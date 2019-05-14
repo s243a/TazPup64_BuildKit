@@ -1,0 +1,1 @@
+ACTION=="add", SUBSYSTEM=="net", ENV{ID_BUS}=="usb", ENV{ID_USB_DRIVER}=="rndis_host", RUN+="/usr/bin/net-interface $env{INTERFACE} start"

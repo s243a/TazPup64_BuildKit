@@ -1,0 +1,13 @@
+/etc/dbus-1/system.conf
+/etc/dbus-1/session.conf
+/etc/init.d/dbus
+/etc/X11/xinit/xinitrc.d/30-dbus
+/usr/lib/libdbus-1.so.3.7.8
+/usr/bin/dbus-cleanup-sockets
+/usr/bin/dbus-daemon
+/usr/bin/dbus-monitor
+/usr/bin/dbus-launch
+/usr/bin/dbus-send
+/usr/bin/dbus-uuidgen
+/usr/lib/libdbus-1.so
+/usr/lib/libdbus-1.so.3

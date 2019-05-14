@@ -1,0 +1,126 @@
+/* CSS style for SliTaz Cooker */
+
+html { min-height: 102%; }
+body { font: 13px sans-serif, vernada, arial; margin: 0; }
+h1 { margin: 0; padding: 8px; color: #fff; font-size: 20px; }
+h1 a { color: #fff; text-decoration: none; }
+h2 { color: #444; }
+h3 { color: #666; font-size: 140%; }
+a { text-decoration: underline; color: #215090; }
+a:hover { text-decoration: none; }
+hr { margin: 0; border: 1px solid #cfcfcf; }
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #ddd;
+	padding: 10px;
+	overflow: auto;
+	font-size: 96%;
+}
+
+/* Header */
+
+#header {
+	color: #fff;
+	background: #222;
+	height: 40px;
+	border-bottom: 4px solid #afafaf;
+}
+
+#header h1 {
+	margin: 0;
+	/* padding: 8px 0 0 42px; */
+	width: 250px;
+}
+
+#header h1 a {
+	color: #fff;
+	text-decoration: none;
+	font-size: 20px;
+	font-style: italic;
+}
+
+#header h1 a:hover, #network a:hover {
+	color: #afafaf;
+}
+
+/* Header links */
+
+#network {
+	float: right;
+	padding: 14px 5px 0;
+	font-size: 12px;
+}
+
+#network a {
+	padding: 0 4px;
+	color: #fff;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+/* Content */
+
+#content {
+	margin: 40px 80px;
+	text-align: justify;
+}
+
+.span-ok    { color: #0a0; }
+.span-red   { color: red; }
+.span-sky   { color: blue; }
+.span-no    { color: #d90; }
+.span-line  { color: #888; }
+.log-date   { color: #666; font-size: 95%; }
+.sh-comment { color: #a00; }
+.sh-val     { color: #e50; font-weight: bold; }
+.var        { color: #05a; }
+
+/* Buttons */
+
+.button {
+	cursor: pointer;
+	padding: 4px;
+	margin: 4px 0px;
+}
+
+a.button, .pctbar  {
+	text-decoration: none;
+	color: #666;
+}
+
+.button:hover {
+	border: 1px solid #999;
+}
+
+.pct { background: #9dff4a; padding: 2px 4px; }
+.pctbar { overflow: hidden; }
+
+.button, .pctbar {
+	border: 1px solid #cccccc;
+	font-size: 14px;
+	line-height: 1.2em;
+	background-image: -webkit-linear-gradient(#FAFAFA, #F4F4F4 40%, #E5E5E5);
+	background-image: -moz-linear-gradient(#FAFAFA, #F4F4F4 40%, #E5E5E5);
+	-webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+	-moz-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Round corner */
+
+pre, .button, .pctbar {
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+	border-radius: 4px;
+}
+
+/* Footer */
+
+#footer {
+	text-align: center;
+	padding: 20px;
+	border-top: 1px solid #ddd;
+	font-size: 90%;
+}
+
+#footer a { padding: 0 2px; }

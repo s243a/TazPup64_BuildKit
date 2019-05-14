@@ -1,0 +1,3 @@
+#!/bin/sh
+#exec puppyapps defaultchat "$@"
+exec sakura -e "tazirc --ask"

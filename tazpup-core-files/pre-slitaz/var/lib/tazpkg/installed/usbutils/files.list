@@ -1,0 +1,4 @@
+/usr/bin/usb-devices
+/usr/bin/lsusb
+/usr/bin/usbhid-dump
+/usr/sbin/update-usbids.sh

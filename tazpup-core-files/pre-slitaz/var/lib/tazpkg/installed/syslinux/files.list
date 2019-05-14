@@ -1,0 +1,11 @@
+/boot/linld.com
+/boot/isolinux/help.fr
+/boot/isolinux/isolinux.bin
+/boot/isolinux/opts.fr
+/boot/isolinux/opts.en
+/boot/isolinux/kbd
+/boot/isolinux/isolinux.cfg
+/boot/isolinux/i18n.cfg
+/boot/isolinux/vesamenu.c32
+/boot/isolinux/c32box.c32
+/boot/isolinux/help.en

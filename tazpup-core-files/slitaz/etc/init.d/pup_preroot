@@ -1,0 +1,32 @@
+#!/bin/sh
+
+. /etc/rc.d/PUPSTATE
+
+addgroup root lp
+addgroup root scanner
+addgroup root operator
+addgroup root tape
+
+if [ ! -d /root/.config ]; then
+ mkdir /root/.config
+ cp -rf /etc/skel/.config/* /root/.config/
+fi
+
+if [ ! -d /root/.local ]; then
+ mkdir /root/.local
+ cp -rf /etc/skel/.local/* /root/.local/
+fi
+
+if [ ! -d /root/Desktop ]; then
+ mkdir /root/Desktop
+fi
+
+if [ ! -d /root/Startup ]; then
+ mkdir /root/Startup
+ cp -rf /etc/skel/Startup/* /root/Startup/
+fi
+
+if [ $PUPMODE -eq 5 ]; then
+ echo  "Performing simple simulation..."
+ /usr/libexec/tazpkg/getenv 2>/dev/null
+fi

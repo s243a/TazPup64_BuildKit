@@ -1,0 +1,17 @@
+/sbin/sysctl
+/bin/ps
+/bin/kill
+/usr/bin/w
+/usr/bin/snice
+/usr/bin/pwdx
+/usr/bin/tload
+/usr/bin/pmap
+/usr/bin/slabtop
+/usr/bin/vmstat
+/usr/bin/free
+/usr/bin/uptime
+/usr/bin/pkill
+/usr/bin/pgrep
+/usr/bin/top
+/usr/bin/watch
+/usr/bin/skill

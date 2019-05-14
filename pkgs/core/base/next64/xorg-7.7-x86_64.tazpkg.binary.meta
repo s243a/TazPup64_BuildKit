@@ -1,0 +1,4 @@
+filename=xorg-7.7-x86_64.tazpkg
+size=4	pkgs/core/base/next64/xorg-7.7-x86_64.tazpkg 
+checksum.md5=c7416769477b4eb38a14d9148193aa13  pkgs/core/base/next64/xorg-7.7-x86_64.tazpkg
+checksum.sha256=cc9a41c85d1fa65cf7d08f56b08d1cc5af7a15668f0161352df7d128b247840a  pkgs/core/base/next64/xorg-7.7-x86_64.tazpkg

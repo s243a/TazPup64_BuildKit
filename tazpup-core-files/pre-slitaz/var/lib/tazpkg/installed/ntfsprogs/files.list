@@ -1,0 +1,16 @@
+/usr/lib/libntfs.so.10.0.0
+/usr/sbin/ntfslabel
+/usr/sbin/ntfsundelete
+/usr/sbin/ntfsclone
+/usr/sbin/mkntfs
+/usr/sbin/ntfsresize
+/usr/sbin/ntfscp
+/usr/bin/ntfsinfo
+/usr/bin/ntfsls
+/usr/bin/ntfscat
+/usr/bin/ntfscluster
+/usr/bin/ntfscmp
+/usr/bin/ntfsfix
+/sbin/mkfs.ntfs
+/usr/lib/libntfs.so
+/usr/lib/libntfs.so.10

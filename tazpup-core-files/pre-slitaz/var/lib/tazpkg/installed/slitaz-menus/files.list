@@ -1,0 +1,15 @@
+/etc/xdg/menus/applications.menu
+/usr/share/desktop-directories/Science.directory
+/usr/share/desktop-directories/Internet.directory
+/usr/share/desktop-directories/Settings.directory
+/usr/share/desktop-directories/Development.directory
+/usr/share/desktop-directories/Games.directory
+/usr/share/desktop-directories/Education.directory
+/usr/share/desktop-directories/Multimedia.directory
+/usr/share/desktop-directories/Office.directory
+/usr/share/desktop-directories/SystemTools.directory
+/usr/share/desktop-directories/Documentation.directory
+/usr/share/desktop-directories/SliTazMenu.directory
+/usr/share/desktop-directories/Utilities.directory
+/usr/share/desktop-directories/Graphics.directory
+/etc/xdg/menus/lxde-applications.menu

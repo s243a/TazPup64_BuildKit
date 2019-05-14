@@ -1,0 +1,4 @@
+filename=patch-2.7.6-x86_64.tazpkg
+size=68	pkgs/core/preinst/next64/patch-2.7.6-x86_64.tazpkg 
+checksum.md5=3dda65c7fecde5bd0c97c067f8d41075  pkgs/core/preinst/next64/patch-2.7.6-x86_64.tazpkg
+checksum.sha256=5fe694f2f8a362e45feb578d254544754c7514f5e860cef38aa4c18a534b8e0b  pkgs/core/preinst/next64/patch-2.7.6-x86_64.tazpkg

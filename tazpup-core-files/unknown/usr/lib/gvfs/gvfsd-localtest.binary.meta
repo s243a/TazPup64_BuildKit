@@ -1,0 +1,4 @@
+filename=gvfsd-localtest
+size=48	tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-localtest 
+checksum.md5=f483324ce33d457c93dcb91a8ff7b4dd  tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-localtest
+checksum.sha256=bc22a37590cfe0dc34072b0a4cdf3bc42a6a5300c119675f89dc5e60a0033bce  tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-localtest

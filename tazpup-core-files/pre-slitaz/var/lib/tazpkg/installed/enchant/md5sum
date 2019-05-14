@@ -1,0 +1,7 @@
+6b9dad8f85583b18ef7bed7112a8da6a  /usr/lib/libenchant.so.1.6.0
+60ad166ea1db3f0e37e246ca25d99941  /usr/lib/enchant/libenchant_myspell.so
+4c149a1e682ca9539e5b3e91a245b7d0  /usr/lib/enchant/libenchant_aspell.so
+1c84a8ff9ed1055228af1e31d99a6ac6  /usr/lib/enchant/libenchant_ispell.so
+486150fb65cf1838e19e1414a1b52dbd  /usr/share/enchant/enchant.ordering
+5b05735a4e2b8bbecff00f9c4bb533b2  /usr/bin/enchant-lsmod
+87accce20c10435ce356b44204b05682  /usr/bin/enchant

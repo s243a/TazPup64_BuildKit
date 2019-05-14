@@ -1,0 +1,4 @@
+filename=grubx64.efi.tar.xz
+size=740	tazpup-core-files/puppy/usr/share/grub2-efi/grubx64.efi.tar.xz 
+checksum.md5=86327d0c82ef2315400cbe274c84e7d5  tazpup-core-files/puppy/usr/share/grub2-efi/grubx64.efi.tar.xz
+checksum.sha256=0af12fb72d594b8491770e1b85d41cc2a56969602b98a3f2484dde950a84d85f  tazpup-core-files/puppy/usr/share/grub2-efi/grubx64.efi.tar.xz

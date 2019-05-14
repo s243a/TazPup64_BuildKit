@@ -1,0 +1,10 @@
+#!/bin/sh
+# Written by mistfire for TazPuppy
+
+args="$1"
+
+if [ "$(whoami)" != "root" ]; then
+ sudo -A shutdown-tazpup "$args"
+else
+ shutdown-tazpup "$args"
+fi

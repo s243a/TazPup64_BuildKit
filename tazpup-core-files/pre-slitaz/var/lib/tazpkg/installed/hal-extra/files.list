@@ -1,0 +1,14 @@
+/usr/share/hal/fdi/policy/10osvendor/10-cpufreq.fdi
+/usr/share/hal/fdi/policy/10osvendor/10-dockstation.fdi
+/usr/share/hal/fdi/policy/10osvendor/10-imac-backlight.fdi
+/usr/share/hal/fdi/policy/10osvendor/15-storage-luks.fdi
+/usr/share/hal/fdi/policy/10osvendor/30-wol.fdi
+/usr/lib/hal/hald-probe-pc-floppy
+/usr/lib/hal/hald-addon-cpufreq
+/usr/lib/hal/hald-probe-video4linux
+/usr/lib/hal/hald-probe-net-bluetooth
+/usr/lib/hal/hald-addon-ipw-killswitch
+/usr/lib/hal/hald-probe-ieee1394-unit
+/usr/lib/hal/hald-addon-imac-backlight
+/usr/lib/hal/hald-probe-printer
+/usr/lib/hal/hald-addon-hid-ups

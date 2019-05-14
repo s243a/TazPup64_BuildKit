@@ -1,0 +1,4 @@
+filename=recovery.jsonlz4
+size=2020	tazpup-core-files/build/no-arch/etc/skel/.mozilla/firefox/b70ns6k0.default/sessionstore-backups/recovery.jsonlz4 
+checksum.md5=c1237b3ec13dac1698634b02b0fb3847  tazpup-core-files/build/no-arch/etc/skel/.mozilla/firefox/b70ns6k0.default/sessionstore-backups/recovery.jsonlz4
+checksum.sha256=08584d3282691470cee05cb0bab0a3fa2edf6294472c6782cffc70155c03f689  tazpup-core-files/build/no-arch/etc/skel/.mozilla/firefox/b70ns6k0.default/sessionstore-backups/recovery.jsonlz4

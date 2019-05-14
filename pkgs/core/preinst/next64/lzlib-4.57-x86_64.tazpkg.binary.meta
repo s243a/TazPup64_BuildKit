@@ -1,0 +1,4 @@
+filename=lzlib-4.57-x86_64.tazpkg
+size=8	pkgs/core/preinst/next64/lzlib-4.57-x86_64.tazpkg 
+checksum.md5=f0028cf1cb9c3a99b4249288ecf20bc0  pkgs/core/preinst/next64/lzlib-4.57-x86_64.tazpkg
+checksum.sha256=b9a34c761698af8545afd155fb8ede9ab5df0dea9eefcec5aecc501a0797296b  pkgs/core/preinst/next64/lzlib-4.57-x86_64.tazpkg

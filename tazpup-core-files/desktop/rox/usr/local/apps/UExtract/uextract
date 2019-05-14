@@ -1,0 +1,1337 @@
+#! /bin/bash
+
+###############################################################################
+# UExtract v3.32 by SFR'2013-2017                                             #
+# GNU GPL v2 applies                                                          #
+###############################################################################
+
+set -o pipefail
+
+APPNAME="UExtract v3.32"
+MYPATH="$(dirname "$(readlink -f "$0")")"
+PATH="${MYPATH}/resources:${PATH}"
+LD_LIBRARY_PATH="${MYPATH}/resources:${LD_LIBRARY_PATH}"
+OLDDIR="$(pwd)"
+WORKDIR="/tmp/uextract.${USER}.${$}"
+
+trap 'func_cleanup; exit' EXIT	# Clean up things on exit
+
+export TEXTDOMAINDIR="${MYPATH}/locale"
+export TEXTDOMAIN=uextract
+export OUTPUT_CHARSET=UTF-8
+
+################################ FUNCTIONS ####################################
+
+func_cleanup () {
+  cd "$OLDDIR" 2>/dev/null
+  umount "$WORKDIR" 2>/dev/null || umount -f -l "$WORKDIR" 2>/dev/null
+  [ "`which $LOSETUP 2>/dev/null`" ] && [ "$FILEPATH" ] && [ "$FREELOOP" ] && $LOSETUP -d "$FREELOOP" 2>/dev/null
+  [ "`which qemu-nbd 2>/dev/null`" ] && [ "$FILEPATH" ] && [ "$NBD_DEV" ] && qemu-nbd -d /dev/nbd${NBD_DEV} >/dev/null 2>&1
+  case "`basename "${FILEEXT##*.}"`" in
+    gc|gst)	CMND="$GOSTCRYPT"	;;
+    hc|vc)	CMND="$VERACRYPT"	;;
+    tc)		CMND="$TRUECRYPT"	;;
+    *)		CMND=''				;;
+  esac
+  [ "$CMND" ] && [ "`which $CMND 2>/dev/null`" ] && [ "$FILEPATH" ] && [ "`$CMND -t -l 2>/dev/null | grep ".*${FILEPATH} "`" ] && $CMND -d "$FILEPATH" 2>/dev/null
+  [ "`which cryptsetup 2>/dev/null`" ] && [ "$FILEPATH" ] && [ "$MAPPER_NAME" ] && [ -e "/dev/mapper/${MAPPER_NAME}" ] && cryptsetup close "/dev/mapper/${MAPPER_NAME}"
+  rm -rf "$WORKDIR" 2>/dev/null
+  #stty sane	# some applications' weird output can break the terminal	# but 'stty sane' in turn breaks 'more', so screw it - IIRC there was only one problematic archive anyway
+  echo -ne "\e[00m"
+  unset FREELOOP NBD_DEV MAPPER_NAME
+}
+
+# -----------------------------------------------------------------------------
+
+func_hr () {
+  printf -- "${1}%.0s" `eval echo {2..$([ $(which tput 2>/dev/null) ] && tput cols || stty size | cut -f2 -d ' ')}`
+}
+
+# -----------------------------------------------------------------------------
+
+func_precheck () {
+  local RET=0
+  for i in "$@"; do
+    [ "`which $i 2>/dev/null`" ] || { echo -e "${REDCOL}$(gettext 'ERROR:') ${BLUECOL}${i}${OFFCOL} $(gettext 'is not installed or not executable!')"; RET=1; }
+  done
+  return $RET
+}
+
+# -----------------------------------------------------------------------------
+
+func_mount () {
+  blkid "$1" | grep -q -E -w 'ext3|ext4' && MOPT="ro,noload" || MOPT="ro"	# use noload for ext{2,3}, because even if it's mounted with 'ro' it can still modify the journal (switches to rw temporarily!)
+  mount -o ${MOPT} "$1" "$2" || return 1
+}
+
+# -----------------------------------------------------------------------------
+
+func_mntpt () {
+  [ $(find "$WORKDIR" -maxdepth 0 -type d -empty) ] && { echo -e "${YELLOWCOL}$(gettext 'WARNING:') ${OFFCOL}$(gettext 'Image/partition does not contain any files, it is empty!')"; return 0; }
+  [ "$MODE" = "list" ] && { find "$WORKDIR" -printf '%M %u:%g %s\r\t\t\t\t\t%P\n' && return 0 || return 1; }
+  [ "`which stdbuf 2>/dev/null`" ] || { cp -ravi "${WORKDIR}/." -t "${1:-.}" && return 0 || return 1; }
+  stdbuf -o0 -e0 cp -ravi "${WORKDIR}/." -t "${1:-.}" | sed -e "s|${WORKDIR}/./||" -e 's/ -> .*//' && return 0 || return 1
+}
+
+# -----------------------------------------------------------------------------
+
+func_mnt_disk_image () {
+  func_precheck $FDISK $LOSETUP || return 1
+  INFO="$($FDISK -l "$1" 2>/dev/null)"
+  UNIT="$(echo "$INFO" | grep -Ei 'sector.*size.*[0-9]+.*bytes' | grep -oE '[0-9]+ bytes' | uniq | tr -cd [:digit:])"
+  PARTITIONS="$(echo "$INFO" | sed -e 's/^[[:space:]]*//' | grep -A256 -i 'start.*end.*size' | tail -n +2 | grep -vE 'Extended$| swap' | tr -d '*' | tr -s ' ' | cut -f2 -d ' ')"
+  if [ "${PARTITIONS}" = "" ] || [[ "${PARTITIONS}" == *"?"* ]] || [[ "$INFO" == *"Exact type match not found"* ]] || [[ "$(file -b "$1")" == *"DOS floppy"* ]]; then
+	if [ "$(od -v -An -tc -j0 -w4 -N4 "$1" | tr -d ' \t\n')" = "LUKS" ]; then
+	  func_precheck cryptsetup || return 1
+	  MAPPER_NAME="$(basename "${1%.*}")_${$}_$RANDOM"
+	  cryptsetup open "$1" "$MAPPER_NAME" || return 1
+	  func_mount "/dev/mapper/${MAPPER_NAME}" "$WORKDIR" && { func_mntpt || ERROR=1; } || ERROR=1
+	else
+	  func_mount "$1" "$WORKDIR" && { func_mntpt || ERROR=1; } || ERROR=1
+	fi
+    umount "$WORKDIR" 2>/dev/null || umount -f -l "$WORKDIR" 2>/dev/null
+    [ "$MAPPER_NAME" ] && [ -e "/dev/mapper/${MAPPER_NAME}" ] && cryptsetup close "$MAPPER_NAME" 2>/dev/null
+	MAPPER_NAME=''
+  else
+    [ "$MODE" != "list" ] && { echo -e "${BLUECOL}MBR:${OFFCOL}"; dd if="$1" of="./$(basename "${FILEPATH%.*}").mbr" bs=512 count=1 || ERROR=1; echo; }
+    CNT=0
+    for OFFSET in $PARTITIONS; do
+      echo -e "${BLUECOL}$(gettext 'Partition')_$((++CNT)):${OFFCOL}"
+	  FREELOOP="$($LOSETUP -f)"; [ "$FREELOOP" = "" ] && return 1
+      $LOSETUP -r -o $((OFFSET*UNIT)) "${FREELOOP}" "$1" || { ERROR=1; continue; }
+      if [ "$(od -v -An -tc -j0 -w4 -N4 "${FREELOOP}" | tr -d ' \t\n')" = "LUKS" ]; then
+	    func_precheck cryptsetup || { echo -e "${REDCOL}$(gettext 'Failed!')${OFFCOL}\n"; $LOSETUP -d "${FREELOOP}"; ERROR=1; continue; }
+	    MAPPER_NAME="$(basename "${FILEPATH%.*}")_${$}_$RANDOM"
+	    cryptsetup open "${FREELOOP}" "$MAPPER_NAME" || { echo -e "${REDCOL}$(gettext 'Failed!')${OFFCOL}\n"; $LOSETUP -d "$FREELOOP"; ERROR=1; continue; }
+        func_mount "/dev/mapper/${MAPPER_NAME}" "$WORKDIR" || { echo -e "${REDCOL}$(gettext 'Failed!')${OFFCOL}\n"; cryptsetup close "$MAPPER_NAME"; $LOSETUP -d "$FREELOOP"; ERROR=1; continue; }
+      else
+        func_mount "$FREELOOP" "$WORKDIR" || { echo -e "${REDCOL}$(gettext 'Failed!')${OFFCOL}\n"; $LOSETUP -d "$FREELOOP"; ERROR=1; continue; }
+      fi
+      [ "$MODE" != "list" ] && mkdir -p "$(gettext 'Partition')_${CNT}"
+      func_mntpt "$(gettext 'Partition')_${CNT}" || { rmdir "$(gettext 'Partition')_${CNT}"; ERROR=1; }
+      umount "$WORKDIR" 2>/dev/null || umount -f -l "$WORKDIR" 2>/dev/null
+      [ "$MAPPER_NAME" ] && [ -e "/dev/mapper/${MAPPER_NAME}" ] && cryptsetup close "$MAPPER_NAME" 2>/dev/null
+      [ "$FREELOOP" ] && $LOSETUP -d "$FREELOOP" 2>/dev/null
+      echo; FREELOOP=''; MAPPER_NAME=''
+    done
+  fi
+  [ $ERROR -eq 0 ] && return 0 || return 1
+}
+
+# -----------------------------------------------------------------------------
+
+func_uextract () {
+  if [ "$MODE" != "list" ]; then
+    DESTDIR="${CUSTOMDIR}/$(basename "$FILEPATH").$(gettext 'extracted')"
+    CNT=1
+    TMP="$DESTDIR" 
+    while [ -e "$TMP" ]; do
+	  TMP="${DESTDIR}($((CNT++)))"
+    done
+    DESTDIR="$TMP"
+    mkdir -p -- "$DESTDIR"	|| { echo -e "\n${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Cannot create destination directory!')"; return 1; }
+    cd -- "$DESTDIR"		|| { echo -e "\n${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Cannot access destination directory!')"; return 1; }
+  fi
+  
+  ERROR=0; FREELOOP=''; NBD_DEV=''; MAPPER_NAME=''
+  FILEEXT="$(echo "$FILEPATH" | tr [:upper:] [:lower:])"
+
+  # Try to determine .run installers that have no .run extension
+  [ ! "`echo "${FILEPATH##*.}" | tr '[:upper:]' '[:lower:]' | grep -E 'package|shar|shr'`" ] && [[ "`head -n2 "$FILEPATH" | file -b - | cut -f1 -d ','`" == *"shell script"* ]] && [[ "`grep -o -m1 '' "$FILEPATH"`" == "Binary"* ]] && FILEEXT=".run"
+  ([ "`echo "$FILEINFO" | grep -i '^ELF'`" ] && [ "$(od -v -An -tc -j32769 -w5 -N5 "$FILEPATH" 2>/dev/null | tr -d ' \n')" = "CD001" ]) && FILEEXT=".run"
+
+  # Try to determine compressed initrd files with .img and .lzm extensions
+  [ "$(echo "$(basename "$FILEPATH")" | grep -iE 'initrd|init.*\.img|init.*\.lzm')" ] && { FILEEXT_TMP="`echo "$FILEINFO" | grep -wioE 'bzip2|gzip|lz4|lzma|lzop|xz|ext2' | tr '[:upper:]' '[:lower:]'`"; [ "$FILEEXT_TMP" ] && FILEEXT=".${FILEEXT_TMP}"; }
+
+  # Determine UPX-ed and fusecompress(ed) files
+  [ "`echo "$FILEINFO" | grep -i '^ELF'`" ] && [ "`which upx 2>/dev/null`" ] && [ "`upx -l "$FILEPATH" 2>&1 | grep -w ' .*Exception:'`" = "" ] && FILEEXT=".upx"
+  [ "`echo "$FILEINFO" | grep -i '^FuseCompress'`" ] && FILEEXT="fusecompress"	# fake extension
+  
+  case "$FILEEXT" in
+    *.tar.7z)
+		func_precheck $SEVENZ tar || return 1
+		$SEVENZ -so x "$FILEPATH" 2>/dev/null | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }	# hack for exit code 141 ('set -o pipefail' + usually piping through (but not only!) tail/head pair produces that!)
+	;;
+	# -----------
+    *.tar.bz|*.tar.bzip|*.tar.bz2|*.tar.bzip2|*.tar.gz2|*.tb2|*.tbz|*.tbz2|*.slp|*.xjtbz2)
+		[ "$(head -c 3 "$FILEPATH")" = "BZ0" ] && CMND=bunzip || CMND="$BUNZIP2"
+		func_precheck $CMND tar || return 1
+		$CMND -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+    *.tar.f)
+		func_precheck $UNFREEZE tar || return 1
+		$UNFREEZE -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+    *.tar.gz|*.tar.gzip|*.tg|*.tgz|*.cxarchive|*.depot.gz|*.dsl|*.emerald|*.epk|*.gtp|*.iar|*.nif|*.oar|*.obt|*.qpk|*.qpr|*.rub|*.unitypackage|*.vbox-extpack|*.xjtgz)
+		func_precheck $GUNZIP tar || return 1
+		$GUNZIP -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.tar.lz4)
+	    func_precheck $LZ4 tar || return 1
+	    $LZ4 -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }	    
+	;;
+	# -----------
+	*.tar.lz|*.tlz)
+	    func_precheck $LUNZIP tar || return 1
+	    $LUNZIP -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }	    
+	;;
+	# -----------
+    *.tar.lzma|*.tlzma|*.tzma)
+		func_precheck $UNLZMA tar || return 1
+		$UNLZMA -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+    *.tar.lzo|*.tzo)
+		func_precheck $UNLZOP tar || return 1
+		$UNLZOP -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+    *.tar.xz|*.txz|*.tpkg|*.xbps)
+		func_precheck $UNXZ tar || return 1
+		$UNXZ -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+    *.tar.z|*.tarz|*.tz|*.taz)
+		func_precheck $UNCOMPRESS tar || return 1
+		$UNCOMPRESS -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.tar.zip)
+	    func_precheck tar || return 1
+	    func_precheck unzip && { unzip -p "$FILEPATH" | tar $TAR_OPTS - && return 0; }
+	    echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}"
+	    func_precheck $SEVENZ || return 1
+	    $SEVENZ x -so "$FILEPATH" 2>/dev/null | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+    *.tar.zst|*.tzst)
+		func_precheck zstd tar || return 1
+		zstd -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.7z)
+		func_precheck $SEVENZ cpio || return 1
+		$SEVENZ x -so "$FILEPATH" 2>/dev/null | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.bz|*.cpio.bzip|*.cpio.bz2|*.cpio.bzip2)
+		[ "$(head -c 3 "$FILEPATH")" = "BZ0" ] && CMND=bunzip || CMND="$BUNZIP2"
+		func_precheck $CMND cpio || return 1
+		$CMND -c -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.f)
+		func_precheck $UNFREEZE cpio || return 1
+		$UNFREEZE -c -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.gz|*.cpio.gzip|*.cpgz|*.cgz)
+		func_precheck $GUNZIP cpio || return 1
+		$GUNZIP -c -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.lz4)
+		func_precheck $LZ4 cpio || return 1
+		$LZ4 -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.lz)
+		func_precheck $LUNZIP cpio || return 1
+		$LUNZIP -c -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.lzma)
+		func_precheck $UNLZMA cpio || return 1
+		$UNLZMA -c -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.lzo)
+		func_precheck $UNLZOP cpio || return 1
+		$UNLZOP -c -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.xz)
+		func_precheck $UNXZ cpio || return 1
+		$UNXZ -c -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.z)
+		func_precheck $UNCOMPRESS cpio || return 1
+		$UNCOMPRESS -c -d "$FILEPATH" | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.cpio.zip)
+	    func_precheck cpio || return 1
+	    func_precheck unzip && { unzip -p "$FILEPATH" | cpio $CPIO_OPTS $BOPTS && return 0; }
+	    echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}"
+	    func_precheck $SEVENZ || return 1
+	    $SEVENZ x -so "$FILEPATH" 2>/dev/null | cpio $CPIO_OPTS $BOPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.adz|*.ai|*.blend|*.dz|*.gnumeric|*.graphmlz|*.jgz|*.jsonlz4|*.psz|*.sifz|*.svgz|*.vgz|*.wrz|*.x3d|*.xcfgz|*.zabw|*.mo|*.dms|*.pack|*.wv|*.xcfbz2|*.aes|*.b64|*.balz|*.bbb|*.bfe|*.bgz|*.br|*.bz|*.bz2|*.bzip|*.bzip2|*.cpt|*.dia|*.emz|*.f|*.flzp|*.gz|*.gz2|*.gzi|*.gzip|*.igz|*.lep|*.liz|*.lpaq1|*.lpaq8|*.lz4|*.lz|*.lzma|*.lzo|*.lrz|*.mpz|*.ogz|*.quad|*.rz|*.sfe|*.snappy|*.snz|*.sz|*.tor|*.xz|*.z|*.zl|*.zst)
+	    EXT=''
+	    for i in 'adz|.adf' 'ai|.svg' 'blend|.blend' 'gnumeric|.gnumeric' 'graphmlz|.graphml' 'jgz|.js' 'jsonlz4|.json' 'lep|.jpg' 'psz|.ps' 'sifz|.sif' 'svgz|.svg' 'vgz|.vgm' 'wrz|.wrl' 'x3d|.x3d' 'xcfgz|.xcf' 'zabw|.abw' 'mo|.po' 'dms|.adf' 'pack|.jar' 'wv|.wav' 'xcfbz2|.xcf'; do
+	      [ "${FILEEXT##*.}" = "${i%%|*}" ] && { EXT="${i##*|}"; break; }
+	    done
+	    [ "$MODE" = "list" ] && { echo "$(basename "${FILEPATH%.*}")${EXT}" && return 0 || return 1; }
+	    echo "$(gettext 'Extracting...')"
+	    case "${FILEEXT##*.}" in
+	      adz|blend|gnumeric|graphmlz|jgz|psz|sifz|svgz|vgz|wrz|x3d|xcfgz|zabw)
+	        func_precheck $GUNZIP || return 1
+	        $GUNZIP -S ".${FILEEXT##*.}" -c -d -v "$FILEPATH" > "$(basename "${FILEPATH%.*}")${EXT}" || { rm -f -- "$(basename "${FILEPATH%.*}").${EXT}"; return 1; }
+	      ;;
+	      # -----------
+	      ai)
+			if [ "$(echo "$FILEINFO" | grep -wi 'postscript')" ]; then
+			  func_precheck gs || return 1
+			  gs -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile="$(basename "${FILEPATH%.*}").pdf" "$FILEPATH" || { rm -f -- "$(basename "${FILEPATH%.*}").pdf"; return 1; }
+			fi
+			func_precheck pdftocairo || return 1
+			[ -e "$(basename "${FILEPATH%.*}").pdf" ] && FILEPATH_TMP="$(basename "${FILEPATH%.*}").pdf" || FILEPATH_TMP="${FILEPATH}"
+			pdftocairo -svg "$FILEPATH_TMP" "$(basename "${FILEPATH%.*}")${EXT}" || ERROR=1
+			rm -f "$(basename "${FILEPATH%.*}").pdf"
+	      ;;
+	      # -----------
+	      mo)
+	        func_precheck msgunfmt || return 1
+		    msgunfmt -v "$FILEPATH" -o "./$(basename "${FILEPATH%.*}")${EXT}" || { rm -f -- "$(basename "${FILEPATH%.*}")${EXT}"; return 1; }
+	      ;;
+	      # -----------
+	      dms)
+	      	func_precheck undms || return 1
+			undms "$FILEPATH" "$(basename "${FILEPATH%.*}")${EXT}" || { rm -f -- "$(basename "${FILEPATH%.*}")${EXT}"; return 1; }	      
+	      ;;
+	      # -----------
+	      jsonlz4)
+			func_precheck lz4jsoncat || return 1
+			lz4jsoncat "$FILEPATH" > "$(basename "${FILEPATH%.*}")${EXT}" || { rm -f -- "$(basename "${FILEPATH%.*}")${EXT}"; return 1; }
+	      ;;
+	      # -----------
+	      pack)
+			func_precheck unpack200 || return 1
+			unpack200 -v "$FILEPATH" "$(basename "${FILEPATH%.*}")${EXT}" || { rm -f -- "$(basename "${FILEPATH%.*}")${EXT}"; return 1; }	      
+	      ;;
+	      # -----------
+	      wv)
+			func_precheck wvunpack || return 1
+			wvunpack -o . "$FILEPATH" || return 1
+	      ;;
+	      # -----------
+	      xcfbz2)
+			func_precheck $BUNZIP2 || return 1
+			$BUNZIP2 -c -d -v "$FILEPATH"  > "$(basename "${FILEPATH%.*}")${EXT}" || { rm -f -- "$(basename "${FILEPATH%.*}")${EXT}"; return 1; }
+	      ;;
+	      # -----------
+	      aes)
+	          func_precheck aescrypt || return 1
+	          aescrypt -d -o ./"$(basename "${FILEPATH%.*}")" "$FILEPATH" || return 1
+	      ;;
+	      # -----------
+	      b64)
+			  func_precheck base64 || return 1
+			  base64 -d "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || return 1	        
+	      ;;
+	      # -----------
+	      balz)
+			  func_precheck balz || return 1
+			  balz d "$FILEPATH" "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }	        
+	      ;;
+		  # -----------
+		  bbb|flzp|lpaq1|lpaq8)
+		      CMND="${FILEEXT##*.}"	# will be bbb or flzp or lpaq1 or lpaq8
+		      func_precheck $CMND || return 1
+		      $CMND d "$FILEPATH" "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+	      # -----------
+	      bfe)
+			  func_precheck bcrypt || return 1
+			  bcrypt -o "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }	        
+	      ;;
+	      # -----------
+	      br)
+			  func_precheck bro || return 1
+			  bro --decompress --input "${FILEPATH}" --output "$(basename "${FILEPATH%.*}")" || return 1
+	      ;;
+	      # -----------
+	      bz|bz2|bzip|bzip2|gz2)
+			  [ "$(head -c 3 "$FILEPATH")" = "BZ0" ] && CMND="bunzip" || CMND="$BUNZIP2"
+			  func_precheck $CMND || return 1
+			  $CMND -c -d -v "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }        
+	      ;;
+	      # -----------
+	      cpt)
+	          func_precheck ccrypt || return 1
+	          ccrypt -d -c "$FILEPATH" > ./"$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }	        
+	      ;;
+	      # -----------
+	      f)
+			  func_precheck $UNFREEZE || return 1
+			  $UNFREEZE -c -d "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+	      ;;
+	      # -----------
+		  dz|gz|gzi|gzip|emz|bgz|dia|mpz|ogz)
+			  func_precheck $GUNZIP || return 1
+			  $GUNZIP -S ".${FILEEXT##*.}" -c -d -v "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+		  # -----------
+		  igz)
+		      [ "$(echo "$FILEINFO" | grep -wi 'gzip')" ] && CMND="$GUNZIP" || CMND="$UNXZ"
+		      func_precheck $CMND || return 1
+		      $CMND -c -d -v "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+		  # -----------
+		  lep)
+			  func_precheck lepton || return 1
+			  lepton "$FILEPATH" "$(basename "${FILEPATH%.*}").jpg" || { rm -f -- "$(basename "${FILEPATH%.*}").jpg"; return 1; }
+		  ;;
+		  # -----------
+		  liz)
+			  func_precheck lizard || return 1
+			  lizard -d "$FILEPATH" "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+		  # -----------
+		  lrz)
+			  func_precheck $LRUNZIP || return 1
+			  $LRUNZIP -d "$FILEPATH" -O . || return 1
+		  ;;
+	      # -----------
+	      lz4)
+			  func_precheck $LZ4 || return 1
+			  $LZ4 -d "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+	      ;;
+	      # -----------
+	      lz)
+			  func_precheck $LUNZIP || return 1
+			  $LUNZIP -c -d -v "$FILEPATH"  > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+	      # -----------
+	      lzma)
+			  func_precheck $UNLZMA || return 1
+			  $UNLZMA -c -d -v "$FILEPATH"  > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+	      # -----------
+	      lzo)
+			  func_precheck $UNLZOP || return 1
+			  $UNLZOP -c -d -v "$FILEPATH"  > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+		  # -----------
+		  quad)
+			  func_precheck quad || return 1
+			  quad -d "$FILEPATH" "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+		  # -----------
+		  rz)
+		      func_precheck $RUNZIP || return 1
+		      $RUNZIP -k -d "$FILEPATH" -o "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+	      # -----------
+	      sfe)
+			  func_precheck scrypt || return 1
+			  scrypt dec "$FILEPATH" "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }	        
+	      ;;
+		  # -----------
+		  snappy|snz|sz)
+			  func_precheck snzip || return 1
+			  snzip -c -d "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+	      # -----------
+	      tor)
+			  func_precheck tor || return 1
+			  tor "$FILEPATH" -o"$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+	      ;;
+		  # -----------
+		  xz)
+			  func_precheck $UNXZ || return 1
+			  $UNXZ -c -d -v "$FILEPATH"  > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+		  # -----------
+		  z)
+			  if [ "$(echo "$FILEINFO" | grep -i '^compress')" ]; then
+			    func_precheck $UNCOMPRESS || return 1
+			    $UNCOMPRESS -c -d "$FILEPATH" > "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+			  else
+			    func_precheck tosz || return 1
+			    RESULT="$(tosz -ascii "${FILEPATH}" "$(basename "${FILEPATH%.*}")")"
+			    echo "$RESULT"; echo "$RESULT" | grep -q '^Fail:' && { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+			  fi
+		  ;;
+		  # -----------
+		  zl)
+			  func_precheck $GUNZIP || return 1
+			  RESULT=$( { printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" | cat - "${FILEPATH}" | $GUNZIP -c -d -v > "$(basename "${FILEPATH%.*}")"; } 2>&1)
+			  [ $? -ne 0 ] && [ "$(echo "$RESULT" | grep -v 'unexpected end of file')" != "" ] && { echo "$RESULT"; rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+		  # -----------
+		  zst)
+			  func_precheck zstd || return 1
+			  zstd -d "$FILEPATH" -o "$(basename "${FILEPATH%.*}")" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+		  ;;
+	    esac
+	;;
+	# -----------
+	*.2fs|*.3fs|*.4fs)
+	  func_precheck $LOSETUP || return 1
+	  FREELOOP="$($LOSETUP -f)"
+	  [ "$FREELOOP" = "" ] && return 1
+	  modprobe -a cryptoloop aes_generic aes crypto_blkcipher cbc 2>/dev/null	# for encrypted savefiles
+	  case "$FILEEXT" in
+	    *_cryptx*) 	[ "`which losetup-klibc 2>/dev/null`" ] && { echo -n "$(gettext "Password: ")"; losetup-klibc -p0 -e 1 "$FREELOOP" "$FILEPATH"; }	|| $LOSETUP -r -E 1 "$FREELOOP" "$FILEPATH"	;;
+	    *_crypta*) 	[ "`which losetup-klibc 2>/dev/null`" ] && { echo -n "$(gettext "Password: ")"; losetup-klibc -p0 -e aes "$FREELOOP" "$FILEPATH"; }	|| $LOSETUP -r -e aes "$FREELOOP" "$FILEPATH"	;;
+	    *)			$LOSETUP -r "$FREELOOP" "$FILEPATH" ;;
+	  esac
+	  func_mount "$FREELOOP" "$WORKDIR" && { func_mntpt || ERROR=1; } || ERROR=1
+	  umount "$WORKDIR" 2>/dev/null || umount -f -l "$WORKDIR" 2>/dev/null
+	  $LOSETUP -d "$FREELOOP" 2>/dev/null
+	  FREELOOP=''
+	;;
+	# -----------
+    *.7z|*.7z.001|.7zip|*.a|*.ar|*.a[0-9][0-9]|*.arj|*.cab|*.cb7|*.cpl|*.crx|*.dll|*.dmg|*.exe|*.fwp|*.hme|*.icl|*.lha|*.lza|*.lzh|*.mct|*.msg|*.msi|*.msp|*.msu|*.mzz|*.nex|*.ndr|*.ngr|*.nlr|*.nsis|*.onepkg|*.safariextz|*.scr|*.sdi|*.sfx|*.swm|*.sys|*.themepack|*.tsk|*.vhd|*.wim|*.wsp|*.xar|*.xsn|*.zipx|*.??_)
+        case "${FILEEXT##*.}" in
+          a|ar)				func_precheck ar  			&& { ar  $AR_OPTS "$FILEPATH"	&& return 0	|| return 1; } ;;
+          arj|a[0-9][0-9])	func_precheck arj 			&& { arj $ARJ_OPTS "$FILEPATH"	&& return 0	|| return 1; } ;;
+          cab)				func_precheck cabextract	&& { cabextract $CABEXTRACT_OPTS "$FILEPATH" && return 0 || return 1; } ;;
+          exe)				func_precheck innoextract	&& { innoextract -l "$FILEPATH" >/dev/null 2>&1 && { innoextract $INNOEXTRACT_OPTS "$FILEPATH" && return 0 || return 1; }; }	;;
+          lha|lza|lzh)		func_precheck lha 			&& { lha $LHA_OPTS "$FILEPATH"	&& return 0 || return 1; } ;;
+          xar)				func_precheck xar 			&& { xar $XAR_OPTS "$FILEPATH"	&& return 0 || return 1; } ;;
+        esac
+        case "${FILEEXT##*.}" in
+          a|ar|arj|a[0-9][0-9]|cab|exe|lha|lza|lzh|xar) echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}" ;;
+        esac
+		func_precheck $SEVENZ || return 1
+		$SEVENZ $SEVENZ_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.ace|*.cba)
+	    func_precheck unace || return 1
+	    unace $UNACE_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.alz)
+	    func_precheck unalz || return 1
+	    unalz $UNALZ_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.ani|*.arch00|*.u|*.uax|*.vpk) # arch00/u/uax/vpk - only wav sounds
+	    [ "${FILEEXT##*.}" = "ani" ] && { PATTERN='icon'; EXT='cur'; ADD='9'; } || { PATTERN='RIFF'; EXT='wav'; ADD='1'; }
+	    ITEMS=( $(grep -abo "${PATTERN}" "$FILEPATH" | cut -f1 -d ':') $(stat -c %s "$FILEPATH") )
+        #ITEMS=( $(od -v -An -tx1 -j0 -w1 "$FILEPATH" | tr -d '\n' | grep -bo '52 49 46 46 .. .. .. .. 57 41 56 45' | cut -f1 -d ':' | sed 's/.*/& 3 \/ p/' | dc) $(stat -c %s "$FILEPATH") )
+        [ ${#ITEMS[@]} -eq 1 ] && { echo -e "${REDCOL}ERROR: ${OFFCOL}$(gettext 'No items found!')"; return 1; }
+	    echo -e "${BLUECOL}$(gettext "Items found:") $(( ${#ITEMS[@]} - 1))${OFFCOL}"
+	    [ "$MODE" = "list" ] && return 0
+	    PADDING=$(( ${#ITEMS[@]} - 1 )); PADDING=${#PADDING}
+        for ((CNT=0; CNT<$((${#ITEMS[@]}-1)); CNT++)); do
+          echo "$(gettext 'Extracting item') $(printf "%0${PADDING}d\n" $((CNT+1)) )"
+          if [ "${FILEEXT##*.}" = "ani" ]; then
+            END=$(( ${ITEMS[$(($CNT+1))]} - ${ITEMS[$CNT]} ))
+          else
+            read B1 B2 B3 B4 <<< $(od -v -An -tu1 -j$(( ${ITEMS[$CNT]} + 4 )) -w4 -N4 "$FILEPATH")
+            END=$(( ($B4*16777216)+($B3*65536)+($B2*256)+($B1) + 8))
+            [ ${END} -gt $(( ${ITEMS[$(($CNT+1))]} - ${ITEMS[$CNT]} )) ] && END=$(( ${ITEMS[$(($CNT+1))]} - ${ITEMS[$CNT]} ))
+          fi
+          tail -c +$((${ITEMS[$CNT]}+${ADD})) "$FILEPATH" | head -c ${END} > "$(printf "%0${PADDING}d\n" $((CNT+1)) ).${EXT}" || { [ $? -ne 141 ] && { rm "$(printf "%0${PADDING}d\n" $((CNT+1)) ).${EXT}"; ERROR=1; }; }
+        done
+	;;
+	# -----------
+	*.arc|*.ark|*.sue)
+	    echo -e "${BLUECOL}$(gettext 'Trying') '(un)arc'...${OFFCOL}\n"
+	    func_precheck $UNARC && { $UNARC $UNARC_OPTS "$FILEPATH" && return 0 || echo;echo; }
+	    [ "$UNARC" = "unarc" ] && [ "`which arc 2>/dev/null`" ] && { arc $UNARC_OPTS "$FILEPATH" && return 0; } # workaround - arc/unarc/nomarch are incompatibile with FreeArc's arc/unarc and nomarch doesn't support Unicode
+	    echo -e "\n${BLUECOL}$(gettext 'Trying') 'nomarch'...${OFFCOL}\n"
+	    func_precheck nomarch || return 1
+	    nomarch $NOMARCH_OPTS "$FILEPATH" || return 1
+	;;
+    # -----------
+	*.asc|*.gpg)
+		func_precheck $GPG || return 1
+		[ "$MODE" = "list" ] && { echo "$(basename "${FILEPATH%.*}")"; $GPG --list-only "$FILEPATH" && return 0 || return 1; }
+		$GPG -o "$(basename "${FILEPATH%.*}")" -d "$FILEPATH" || { rm -f -- "$(basename "${FILEPATH%.*}")"; return 1; }
+	;;
+	# -----------
+	*.bin|*.daa|*.mdf|*.mds|*.nrg)
+	    func_precheck poweriso || return 1
+	    poweriso $POWERISO_OPTS "$FILEPATH" / -r -od . || return 1
+	;;
+	# -----------
+	*.bxy|*.sdk|*.sh2|*.shk)
+	    func_precheck $NULIB || return 1
+	    [ "$NULIB" = "nulib2" ] && OPTS="$NULIB2_OPTS" || OPTS="$NULIB_OPTS"
+	    $NULIB $OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.chm)
+		[ "$MODE" = "list" ] && { CMND=enum_chmLib; OUTDIR=''; } || { CMND=extract_chmLib; OUTDIR='.'; }
+	    func_precheck $CMND && { $CMND "$FILEPATH" $OUTDIR && return 0; }
+	    echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}"
+	    func_precheck $SEVENZ || return 1
+	    $SEVENZ $SEVENZ_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.cpio)
+	    func_precheck cpio || return 1
+	    cpio $CPIO_OPTS $BOPTS < "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.cramfs|*.disk|*.dsk|*.ext2|*.ext3|*.ext4|*.fat|*.flp|*.hfs|*.hfv|*.ima|*.img|*.ntfs|*.udf|*.vfd)
+	  if [ "${FILEEXT##*.}" = "fat" ] && [[ "`echo "$FILEINFO" | grep -wi 'gzip'`" ]]; then
+	    func_precheck $GUNZIP tar || return 1
+	    $GUNZIP -c -d "$FILEPATH" | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	  else
+	    func_mnt_disk_image "$FILEPATH" || return 1
+	  fi
+	;;
+	# -----------
+	*.cur|*.ico)
+		func_precheck icotool || return 1
+		[ "$MODE" != "list" ] && echo "$(gettext 'Extracting...')"
+		RESULT="$(icotool $ICOTOOL_OPTS "$FILEPATH" 2>&1)"
+		echo "$RESULT"; [[ "$RESULT" == "${FILEPATH}: "* ]] && return 1	# icotool returns always 0, so have to scrap the stderr
+	;;
+	# -----------
+	*.cvd|*.cld)
+		[ "${FILEEXT##*.}" = "cvd" ] && { CMND="$GUNZIP -c -d"; func_precheck $GUNZIP tar || return 1; } || { CMND="cat"; func_precheck tar || return 1; }
+	    tail -c +513 "$FILEPATH" | $CMND | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.dar)
+	    func_precheck dar || return 1
+  	    dar $DAR_OPTS "${FILEPATH%.*.dar*}" $DAR_OPTS2 || return 1
+	;;
+	# -----------
+	*.dat|*.tnef)
+	    func_precheck tnef || return 1
+	    tnef $TNEF_OPTS --unix-paths --save-body="$(basename "${FILEPATH%.*}")" -v "$FILEPATH" || return 1
+	;;
+	# -----------
+    *.deb|*.udeb|*.ipk)
+        if [ "$(echo "$FILEINFO" | grep -wi 'gzip')" ]; then
+	      func_precheck $GUNZIP tar || return 1
+	      [ "$MODE" != "list" ] && { mkdir control data; OPTS1='-C control'; OPTS2='-C data'; }
+          $GUNZIP -c -d "$FILEPATH" | tar $TAR_OPTS - --exclude=control.tar.gz --exclude=data.tar.gz || { [ $? -ne 141 ] && ERROR=1; }
+          echo; $GUNZIP -c -d "$FILEPATH" | tar x --to-stdout -f - ./control.tar.gz	| $GUNZIP -c -d | tar $TAR_OPTS - $OPTS1 || { [ $? -ne 141 ] && ERROR=1; }
+          echo; $GUNZIP -c -d "$FILEPATH" | tar x --to-stdout -f - ./data.tar.gz	| $GUNZIP -c -d | tar $TAR_OPTS - $OPTS2 || { [ $? -ne 141 ] && ERROR=1; }
+          [ $ERROR -eq 0 ] && return 0 || return 1
+        fi
+        echo -e "${BLUECOL}$(gettext 'Trying') 'ar'...${OFFCOL}\n"
+        func_precheck ar tar && {
+		  for i in control data; do
+		    EXT="$(ar t "$FILEPATH" 2>/dev/null | grep -io "${i}.tar.*")"
+		    case "${EXT##*.}" in
+		      gz)	CMND="$GUNZIP -c -d" 	;;
+		      bz2)	CMND="$BUNZIP2 -c -d"	;;
+		      lzma)	CMND="$UNLZMA -c -d"	;;
+		      xz)	CMND="$UNXZ -c -d"		;;
+		      *)	CMND="cat"				;;	# plain tar
+		    esac
+		    func_precheck ${CMND%% *} && {
+			  ar -p "$FILEPATH" "$EXT" | $CMND | tar $TAR_OPTS - || ERROR=1
+			} || { ERROR=1; break; }
+		  done
+		  [ $ERROR -eq 0 ] && return 0 || ERROR=0
+		}
+		echo -e "\n${BLUECOL}$(gettext 'Trying') 'dpkg-deb'...${OFFCOL}\n"
+        func_precheck dpkg-deb && {
+		  for CMND in 'dpkg-deb' 'busybox dpkg-deb'; do
+		    if [ "$MODE" = "list" ]; then
+		      $CMND -c "$FILEPATH" || ERROR=1
+		    else
+		      $CMND -e "$FILEPATH" . || ERROR=1
+		      $CMND -X "$FILEPATH" . || ERROR=1
+		    fi
+		    ([ $ERROR -eq 0 ] || [ "$(readlink -f "`which dpkg-deb 2>/dev/null`" | grep 'busybox')" ] || [ ! "$(busybox | grep -wo 'dpkg-deb')" ]) && break
+		  done
+		  [ $ERROR -eq 0 ] && return 0 || ERROR=0
+        }
+        [ "${FILEEXT##*.}" = "deb" ] && echo -e "\n${BLUECOL}$(gettext 'Trying') 'exploderpm'...${OFFCOL}\n" || return 1
+        func_precheck exploderpm || return 1
+		exploderpm $EXPLODERPM_OPTS "$FILEPATH"; RET=$?
+		if [ $RET -eq 0 ] && [ `exploderpm -l "$FILEPATH" | grep '^./$' | wc -l` -lt 2 ]; then
+		  echo -e "\n${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Archive has not been fully listed/extracted!')"
+		  return 1
+		fi
+		[ $RET -ne 0 ] && { echo -e "${REDCOL}$(gettext "Error...")${OFFCOL}"; return 1; }
+	;;
+	# -----------
+	*.djvu)
+	    func_precheck ddjvu || return 1
+	    [ "$MODE" = "list" ] && { ddjvu -verbose -format=rle -scale=1% "$FILEPATH" > /dev/null && return 0 || return 1; }
+	    PAGES="$(ddjvu -verbose -format=ppm -scale=1% -page=999999999 "$FILEPATH" 2>&1 | grep -E '^-.*[0-9]+.*-' | tr -cd '[:digit:]')"
+	    [ "$PAGES" ] || { echo -e "${REDCOL}$(gettext "Error...")${OFFCOL}"; return 1; }
+	    for i in `eval echo {1..${PAGES}}`; do
+	      ddjvu -verbose -format=ppm -page=$i "$FILEPATH" "${i}.$(basename "${FILEPATH%.*}").ppm" || ERROR=1
+	    done
+	;;
+	# -----------
+	*.eml|*.mht|*.mhtml|*.mim|*.mime|*.mbox|*.mbx)
+		func_precheck ripmime || return 1
+		[ "$MODE" = "list" ] && OUTDIR="$WORKDIR" || OUTDIR="."
+		ripmime -v -i "$FILEPATH" -d "$OUTDIR" || return 1
+		[ $(find "$OUTDIR" -maxdepth 0 -type d -empty) ] && { echo -e "${REDCOL}$(gettext "ERROR:")${OFFCOL} $(gettext "Nothing listed/extracted!")"; return 1; }
+	;;
+	# -----------
+	*.fossil)
+		func_precheck fossil || return 1
+		if [ "$MODE" = "list" ]; then
+		  cd "$WORKDIR"
+		  { fossil open --empty "${FILEPATH}" && fossil checkout --latest --keep && fossil ls; } || return 1
+		else
+		  { fossil open --empty "${FILEPATH}" && fossil checkout --latest; } || return 1
+		fi
+	;;
+	# -----------
+	*.fp8)
+		func_precheck fp8 || return 1
+		fp8 $FP8_OPTS "$FILEPATH" . || return 1
+	;;
+	# -----------
+	*.gc|*.gst|*.tc|*.hc|*.vc)
+		case "`basename "${FILEEXT##*.}"`" in
+		  gc|gst)	CMND="$GOSTCRYPT"	;;
+		  hc|vc)	CMND="$VERACRYPT"	;;
+		  *)		CMND="$TRUECRYPT"	;;
+		esac
+		func_precheck $CMND || return 1
+		$CMND --text --fs-options=ro --mount-options=nokernelcrypto --mount "$FILEPATH" "$WORKDIR" || return 1 && echo
+		func_mntpt || ERROR=1
+        $CMND -d "$FILEPATH"
+	;;
+	# -----------
+	*.gif)
+	    func_precheck gifsicle || return 1
+	    gifsicle $GIFSICLE_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.gifar)
+	    BOUNDARY=$(grep -aboU -m1 "$(echo -e "\x3b\x50\x4b\x03\x04")" "$FILEPATH" | cut -f1 -d ':')
+        [ "$BOUNDARY" = "" ] && { echo -e "${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Cannot find appended .jar file!')"; return 1; }
+        echo -e "${BLUECOL}$(gettext 'This file contains appended .jar file!')${OFFCOL}"
+	    [ "$MODE" = "list" ] && return 0
+	    echo -e "$(gettext 'Extracting GIF')"; head -c $(($BOUNDARY+1)) "$FILEPATH" > "$(basename "${FILEPATH%.*}").gif" || ERROR=1
+	    echo -e "$(gettext 'Extracting JAR')"; tail -c +$(($BOUNDARY+2)) "$FILEPATH" > "$(basename "${FILEPATH%.*}").jar" || ERROR=1
+	;;
+	# -----------
+	*.ha)
+	    func_precheck ha || return 1
+	    ha $HA_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.hqx)
+	    func_precheck hexbin || return 1
+	    hexbin $HEXBIN_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.iso|*.cfs)
+	  for DUMMY in DUMMY; do	# a workaround to avoid a separate function or nested if-fi
+		[ "$(od -v -An -tc -j$((17*2048+1)) -w29 -N29 "$FILEPATH" | tr -d ' \t\n')" != "CD001001ELTORITOSPECIFICATION" ] && break
+		read B1 B2 B3 B4 <<< $(od -v -An -tu1 -j$((17*2048+71)) -w4 -N4 "$FILEPATH")
+		INFOSECTOR=$(( ($B4*16777216)+($B3*65536)+($B2*256)+($B1) ))
+		read B1 B2 B3 B4 <<< $(od -v -An -tu1 -j$(($INFOSECTOR*2048+40)) -w4 -N4 "$FILEPATH")
+		STARTSECTOR=$(( ($B4*16777216)+($B3*65536)+($B2*256)+($B1) ))
+		read ISBOOT TYPE NULL NULL NULL NULL S1 S2 <<< $(od -v -An -tx1 -j$(($INFOSECTOR*2048+32)) -w8 -N8 "$FILEPATH")
+		[ $ISBOOT -ne 88 ] && break
+		case $TYPE in
+		  01) COUNT=$((1200*1024/512)); [ "$MODE" = "list" ] && echo -e "${BLUECOL}$(gettext 'Found embedded 1.2M floppy boot image.')${OFFCOL}"	|| echo -e "${BLUECOL}$(gettext 'Extracting embedded 1.2M floppy boot image.')${OFFCOL}" ;;
+		  02) COUNT=$((1440*1024/512)); [ "$MODE" = "list" ] && echo -e "${BLUECOL}$(gettext 'Found embedded 1.44M floppy boot image.')${OFFCOL}"	|| echo -e "${BLUECOL}$(gettext 'Extracting embedded 1.44M floppy boot image.')${OFFCOL}" ;;
+		  03) COUNT=$((2880*1024/512)); [ "$MODE" = "list" ] && echo -e "${BLUECOL}$(gettext 'Found embedded 2.88M floppy boot image.')${OFFCOL}"	|| echo -e "${BLUECOL}$(gettext 'Extracting embedded 2.88M floppy boot image.')${OFFCOL}" ;;
+		  *)	break ;;
+	    esac
+	    if [ "$MODE" != "list" ]; then
+	      mkdir 0_UExtract_BOOTIMAGE || { ERROR=1; break; }
+	      dd if="$FILEPATH" of="./0_UExtract_BOOTIMAGE/FLOPPY.img" bs=512 skip=$(( ${STARTSECTOR}*4 )) count=${COUNT} 2>/dev/null || ERROR=1
+	    fi
+	  done
+	  mount -o utf8,loop,ro -t iso9660 "$FILEPATH" "$WORKDIR" 2>/dev/null
+	  ls "$WORKDIR" >/dev/null 2>&1 && OPTS='' || OPTS='norock'	# HBCD gets mounted as *empty* if there is no 'norock' option (?!)
+	  umount "$WORKDIR" 2>/dev/null || umount -f -l "$WORKDIR" 2>/dev/null
+	  mount -o utf8,loop,ro,${OPTS} -t iso9660 "$FILEPATH" "$WORKDIR" || return 1
+	  func_mntpt || ERROR=1
+	  umount "$FILEPATH" 2>/dev/null || umount -f -l "$FILEPATH" 2>/dev/null
+	;;
+	# -----------
+	*.jpg|*.jpeg|*.bmp|*.wav|*.au)
+		func_precheck steghide || return 1
+		steghide $STEGHIDE_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+    *.lbr)
+        func_precheck lbrate || return 1
+        lbrate $LBRATE_OPTS "$FILEPATH" || return 1
+    ;;
+	# -----------
+	*.lzx)
+		func_precheck unlzx || return 1
+		unlzx $UNLZX_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+    *.mar)
+        func_precheck $BUNZIP2 || return 1
+        ERROR=1
+		[ "$(head -c4 "$FILEPATH")" != "MAR1" ] && { echo -e "${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'It is not a .mar archive!')"; return 1; }
+		read I1 I2 I3 I4 <<< $(od -v -An -tu1 -j4 -w4 -N4 "$FILEPATH")
+		INDEX=$(echo $(( ($I1*16777216)+($I2*65536)+($I3*256)+($I4) +4 )) ) || return 1
+		FILESIZE=$(stat -c %s "$FILEPATH")
+		while [ ${INDEX} -lt ${FILESIZE} ]; do
+		  read O1 O2 O3 O4 S1 S2 S3 S4 F1 F2 F3 F4 <<< $(od -v -An -tu1 -j${INDEX} -w12 -N12 "$FILEPATH")
+	      OFFSET=$(echo $(( ($O1*16777216)+($O2*65536)+($O3*256)+($O4) )) )			|| return 1
+		  SIZE=$(echo $(( ($S1*16777216)+($S2*65536)+($S3*256)+($S4) )) )			|| return 1
+		  FLAGS=$(printf '%o' $(( ($F1*16777216)+($F2*65536)+($F3*256)+($F4) )) )	|| return 1
+		  ((INDEX+=12))
+		  NAME=''
+		  while read -r CHAR; do
+		    [[ "$CHAR" == "\\0" ]] && break || NAME="${NAME}${CHAR}"
+          done < <(od -v -An -tc -j${INDEX} -w1 "$FILEPATH")
+          [ "$NAME" = "" ] && return 1 || { echo "${NAME}"; ERROR=0; }
+          INDEX=$(( ${INDEX}+${#NAME}+1 ))
+		  [ "$MODE" = "list" ] && continue
+          mkdir -p "$(dirname "$NAME")"
+          tail -c +$((${OFFSET}+1)) "$FILEPATH" | head -c ${SIZE} | $BUNZIP2 -c -d > "${NAME}" || { [ $? -ne 141 ] && ERROR=1; }
+          chmod $FLAGS "${NAME}"
+        done
+	;;
+	# -----------
+	*.nz)
+	    func_precheck nz || return 1
+	    nz $NZ_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.package)
+	    func_precheck $GUNZIP tar || return 1
+		COMPRESSION=$(grep -m1 -a -E 'compression=".*"' "$FILEPATH" | cut -f2 -d '"')
+		SKIP_LINES=$(grep -m1 -a -E 'skip_lines=".*"|skipLines=".*"' "$FILEPATH" | cut -f2 -d '"')
+		META_SIZE=$(grep -m1 -a -E 'meta_size=".*"|metaSize=".*"' "$FILEPATH" | cut -f2 -d '"')
+		DATA_SIZE=$(grep -m1 -a -E 'data_size=".*"|dataSize=".*"' "$FILEPATH" | cut -f2 -d '"')
+		[ "$MODE" != "list" ] && { mkdir meta payload; OPTS1='xvf - -C meta'; OPTS2='xvf - -C payload'; } || { OPTS1='tvf -'; OPTS2='tvf -'; }
+		tail -n +$SKIP_LINES "$FILEPATH" | head -c $META_SIZE | $GUNZIP -c -d | tar $OPTS1 || { [ $? -ne 141 ] && ERROR=1; }
+		case "$COMPRESSION" in
+		  lzma)	func_precheck $UNLZMA	&&	{ tail -c $DATA_SIZE "$FILEPATH" | $UNLZMA -c	| tar $OPTS2	|| { [ $? -ne 141 ] && ERROR=1 || ERROR=0; }; } || ERROR=1 ;;
+     	  *)	func_precheck $BUNZIP2	&&	{ tail -c $DATA_SIZE "$FILEPATH" | $BUNZIP2 -c	| tar $OPTS2	|| { [ $? -ne 141 ] && ERROR=1 || ERROR=0; }; } || ERROR=1 ;;
+		esac
+	    [ "$MODE" != "list" ] && find ./meta ./payload -maxdepth 0 -type d -empty -delete 2>/dev/null
+	;;
+	# -----------
+	*.paq8l|*.paq8n|*.paq8o|*.kgb)
+		CMND="${FILEEXT##*.}"	# will be paq8l or paq8n or paq8o or kgb
+		[ "${CMND}" = "kgb" ] && { ID_STRING="KGB_arch"; OUTDIR=''; } || { ID_STRING="paq8"; OUTDIR='.'; }
+	    if [ "$MODE" = "list" ]; then
+	      cat "$FILEPATH" | while read -r LINE; do echo "$LINE" | grep -qE "^[0-9]+$(echo -e "\t")|^${ID_STRING}" && echo "$LINE" || break; done
+	    else
+	      func_precheck $CMND || return 1
+	      $CMND "$FILEPATH" $OUTDIR || return 1
+	    fi
+	;;
+	# -----------
+	*.pbp)
+	    [ "$(head -c 4 "$FILEPATH" | tail -c 3)" != "PBP" ] && { echo -e "${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'It is not a .pbp file!')"; return 1; }
+        FILES=( PARAM.SFO ICON0.PNG ICON1.PMF PIC0.PNG PIC1.PNG SND0.AT3 DATA.PSP DATA.PSAR )
+        for i in {0..7}; do
+          read B1 B2 B3 B4 <<< $(od -v -An -tu1 -j$((8+(i*4))) -w4 -N4 "$FILEPATH")
+          OFFSET[$i]=$(echo $(( ($B4*16777216)+($B3*65536)+($B2*256)+($B1) )) ) || return 1
+        done
+        OFFSET[8]=$(stat -c %s "$FILEPATH")
+        for i in {0..7}; do
+          printf "%-32s%s\n" "${FILES[$i]}" "$(( ${OFFSET[$(($i+1))]} - ${OFFSET[$i]} )) $(gettext 'bytes')"
+          [ "$MODE" = "list" ] && continue
+          tail -c +$((${OFFSET[$i]}+1)) "$FILEPATH" | head -c $(( ${OFFSET[$(($i+1))]} - ${OFFSET[$i]} )) > ${FILES[$i]} || { [ $? -ne 141 ] && ERROR=1; }  
+        done
+	;;
+	# -----------
+	*.pdf)
+	    func_precheck pdfinfo || return 1
+	    unset PASSWORD
+	    if [ "`pdfinfo "$FILEPATH" 2>&1 | grep -i 'Incorrect password'`" != "" ]; then
+	      OLDIFS="$IFS"; IFS=
+	      read -s -r -p "$(gettext "PDF is encrypted, enter password:") " PASSWORD
+	      IFS="$OLDIFS"; echo; echo
+	    fi
+	    if [ "$MODE" = "list" ]; then
+	      func_precheck pdftotext && {
+		    echo -e "${BLUECOL}$(gettext 'Listing text...')${OFFCOL}\n"
+		    pdftotext -opw "$PASSWORD" -upw "$PASSWORD" -layout -nopgbrk -enc UTF-8 "$FILEPATH" - 2>/dev/null | wc -l | tr -d '\n' || ERROR=1; echo -e " $(gettext 'lines')\n"
+		  } || ERROR=1
+		  func_precheck pdfimages && {
+		    echo -e "${BLUECOL}$(gettext 'Listing images...')${OFFCOL}\n"
+		    pdfimages -opw "$PASSWORD" -upw "$PASSWORD" -list "$FILEPATH" 2>/dev/null || ERROR=1
+		  } || ERROR=1
+		  func_precheck pdfdetach && {
+		    echo -e "\n${BLUECOL}$(gettext 'Listing attachments...')${OFFCOL}\n"
+		    pdfdetach -opw "$PASSWORD" -upw "$PASSWORD" -list "$FILEPATH" 2>/dev/null || ERROR=1
+		  } || ERROR=1
+		else
+		  mkdir -p ./TEXT/{RAW,LAYOUT,HTML} ./IMAGES/{RAW,PNG} ./ATTACHMENTS
+		  func_precheck pdftotext pdftohtml && {
+		    echo -e "${BLUECOL}$(gettext 'Extracting text...')${OFFCOL}"
+		    pdftotext -opw "$PASSWORD" -upw "$PASSWORD" -raw -nopgbrk -enc UTF-8 "$FILEPATH" "./TEXT/RAW/$(basename "${FILEPATH%.*}".txt)" || ERROR=1
+		    pdftotext -opw "$PASSWORD" -upw "$PASSWORD" -layout -nopgbrk -enc UTF-8 "$FILEPATH" "./TEXT/LAYOUT/$(basename "${FILEPATH%.*}".txt)" || ERROR=1
+		    pdftohtml -opw "$PASSWORD" -upw "$PASSWORD" -s -c -enc UTF-8 "$FILEPATH" "./TEXT/HTML/$(basename "${FILEPATH%.*}".html)" || ERROR=1
+		    for i in ./TEXT/*/*.txt; do [ $(stat -c %s "$i") -eq 0 ] && rm "$i"; done 2>/dev/null
+		    find ./TEXT -maxdepth 1 -type d -empty -delete 2>/dev/null
+		    [ ! -d ./TEXT ] && echo -e "${OFFCOL}$(gettext 'No text found!')\n" || echo;:
+		  } || ERROR=1
+		  func_precheck pdfimages && {
+	        echo -e "${BLUECOL}$(gettext 'Extracting images...')${OFFCOL}"
+	        pdfimages --help 2>&1 | grep -qFw -- '-all' && PDFIMAGES_OPT='-all' || PDFIMAGES_OPT=''
+		    pdfimages $PDFIMAGES_OPT -opw "$PASSWORD" -upw "$PASSWORD" -p "$FILEPATH" "./IMAGES/RAW/$(basename "${FILEPATH%.*}")" || ERROR=1
+		    pdfimages -png -opw "$PASSWORD" -upw "$PASSWORD" -p "$FILEPATH" "./IMAGES/PNG/$(basename "${FILEPATH%.*}")" || ERROR=1
+		    find ./IMAGES -maxdepth 1 -type d -empty -delete 2>/dev/null
+		    [ ! -d ./IMAGES ] && echo -e "${OFFCOL}$(gettext 'No images found!')\n" || echo;:
+		  } || ERROR=1
+		  func_precheck pdfdetach && {
+		    echo -e "${BLUECOL}$(gettext 'Extracting attachments...')${OFFCOL}"
+		    CNT=1
+		    for EXT in $(pdfdetach -opw "$PASSWORD" -upw "$PASSWORD" -list "$FILEPATH" | tail -n +2 | rev | cut -f1 -d '.' | rev); do
+		      pdfdetach -opw "$PASSWORD" -upw "$PASSWORD" -save $CNT "$FILEPATH" -o "./ATTACHMENTS/$(basename "${FILEPATH%.*}")_${CNT}.${EXT}" || ERROR=1
+		      ((CNT++))
+		    done
+		    find ./ATTACHMENTS -maxdepth 0 -type d -empty -delete 2>/dev/null
+		    [ ! -d ./ATTACHMENTS ] && echo -e "${OFFCOL}$(gettext 'No attachments found!')\n";: 
+		  } || ERROR=1
+		fi
+	;;
+	# -----------
+    *.pet)
+		[ "$(echo "$FILEINFO" | grep -wi 'gzip')" ] && CMND="$GUNZIP" || CMND="$UNXZ"
+		func_precheck $CMND tar || return 1
+		head -c -32 "$FILEPATH" | $CMND -c -d | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.pisi)
+	    func_precheck unzip $UNXZ tar || return 1
+	    unzip $UNZIP_OPTS "$FILEPATH" -x "install.tar.*" || return 1
+	    unzip -pv "$FILEPATH" "install.tar.*" | $UNXZ -c -d | tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.pkg)
+	    func_precheck $SEVENZ $GUNZIP cpio || return 1
+	    if [ "$MODE" = "list" ]; then
+		  echo -e "\n${BLUECOL}$(gettext 'Listing the main archive...')${OFFCOL}\n"
+		  $SEVENZ l -txar "$FILEPATH" || return 1
+		  for SUBARCHIVE in $($SEVENZ l -txar "$FILEPATH" | grep -E 'Payload|Scripts' | rev | cut -f1 -d ' ' | rev); do
+		    echo -e "\n${BLUECOL}$(gettext 'Listing subarchive:') ${OFFCOL}'$SUBARCHIVE'\n"
+		    $SEVENZ e -txar -so "$FILEPATH" "$SUBARCHIVE" 2>/dev/null | $GUNZIP -c -d | cpio -itv $BOPTS || { [ $? -ne 141 ] && ERROR=1; }
+		  done
+		else
+		  $SEVENZ x -txar "$FILEPATH" || return 1
+		  while read -r SUBDIR; do
+		    cd "$SUBDIR"
+		    for i in Payload Scripts; do
+		      if [ -f "${i}" ]; then
+		        mv "${i}" "${i}.cpio.gz"
+		        $GUNZIP -c -d -v "${i}.cpio.gz" | cpio -idmv $BOPTS || { [ $? -ne 141 ] && ERROR=1; }
+		        rm "${i}.cpio.gz"
+		      fi
+		    done
+		    [ "$SUBDIR" != "." ] && cd ..
+		  done < <(find . -maxdepth 1 -type d -iname "*.pkg"; echo . )
+	    fi
+	;;
+	# -----------
+	*.qcow|*.qcow2|*.vdi|*.vmdk)
+	  func_precheck qemu-nbd && {
+	    modprobe nbd || return 1 && sleep 1
+	    NBD_DEV=0
+	    while :; do
+	      [ -b /dev/nbd${NBD_DEV} ] || { NBD_DEV=''; return 1; }
+	      qemu-nbd -c /dev/nbd${NBD_DEV} "$FILEPATH" 2>/dev/null && break
+	      ((NBD_DEV++))
+	    done
+        func_mnt_disk_image "/dev/nbd${NBD_DEV}" || ERROR=1
+	    qemu-nbd -d /dev/nbd${NBD_DEV} >/dev/null 2>&1 
+	    NBD_DEV=''
+	  } || {
+	    echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}"
+	    func_precheck $SEVENZ || return 1
+	    $SEVENZ $SEVENZ_OPTS "$FILEPATH" || return 1	    
+	  }
+	;;
+	# -----------
+    *.rar|*.rar5|*.r[0-9]|*.r[0-9][0-9]|*.cbr|*.lemon|*.rsn)
+		func_precheck $UNRAR && { $UNRAR $UNRAR_OPTS "$FILEPATH" && return 0; }
+		echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}\n"
+		func_precheck $SEVENZ || return 1
+		$SEVENZ $SEVENZ_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+    *.rpm|*.spm)
+        echo -e "${BLUECOL}$(gettext 'Trying') 'rpm2cpio' + 'cpio'...${OFFCOL}\n"
+		func_precheck rpm2cpio cpio && {
+		  rpm2cpio "$FILEPATH" | cpio $CPIO_OPTS $BOPTS && [ $? -eq 0 -o $? -eq 141 ] && return 0
+		}
+        echo -e "\n${BLUECOL}$(gettext 'Trying') 'exploderpm'...${OFFCOL}\n"
+        func_precheck exploderpm && {
+		  exploderpm $EXPLODERPM_OPTS "$FILEPATH" && return 0
+		}
+		echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}' + 'cpio'...${OFFCOL}\n"
+		func_precheck $SEVENZ cpio && {
+		  $SEVENZ -so x "$FILEPATH" | cpio $CPIO_OPTS $BOPTS && [ $? -eq 0 -o $? -eq 141 ] && return 0
+		}
+		return 1
+	;;
+	# -----------
+	*.run|*.sh|*.appimage|*.orb)	# supports at least amd/nvidia/vbox/truecrypt/veracrypt/BOINC/Unity installers + makeself.sh + portablelinuxapps + AppImage
+	    if [ "$(od -v -An -tc -j32769 -w5 -N5 "$FILEPATH" 2>/dev/null | tr -d ' \n')" = "CD001" ]; then
+          func_mnt_disk_image "$FILEPATH" || return 1
+		elif [[ "${FILEEXT}" == *".appimage" ]]; then
+          OFFSET=$(grep -abo -m2 'hsqs' "$FILEPATH" | tail -n 1 | cut -f1 -d ':')	# 2nd 'hsqs' is "the one"
+          [ "$OFFSET" ] && mount -o offset=${OFFSET} "$FILEPATH" "$WORKDIR" || return 1	# note: bb mount doesn't support 'offset'!
+          func_mntpt || return 1
+        else
+	      for DUMMY in DUMMY; do
+	        OFFSET=$(head -n 1024 "$FILEPATH" | grep -a -m1 -E '^skip=|^PACKAGE_START=' | tr -c -d '[:digit:]')
+	        [ "$OFFSET" ] && { METHOD="-n +$OFFSET"; break; }
+			OFFSET=$(head -n 1024 "$FILEPATH" | grep -a -m1 -n '^__ARCHIVE_BEGINS_HERE__' | cut -f1 -d ':')	# Unity-editor
+			[ "$OFFSET" ] && { METHOD="-n +$((OFFSET+1))"; break; }
+		    OFFSET=$(head -n 1024 "$FILEPATH" | grep -a -m1 '^filesizes=' | tr -c -d '[:digit:]')
+		    [ "$OFFSET" ] && { METHOD="-c $OFFSET"; break; }
+		    [ "$(head -n 3 "$FILEPATH" | grep 'BOINC.*binstall.sh')" ] && { METHOD="-n +4"; break; }	# BOINC
+		    echo -e "${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Unknown method!')"
+		    return 1
+		  done
+		  case "$(tail $METHOD "$FILEPATH" | file -b - | cut -f1 -d ',' | tr '[:upper:]' '[:lower:]')" in
+		    *'tar'*)		func_precheck tar && 				{ tail $METHOD "$FILEPATH" | 				 		tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1 || return 0; }; } || return 1 ;;
+		    *'xz'*)			func_precheck tar $UNXZ &&			{ tail $METHOD "$FILEPATH" | $UNXZ -c -d		|	tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1 || return 0; }; } || return 1 ;;
+		    *'gzip'*)		func_precheck tar $GUNZIP &&		{ tail $METHOD "$FILEPATH" | $GUNZIP -c -d		|	tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1 || return 0; }; } || return 1 ;;
+		    *'bzip2'*)		func_precheck tar $BUNZIP2 &&		{ tail $METHOD "$FILEPATH" | $BUNZIP2 -c -d		|	tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1 || return 0; }; } || return 1 ;;
+		    *'compress'*)	func_precheck tar $UNCOMPRESS &&	{ tail $METHOD "$FILEPATH" | $UNCOMPRESS -c -d	|	tar $TAR_OPTS - || { [ $? -ne 141 ] && return 1 || return 0; }; } || return 1 ;;
+		    *)	echo -e "${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Unknown compression!')"; return 1 ;;
+		  esac
+		fi
+	;;
+	# -----------
+	*.sfs|*.slm|*.srm|*.usfs|*.pfs|*.sb|*.scm|*.snap|*.sqf|*.sqfs|*.sqsh|*.squashfs|*.tcz|*.xzm)
+		func_precheck $UNSQUASHFS || return 1
+		$UNSQUASHFS $UNSQUASHFS_OPTS "$FILEPATH" || return 1
+		[ "$MODE" != "list" ] && [ `$DF . | tail -n -1 | tr -s ' ' | cut -f4 -d ' '` -eq 0 ] && return 1	# unsquashfs exits with 0 if 'No space left on device' !!!
+	;;
+	# -----------
+	*.shar|*.shr)
+	    if [ "$MODE" = "list" ]; then
+		  while read -r LINE; do
+		    [ "$LINE" != "#" ] && echo "$LINE" || break 
+	      done < <(grep -A999999999999 "# This shar contains:" "$FILEPATH")
+	    else
+		  echo -e "${REDCOL}$(gettext 'WARNING! This is an executable script!')${OFFCOL}"
+		  read -p "$(gettext 'Are you sure you want to launch it? If so, type uppercase YES:') " -t11 KEY
+		  [ "$KEY" != "$(gettext "YES")" ] && { echo -e "${YELLOWCOL}$(gettext 'Aborted...')${OFFCOL}"; return 1; }
+		  echo; sh "$FILEPATH" || return 1
+	    fi
+	;;
+	# -----------
+	*.spk)
+	    func_precheck $GUNZIP tar || return 1
+	    [ "$MODE" != "list" ] && { mkdir package; OPTS="-C package"; } || OPTS=''
+	    tar $TAR_OPTS "$FILEPATH" --exclude=package.tgz || return 1
+	    echo; tar x --to-stdout -f "$FILEPATH" package.tgz | $GUNZIP -c -d | tar $TAR_OPTS - $OPTS || { [ $? -ne 141 ] && return 1; }
+	;;
+	# -----------
+	*.swf)
+	    func_precheck swfextract || return 1
+	    swfextract $SWFEXTRACT_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+    *.tar|*.tar.md5|*.gem|*.gnutar|*.gtar|*.cbt|*.hid|*.ova|*.pat|*.tardist|*.thm|*.ustar|*.wbm|*.xjt)
+		func_precheck tar || return 1
+		tar $TAR_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.tazpkg|*.spack)
+		[ "${FILEEXT##*.}" = "tazpkg" ] && { CMND="${UNLZMA}"; TMPFILE="fs.cpio.lzma"; } || { CMND="${UNXZ}"; TMPFILE="files.xz"; }
+		func_precheck $CMND cpio || return 1
+		cpio $CPIO_OPTS $BOPTS < "$FILEPATH" || return 1
+	    if [ "$MODE" = "list" ]; then
+		  echo; cpio --to-stdout -iv -E <(echo "${TMPFILE}") < "$FILEPATH" 2>/dev/null | $CMND -c | cpio -itv || { [ $? -ne 141 ] && return 1; }
+		else
+		  $CMND -c "${TMPFILE}" | cpio -idmv $BOPTS || { [ $? -ne 141 ] && return 1; }
+		  rm -f "${TMPFILE}"
+	    fi
+	;;
+	# -----------
+	*.upx)
+		func_precheck upx || return 1
+		upx $UPX_OPTS "$FILEPATH" -o "./$(basename "$FILEPATH")" || return 1
+	;;
+	# -----------
+	*.uu|*.uue)
+		OUTNAME="$(head -n 1 "$FILEPATH" | cut -f3- -d ' ')"
+		[ "$MODE" = "list" ] && { echo "${OUTNAME##*/}" && return 0 || return 1; }
+		func_precheck uudecode || return 1
+		echo "$(gettext 'Extracting...')"
+		uudecode "$FILEPATH" -o "${OUTNAME##*/}" || return 1	# ${OUTNAME##*/} - can contain path (!), so leave only last segment
+    ;;
+    # -----------
+    *.wot)
+        func_precheck $BUNZIP2 || return 1
+        $BUNZIP2 -c -d -v "$FILEPATH" > "${WORKDIR}/$(basename "${FILEPATH%.*}").ar" || return 1      
+        func_precheck ar && { ar $AR_OPTS "${WORKDIR}/$(basename "${FILEPATH%.*}").ar" && return 0 || return 1; }
+        echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}\n"
+        func_precheck $SEVENZ || return 1
+        $SEVENZ $SEVENZ_OPTS "${WORKDIR}/$(basename "${FILEPATH%.*}").ar" && return 0 || return 1
+    ;;
+    # -----------
+    *.zim)
+		func_precheck zimdump || return 1
+		[ "$MODE" != "list" ] && echo "$(gettext 'Extracting...')"
+		zimdump $ZIMDUMP_OPTS "$FILEPATH" || return 1
+		[ "$MODE" != "list" ] && { for i in A/*; do mv "$i" "${i}.html"; done || return 1; }
+    ;;
+	# -----------
+    *.zip|*.a2theme|*.pup|*.acp|*.apk|*.avastsounds|*.azw2|*.bau|*.bmz|*.capx|*.crf|*.cbz|*.cdmtz|*.cdmz*|*.chrt|.dbk|*.dazip|*.docx|*.dotx|*.ear|*.ecs|*.egg|*.eaz|*.eftx|*.epub|*.esriaddin|*.fcstd|*.flf|*.g3x|*.gadget|*.gg|*.goomod|*.gps|*.gszip|*.hmxz|*.htmlz|*.hwp|*.i5z|*.imz|*.ip|*.ipa|*.ipcc|*.ipg|*.ipsw|*.ita|*.itz|*.iwd|*.ja|*.jar|*.jic|*.kfo|*.kmz|*.kpr|*.ksf|*.ksp|*.kwd|*.lca|*.little|*.love|*.lpk|*.lxf|*.maff|*.mcgame|*.mcworld|*.mscz|*.mdz|*.mdzip|*.mga|*.mmip|*.mpk|*.mpzip|*.mxl|*.mzp|*.nbf|*.nbm|*.nfl|*.nth|*.nupkg|*.odb|*.odc|*.odf|*.odg|*.odi|*.odm|*.odp|*.ods|*.odt|*.oex|*.otg|*.oth|*.otp|*.ots|*.ott|*.ovp|*.oxt|*.p2s|*.pak|*.par|*.pcv|*.pigm|*.pigs|*.piz|*.pk3|*.pk4|*.pmlz|*.potx|*.pptx|*.pvga|*.quiz|*.rmskin|*.s3z|*.sam|*.sdz|*.sfg|*.sh3d|*.sh3f|*.sh3t|*.sle|*.smzip|*.sob|*.sox|*.stc|*.std|*.sti|*.studyarch|*.stw|*.styx|*.sxc|*.sxd|*.sxg|*.sxi|*.sxm|*.sxw|*.thmx|*.twz|*.twzip|*.u3p|*.utz|*.wal|*.war|*.wba|*.webz|*.wgt|*.wgz|*.whl|*.widget|*.wlz|*.wmd|*.wmga|*.wmz|*.wsz|*.xap|*.xlam|*.xlsm|*.xlsx|*.xltx|*.xmz|*.xo|*.xpi|*.xrns|*.z[0-9][0-9]|*.zab|*.zad|*.zfsendtotarget|*.zi|*.zpi|*.zm9|*.ztd|*.zxp)
+		[[ "$FILEEXT" == *.egg ]] && [ ! "`echo "$FILEINFO" | grep -wi 'Zip'`" ] && {
+		  func_precheck unegg || return 1
+		  unegg $UNEGG_OPTS "$FILEPATH" && return 0 || return 1	
+		}
+		[[ "$FILEEXT" == *.apk ]] && [ "`echo "$FILEINFO" | grep -wi 'gzip'`" ] && {
+		  func_precheck $GUNZIP tar || return 1
+		  $GUNZIP -c -d "$FILEPATH" | tar $TAR_OPTS - && return 0 || { [ $? -ne 141 ] && return 1 || return 0; }
+		}
+		[[ "$FILEEXT" == *.sdz ]] && [ "`echo "$FILEINFO" | grep -wi 'gzip'`" ] && {
+		  [ "$MODE" = "list" ] && { echo "$(basename "${FILEPATH%.*}").sdf" && return 0 || return 1; }
+		  func_precheck $GUNZIP || return 1
+		  $GUNZIP -S ".${FILEEXT##*.}" -c -d -v "$FILEPATH" > "$(basename "${FILEPATH%.*}").sdf" && return 0 || return 1			  
+		}	
+		if [ "$MODE" = "list" ]; then
+		  func_precheck unzip && {
+		    unzip -lv "$FILEPATH" && return 0
+		  }
+		else
+		  func_precheck unzip && {
+		    unzip "$FILEPATH" && { [ "$(file -b -- "./-" | cut -f1 -d ',' | grep 'ISO')" ] && mv -- "./-" "$(basename "${FILEPATH%%.*}").iso"; return 0; }
+		    # In case of some extensions ignore warning (1) and don't continue with 7z, because unzip handles backslashes properly (but warns) and 7z does conversely
+		    [ $? -eq 1 ] && [ "$(echo ${FILEEXT##*.} | grep -E 'capx|eaz|esriaddin|lpk|mpk|xrns')" ] && return 0	    
+		  }
+	    fi
+	    echo -e "\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}"
+		func_precheck $SEVENZ || return 1
+		$SEVENZ $SEVENZ_OPTS "$FILEPATH" && return 0 || return 1
+	;;
+	# -----------
+	*.zoo)
+	    func_precheck zoo || return 1
+	    zoo $ZOO_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.zpaq)
+	    func_precheck zpaq || return 1
+	    zpaq $ZPAQ_OPTS "$FILEPATH" $ZPAQ_OPTS2 && return 0
+	    echo -e "\n${BLUECOL}$(gettext 'Archive might be encrypted, trying with '-k' option...')${OFFCOL}\n"
+	    zpaq $ZPAQ_OPTS "$FILEPATH" $ZPAQ_OPTS2 -k || return 1
+	;;
+	# -----------
+	*.zz)
+	    func_precheck zzip || return 1
+	    zzip $ZZIP_OPTS "$FILEPATH" || return 1
+	;;
+	# -----------
+	*.flac|*.mp3|*.wma)
+		func_precheck $FFMPEG || return 1
+	    if [ "$MODE" = "list" ]; then
+	      echo -e "${BLUECOL}$(gettext 'Listing album art...')${OFFCOL}"
+	      RESULT="$($FFMPEG -i "$FILEPATH" 2>&1 | grep "Video: mjpeg")"
+	      [ "$RESULT" != "" ] && echo "$RESULT" || { echo -e "${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'No album art found!')${OFFCOL}"; return 1; }
+	    else
+	      echo -e "${BLUECOL}$(gettext 'Extracting album art...')${OFFCOL}"
+          CNT=0
+	      for STREAM in $($FFMPEG -i "$FILEPATH" 2>&1 | grep ' Video: mjpeg' | cut -f2 -d '#' | cut -b1-3); do
+		    [ $CNT -eq 0 ] && CNTEXT= || CNTEXT="_(${CNT})"
+		    $FFMPEG -i "$FILEPATH" -map ${STREAM//./:} -vcodec copy -an "$(basename "${FILEPATH%.*}")${CNTEXT}.jpg" || ERROR=1
+	        ((CNT++))
+	      done
+          [ $CNT -eq 0 ] && { echo -e "${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'No album art found!')${OFFCOL}"; return 1; }
+	    fi
+	;;
+	# -----------
+	*.3gp|*.avi|*.divx|*.flv|*.mkv|*.mov|*.mp4|*.mpeg|*.mpg|*.ogg|*.ogv|*.ts|*.vob|*.webm|*.wmv)
+		func_precheck $FFMPEG || return 1
+		STREAMSFOUND=''
+		if [ "$MODE" = "list" ]; then
+		  for STREAM in "$(gettext 'Listing audio streams...')|Audio" "$(gettext 'Listing video streams...')|Video" "$(gettext 'Listing subtitles streams...')|Subtitle"; do
+			echo -e "\n${BLUECOL}${STREAM%|*}${OFFCOL}"
+			TMP="$($FFMPEG -i "$FILEPATH" 2>&1 | grep " ${STREAM##*|}: ")"
+			[ "$TMP" != "" ] && { echo "${TMP}"; STREAMSFOUND=true; } || echo -e "${YELLOWCOL}$(gettext 'WARNING:') ${OFFCOL}$(gettext 'No streams found.')"
+		  done
+		else
+		  for STREAM in "$(gettext 'Extracting audio streams...')|Audio" "$(gettext 'Extracting video streams...')|Video" "$(gettext 'Extracting subtitles streams...')|Subtitle"; do
+			echo -e "\n${BLUECOL}${STREAM%|*}${OFFCOL}"
+			CNT=0
+			for SUBSTREAM in $($FFMPEG -i "$FILEPATH" 2>&1 | grep " ${STREAM##*|}: " | cut -f2 -d '#' | cut -b1-3); do
+			  [ $CNT -eq 0 ] && CNTEXT= || CNTEXT="_(${CNT})"
+			  case "${STREAM##*|}" in
+			    Audio)		EXT=$($FFMPEG -i "$FILEPATH" 2>&1 | grep "#$SUBSTREAM" | grep -o " ${STREAM##*|}: .*" | cut -f3 -d ' ' | cut -b1-3)
+							for i in adp:wav vor:ogg opu:opus fla:flac; do
+								[ "$EXT" = "${i%:*}" ] && { EXT="${i##*:}"; break; }
+							done	
+							$FFMPEG -i "$FILEPATH" -map ${SUBSTREAM//./:} -acodec copy -vn "$(basename "${FILEPATH%.*}")${CNTEXT}.${EXT}" || ERROR=1
+				;;
+			    Video)		EXT="${FILEPATH##*.}"; [ "$EXT" = "divx" ] && EXT=mp4
+							$FFMPEG -i "$FILEPATH" -map ${SUBSTREAM//./:} -vcodec copy -an "$(basename "${FILEPATH%.*}")${CNTEXT}.${EXT}" || ERROR=1
+			    ;;
+			    Subtitle)	EXT=srt	#EXT=$($FFMPEG -i "$FILEPATH" 2>&1 | grep "#$STREAM" | grep -o " Subtitle: .*" | cut -f3 -d ' ' | cut -b1-3)
+							$FFMPEG -i "$FILEPATH" -map ${SUBSTREAM//./:} -scodec srt -an -vn "$(basename "${FILEPATH%.*}")${CNTEXT}.${EXT}" || ERROR=1
+			    ;;
+			  esac
+		      ((CNT++))
+		    done
+		    [ $CNT -eq 0 ] && echo -e "${YELLOWCOL}$(gettext 'WARNING:') ${OFFCOL}$(gettext 'No streams found.')" || STREAMSFOUND=true
+		  done
+	    fi
+	    [ "$STREAMSFOUND" ] || ERROR=1
+	;;
+	# -----------
+	fusecompress)	# fake extension
+		[ "$MODE" = "list" ] && { echo "$(basename "$FILEPATH")" && return 0 || return 1; }
+		func_precheck fusecompress_offline || return 1
+		cp -a "$FILEPATH" . || return 1
+		fusecompress_offline -v -r null -- "$(basename "$FILEPATH")" || { rm -- "$(basename "$FILEPATH")"; return 1; }
+	;;
+	# -----------
+    *)  if [[ "$(basename "$FILEPATH")" == init* && "$FILEINFO" == *" cpio "* ]]; then
+		  func_precheck cpio || return 1
+		  cpio $CPIO_OPTS $BOPTS < "$FILEPATH" || return 1
+		elif [[ "$(basename "$FILEPATH")" == Thumbs*.db ]]; then
+		  func_precheck $SEVENZ || return 1
+		  IMAGES="$($SEVENZ l "$FILEPATH" | tail -n -1 | tr -s ' ' | cut -f4 -d ' ')" || { echo -e "${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext "No thumbnails found!")"; return 1; }
+		  echo -e "${BLUECOL}$(gettext 'Thumbnails found:') $(($IMAGES-1))${OFFCOL}"
+		  [ "$MODE" = "list" ] && return 0
+		  $SEVENZ x "$FILEPATH" || return 1
+		  echo -e "\n${BLUECOL}$(gettext 'Postprocessing, please wait...')${OFFCOL}"
+		  for NAME in *; do
+			[ "$NAME" = "Catalog" ] && continue
+		    tail -c +13 "$NAME" > "$(gettext 'Thumbnail')_$(echo "$NAME" | rev).jpg" || ERROR=1; rm -f "$NAME"
+		  done
+        elif [ "`echo "$FILEINFO" | grep -wiE 'Xcursor|X11 cursor'`" ]; then
+          func_precheck xcur2png || return 1
+          xcur2png $XCUR2PNG_OPTS "$FILEPATH"
+          [ $? -eq 255 ] && { rm -f *.conf; return 1; }
+        elif [ "`echo "$FILEINFO" | grep -wi "Linux kernel"`" ]; then
+          func_precheck extract-ikconfig || return 1
+          [ "$MODE" = "list" ] && { extract-ikconfig "$FILEPATH" || return 1; } || { extract-ikconfig "$FILEPATH" | tee DOTconfig || return 1; }
+		else
+          echo -e "${YELLOWCOL}$(gettext 'WARNING:') ${OFFCOL}$(gettext 'Format not supported!')\n\n${BLUECOL}$(gettext 'Trying') '${SEVENZ}'...${OFFCOL}"
+		  func_precheck $SEVENZ || return 1
+		  $SEVENZ $SEVENZ_OPTS "$FILEPATH" && return 0 || return 1
+	    fi
+	;;
+  esac
+  [ $ERROR -eq 0 ] && return 0 || return 1
+}
+
+#################################### START ####################################
+
+unset CURSTOMDIR FILESSTACK EXTRAOPT
+CUSTOMDIR_FLAG=false
+MODE=extract
+BADOPT=false
+[ "$*" ] || EXTRAOPT=help
+OFFCOL="\e[00m"; REDCOL="\e[0;31m"; BLUECOL="\e[0;34m"; GREENCOL="\e[0;32m"; YELLOWCOL="\e[0;33m"; UNDERLINE="\e[0;32;4m"
+
+while (($#)); do
+  case "$1" in
+	-o|-output|--output)		CUSTOMDIR="$2"; CUSTOMDIR_FLAG=true; shift; shift	;;	# 'shift 2' hangs if only one arg left
+    -output=*|--output=*)		CUSTOMDIR="${1#*=}"; CUSTOMDIR_FLAG=true; shift	;;
+    -l|-list|--list)			MODE=list; shift	;;
+    -n|-no-colors|--no-colors) 	unset REDCOL BLUECOL GREENCOL YELLOWCOL UNDERLINE; shift	;;
+    -b|-backends|--backends)	EXTRAOPT=backends; shift	;;
+    -f|-formats|--formats)		EXTRAOPT=formats; shift	;;
+    -h|-help|--help|"")			EXTRAOPT=help; shift	;;
+    --) 						shift; while (($#)); do FILESSTACK=( "${FILESSTACK[@]}" "$1" ); shift; done; break ;;
+    -*) 						BADOPT=true; break ;;
+    *) 							FILESSTACK=( "${FILESSTACK[@]}" "$1" ); shift ;;
+  esac
+done
+
+echo -e "\n${UNDERLINE}${APPNAME} by SFR'$(head -n 6 "$0" | grep -Eo "[0-9]+-[0-9]+"); GNU GPL v2 applies${OFFCOL}"
+[ $(id -u) -ne 0 ] && { echo -e "\n${YELLOWCOL}$(gettext 'WARNING'): ${OFFCOL}$(gettext 'Some actions (like mounting ISO/disk images) require root privileges, so you may need to execute this script as root.')"; sleep 0.5; }
+[ "$BADOPT" = "true" ] && { echo -e "\n${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Unknown option:') ${1}\n"; exit 1; }
+
+SEVENZ=7z; for i in 7z 7za 7zr; do [ "`which $i 2>/dev/null`" ] && SEVENZ="$i" && break; done
+UNSQUASHFS=unsquashfs; for i in unsquashfs4 unsquashfs unsquashfs3; do [ "`which $i 2>/dev/null`" ] && UNSQUASHFS="$i" && break; done
+
+for i in 'BUNZIP2|bunzip2|bzip2' 'DF|df-FULL|df' 'FDISK|gdisk|fdisk' 'FFMPEG|avconv|ffmpeg' 'GOSTCRYPT|gostcrypt_cli|gostcrypt' 'GPG|gpg|gpg2' 'GUNZIP|gunzip|gzip' 'LRUNZIP|lrunzip|lrzip' 'LUNZIP|lunzip|lzip' 'NULIB|nulib2|nulib' 'LZ4|lz4c|lz4' 'RUNZIP|runzip|rzip' 'TRUECRYPT|truecrypt_cli|truecrypt' 'UNARC|unarc|arc' 'UNCOMPRESS|uncompress|compress' 'UNFREEZE|unfreeze|freeze' 'UNLZMA|unlzma|lzma' 'UNLZOP|unlzop|lzop' 'UNRAR|rar|unrar' 'UNXZ|unxz|xz' 'VERACRYPT|veracrypt_cli|veracrypt'; do
+  read -r CMND IN1 IN2 <<< "${i//|/ }"
+  [ "`which "$IN1" 2>/dev/null`" ] && eval "$CMND=$IN1" || eval "$CMND=$IN2"
+done
+
+[ "`which $UNLZMA 2>/dev/null`" ] || UNLZMA="$UNXZ"		# (un)xz can handle lzma, too
+([ "$(readlink -f "`which losetup 2>/dev/null`" | grep 'busybox')" ] && [ "`which losetup-FULL 2>/dev/null`" ]) && LOSETUP='losetup-FULL' || LOSETUP='losetup'
+[ "$(readlink -f "`which cpio 2>/dev/null`" | grep 'busybox')" ] 	&& BOPTS='' || BOPTS="--no-absolute-filenames"
+
+[ "$MODE" = "list" ] 	&&  { AR_OPTS='tv'; ARJ_OPTS='l -y -v'; CABEXTRACT_OPTS='-l'; CPIO_OPTS='-ivt';  DAR_OPTS='-l'; DAR_OPTS2='';	EXPLODERPM_OPTS='-l'; FP8_OPTS='-l';	GIFSICLE_OPTS='-I';                 	HA_OPTS='l'; HEXBIN_OPTS='-i';  ICOTOOL_OPTS='-l'; INNOEXTRACT_OPTS='-c 0 -l -g'; LBRATE_OPTS='-l'; LHA_OPTS='-l'; NOMARCH_OPTS='-l'; NULIB_OPTS='tv'; NULIB2_OPTS='-v'; NZ_OPTS='l -v'; POWERISO_OPTS='list';    SEVENZ_OPTS='l'; STEGHIDE_OPTS='info';		SWFEXTRACT_OPTS='';                                                 	TAR_OPTS='tvf'; TNEF_OPTS='-t'; UNACE_OPTS='l -y'; UNALZ_OPTS='-l'; UNARC_OPTS='l'; UNEGG_OPTS='-l'; UNLZX_OPTS='-v'; UNRAR_OPTS='l'; UNSQUASHFS_OPTS='-l';      UNZIP_OPTS='-lv'; UPX_OPTS='-l'; XAR_OPTS='-t -f';    XCUR2PNG_OPTS='-n'; ZIMDUMP_OPTS='-l';	ZOO_OPTS='l'; ZPAQ_OPTS='l'; ZPAQ_OPTS2=''; 		ZZIP_OPTS='l'; }
+[ "$MODE" = "extract" ]	&&	{ AR_OPTS='xv'; ARJ_OPTS='x -y -v'; CABEXTRACT_OPTS='';   CPIO_OPTS='-idmv'; DAR_OPTS='-x'; DAR_OPTS2='-v';	EXPLODERPM_OPTS='-x'; FP8_OPTS='';		GIFSICLE_OPTS='--no-background -eVU';	HA_OPTS='e'; HEXBIN_OPTS='-fl'; ICOTOOL_OPTS='-x'; INNOEXTRACT_OPTS='-c 0 -e -g'; LBRATE_OPTS='';   LHA_OPTS='-x'; NOMARCH_OPTS='';   NULIB_OPTS='x';  NULIB2_OPTS='-x'; NZ_OPTS='x -v'; POWERISO_OPTS='extract'; SEVENZ_OPTS='x'; STEGHIDE_OPTS='extract -sf';	SWFEXTRACT_OPTS='--outputformat '"$(gettext 'Item')_%06d.%s"' -a 1-'; 	TAR_OPTS='xvf'; TNEF_OPTS='';   UNACE_OPTS='x';    UNALZ_OPTS='';   UNARC_OPTS='x'; UNEGG_OPTS='-x'; UNLZX_OPTS='-x'; UNRAR_OPTS='x'; UNSQUASHFS_OPTS='-f -d .'; UNZIP_OPTS='';    UPX_OPTS='-d'; XAR_OPTS='-x -v -f'; XCUR2PNG_OPTS='';   ZIMDUMP_OPTS='-D .';	ZOO_OPTS='x'; ZPAQ_OPTS='x'; ZPAQ_OPTS2='-to ./';	ZZIP_OPTS='x'; }
+
+case "$EXTRAOPT" in
+  help)		echo -e "\n$(gettext 'Usage:')"
+			echo "  $(basename "$(readlink -f "$0")") [$(gettext "options")] $(gettext "files")"
+			echo "  $(basename "$(readlink -f "$0")") [-n] <$(gettext "extra_option")>"
+			echo -e "\n$(gettext 'Options:')"
+			echo "  -o, --output		$(gettext 'set output directory (ignored if -l was also specified)')"
+			echo "  -l, --list		$(gettext 'list contents instead of extracting')"
+			echo "  -n, --no-colors	$(gettext 'disable ANSI colors in output')"
+			echo -e "\n$(gettext 'Extra options:')"
+			echo "  -f, --formats		$(gettext 'show supported formats/extensions')"
+			echo "  -b, --backends	$(gettext "check availability of backends")"
+			echo "  -h, --help		$(gettext 'this very help')"
+			echo -e "${OFFCOL}"; exit	;;
+  backends)	echo -e "\n${YELLOWCOL}$(gettext 'Backends:')"
+			for i in $(echo 7z $SEVENZ aescrypt ar arj balz base64 bbb bcrypt bro bunzip $BUNZIP2 cabextract ccrypt cpio cryptsetup dar ddjvu dpkg-deb enum_chmLib exploderpm extract_chmLib extract-ikconfig $FDISK gdisk $FFMPEG flzp fossil fp8 fusecompress_offline gifsicle $GPG $GOSTCRYPT gs $GUNZIP ha hexbin icotool innoextract kgb lbrate lepton lha lizard $LOSETUP lpaq1 lpaq8 $LRUNZIP $LZ4 lz4jsoncat $LUNZIP msgunfmt nomarch $NULIB nz paq8l paq8n paq8o pdfdetach pdfimages pdfinfo pdftocairo pdftohtml pdftotext poweriso qemu-nbd quad ripmime rpm2cpio $RUNZIP scrypt snzip steghide swfextract tar tnef $TRUECRYPT tor tosz unace unalz $UNARC $UNCOMPRESS undms $UNFREEZE $UNLZMA $UNLZOP unlzx unpack200 unegg $UNRAR $UNSQUASHFS $UNXZ unzip upx uudecode $VERACRYPT wvunpack xar xcur2png zimdump zoo zpaq zstd zzip | tr ' ' '\n' | sort -u); do
+			  printf "${BLUECOL}%-32s" "> $i"
+			  [ "`which $i 2>/dev/null`" ] && printf "${GREENCOL}%s${OFFCOL}\n" "[$(gettext 'OK')]" || printf "${REDCOL}%s${OFFCOL}\n" "[$(gettext 'MISSING')]"
+			done
+			echo -e "${OFFCOL}"; exit	;;
+  formats)	echo -e "\n${YELLOWCOL}$(gettext 'Supported formats/extensions:')${BLUECOL}"
+			grep -woE "[^#\"\*\?/]\*\..*\)" "$(readlink -f "$0")" | tr -d '\t \*)' | tr '|' '\n' | sort | uniq
+			echo -e "${OFFCOL}"; exit	;;
+esac
+
+set -- "${FILESSTACK[@]}"
+
+[ "$1" ] || { echo -e "\n${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Nothing to process, exiting...')\n"; exit 1; }
+[ -f "$CUSTOMDIR" ] && { echo -e "\n${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Cannot create output directory!')\n$(gettext 'A file with the same name already exists:')\n${BLUECOL}> ${CUSTOMDIR}${OFFCOL}\n"; exit 1; }
+[ "$MODE" = "list" ] && { MSG1="$(gettext "Listing:")"; MSG2="$(gettext "Listing failed!")"; MSG3="$(gettext "Listing successful!")"; } || { MSG1="$(gettext "Extracting:")"; MSG2="$(gettext "Extraction failed!")"; MSG3="$(gettext "Extraction successful!")"; }
+
+# -----------------------------------------------------------------------------
+
+SUCCESSCNT=0; FAILCNT=0; SKIPCNT=0
+
+while (($#)); do
+  FILEPATH_ORG="$1"
+  FILEPATH="$(readlink -f -- "$1" 2>/dev/null)"
+  
+  echo -e "\n${BLUECOL}$(func_hr '=')${OFFCOL}\n${BLUECOL}${MSG1}${OFFCOL} ${FILEPATH:-${FILEPATH_ORG}}\n${BLUECOL}$(func_hr '-')${OFFCOL}"
+  (file -b "${FILEPATH:-${FILEPATH_ORG}}" 2>/dev/null; file -bi "${FILEPATH:-${FILEPATH_ORG}}" 2>/dev/null) | uniq
+  echo -e "${BLUECOL}$(func_hr '=')${OFFCOL}\n"
+
+  [ -d "$FILEPATH" ] && { echo -e "${YELLOWCOL}$(gettext 'WARNING:') ${OFFCOL}$(gettext "It is a directory; skipping...")"; ((SKIPCNT++)); SKIPFILES[$SKIPCNT]="$FILEPATH"; shift; continue; }
+  [ ! -f "$FILEPATH" ] && { echo -e "${YELLOWCOL}$(gettext 'WARNING:') ${OFFCOL}$(gettext "File does not exist or it's a device file; skipping...")"; ((SKIPCNT++)); SKIPFILES[$SKIPCNT]="${FILEPATH:-${FILEPATH_ORG}}"; shift; continue; }
+  [ $(stat -c %s "$FILEPATH") -eq 0 ] && { echo -e "${YELLOWCOL}$(gettext 'WARNING:') ${OFFCOL}$(gettext "Zero-byte file; skipping...")"; ((SKIPCNT++)); SKIPFILES[$SKIPCNT]="${FILEPATH:-${FILEPATH_ORG}}"; shift; continue; }
+  
+  mkdir -p "$WORKDIR" || { echo -e "\n${REDCOL}$(gettext 'ERROR:') ${OFFCOL}$(gettext 'Cannot create temporary directory! Aborting...')\n"; exit 1; }
+  FILEINFO="$(file -b "$FILEPATH" | cut -f1 -d ',')"
+  [ "$CUSTOMDIR_FLAG" = "true" ] || CUSTOMDIR="${FILEPATH%/*}"
+
+  func_uextract; RET=$?
+  func_cleanup
+  echo -e "\n${BLUECOL}$(func_hr '-')${OFFCOL}"
+
+  if [ $RET -ne 0 ]; then
+    [ "$MODE" != "list" ] && find "$(readlink -f "$DESTDIR" 2>/dev/null)" -maxdepth 0 -type d -empty -delete 2>/dev/null
+    echo -e "${REDCOL}${MSG2}${OFFCOL}"
+    FAILFILES[FAILCNT++]="$FILEPATH"
+  else
+    echo -e "${GREENCOL}${MSG3}${OFFCOL}"
+    SUCCESSFILES[SUCCESSCNT++]="$FILEPATH"
+  fi
+
+  shift
+done
+
+# -----------------------------------------------------------------------------
+
+echo -e "\n${BLUECOL}$(func_hr '*')${OFFCOL}"
+[ $SUCCESSCNT -ne 0 ]	&& { echo -e "\n${GREENCOL}$(gettext 'Successful files'):${OFFCOL}";	printf '> %s\n' "${SUCCESSFILES[@]}";	TMPCOL="${GREENCOL}"; }
+[ $SKIPCNT -ne 0 ]		&& { echo -e "\n${YELLOWCOL}$(gettext 'Skipped files'):${OFFCOL}";		printf '> %s\n' "${SKIPFILES[@]}";		TMPCOL="${YELLOWCOL}"; }
+[ $FAILCNT -ne 0 ]		&& { echo -e "\n${REDCOL}$(gettext 'Failed files'):${OFFCOL}";			printf '> %s\n' "${FAILFILES[@]}";		TMPCOL="${REDCOL}"; }
+echo -e "\n${BLUECOL}$(func_hr '*')${OFFCOL}\n\n${BLUECOL}$((SUCCESSCNT+FAILCNT+SKIPCNT))${OFFCOL} $(gettext 'file(s) processed'): ${GREENCOL}${SUCCESSCNT}${OFFCOL} $(gettext 'successfully'), ${YELLOWCOL}${SKIPCNT}${OFFCOL} $(gettext 'skipped'), ${REDCOL}${FAILCNT}${OFFCOL} $(gettext 'failed').\n\n${TMPCOL}$(gettext 'Finished!')${OFFCOL}\n"
+[ $FAILCNT -eq 0 ] && exit 0 || exit 1
+
+################################ (_)3><+.-@<+ #################################

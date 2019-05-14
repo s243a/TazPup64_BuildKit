@@ -1,0 +1,4 @@
+filename=libmagic-5.34-x86_64.tazpkg
+size=52	pkgs/core/preinst/next64/libmagic-5.34-x86_64.tazpkg 
+checksum.md5=7c8924e3e55e8a9610ea1fa424d37c11  pkgs/core/preinst/next64/libmagic-5.34-x86_64.tazpkg
+checksum.sha256=e3aee3f09623f1bb559d727698e91f2f02f90f7ae9d1e556ad38302a7ad8731b  pkgs/core/preinst/next64/libmagic-5.34-x86_64.tazpkg

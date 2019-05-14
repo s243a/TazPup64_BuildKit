@@ -1,0 +1,10 @@
+d41d8cd98f00b204e9800998ecf8427e  /etc/pango/pango.modules
+e3159db91b3488e52de0a092bbd287e1  /usr/lib/pango/1.8.0/modules/pango-indic-lang.so
+435ff75b9ab6c5d9ac621c087026643e  /usr/lib/pango/1.8.0/modules/pango-arabic-lang.so
+d63aa7f20e40f922a2fe1e96f3f917fb  /usr/lib/pango/1.8.0/modules/pango-basic-fc.so
+31a36eb8440711289998bc1476fc846b  /usr/lib/libpangoxft-1.0.so.0.3600.8
+6057437d2c631e601077806033dbee55  /usr/lib/libpangoft2-1.0.so.0.3600.8
+5df57835dd83feb3fd824a930d7bd5a2  /usr/lib/libpangocairo-1.0.so.0.3600.8
+2209196c7ee428c42a1430784c0cf803  /usr/lib/libpango-1.0.so.0.3600.8
+2fa3799feb70e11877dbca52103147e9  /usr/bin/pango-querymodules
+4a6755b28bb6cf841e82bf017d5e39b9  /usr/bin/pango-view

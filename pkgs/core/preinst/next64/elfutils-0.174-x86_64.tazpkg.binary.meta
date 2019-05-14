@@ -1,0 +1,4 @@
+filename=elfutils-0.174-x86_64.tazpkg
+size=364	pkgs/core/preinst/next64/elfutils-0.174-x86_64.tazpkg 
+checksum.md5=daa843d309034170538d134f9a640ab6  pkgs/core/preinst/next64/elfutils-0.174-x86_64.tazpkg
+checksum.sha256=d0d596b41e7587da429265926d40cc4babd70192368a8bb552648a3fb76df702  pkgs/core/preinst/next64/elfutils-0.174-x86_64.tazpkg

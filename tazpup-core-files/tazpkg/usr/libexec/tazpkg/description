@@ -1,0 +1,51 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# description - TazPkg module
+# Display package description
+
+. /usr/libexec/tazpkg/header
+
+unset desc
+for lang in $LANG ${LANG%_*}; do
+[ -e "$PKGS_DB/descriptions.$lang.txt" ] || continue
+desc="$(awk -vRS='' -vFS='\n' -vOFS='\n' -vp="$1" '
+$1 == p { $1 = ""; print $0; exit; }
+' "$PKGS_DB/descriptions.$lang.txt" | sed '1d')"
+done
+if [ -z "$desc" -a -s "$INSTALLED/$1/description.txt" ]; then
+desc="$(cat "$INSTALLED/$1/description.txt")"
+fi
+if [ -z "$desc" -a -s "$PKGS_DB/descriptions.txt" ]; then
+desc="$(awk -vRS='' -vFS='\n' -vOFS='\n' -vp="$1" '
+$1==p {$1 = ""; print $0; exit}
+' "$PKGS_DB/descriptions.txt" | sed '1d')"
+fi
+if [ -z "$desc" ] && im; then
+for lang in $LANG ${LANG%_*}; do
+[ -e "$PKGS_DB/packages-desc.$lang" ] || continue
+desc=$(awk -F$'\t' -vp="$1" '$1==p {print $2; exit}' "$PKGS_DB/packages-desc.$lang")
+done
+[ -z "$desc" -a -s "$PKGS_DB/packages.info" ] &&
+desc="$(awk -F$'\t' -vp="$1" '$1==p {print $4; exit}' "$PKGS_DB/packages.info")"
+fi
+if [ -n "$desc" ]; then
+case $output in
+html)
+if [ -n "$(which sundown)" ]; then
+echo "$desc" | sundown
+else
+echo '<pre class="pre-wrap">'
+echo "$desc" | sed -e 's|\&|\&amp;|g; s|<|\&lt;|g; s|>|\&gt;|g'
+echo '</pre>'
+fi
+;;
+*)
+im && title 'Description of package "%s"' "$1"
+echo "$desc"
+im && footer
+;;
+esac
+else
+im && _ 'Description absent.'
+fi
+exit 0

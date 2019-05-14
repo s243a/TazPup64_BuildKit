@@ -1,0 +1,4 @@
+a38297928e2d5e031f05f166d5f614ec  /usr/bin/usb-devices
+44eaec61939b86f42fd29b00db50e392  /usr/bin/lsusb
+a526037dc1973e8291a1054cd929dc99  /usr/bin/usbhid-dump
+56c4a443245e4b1bffc72758b9b24209  /usr/sbin/update-usbids.sh

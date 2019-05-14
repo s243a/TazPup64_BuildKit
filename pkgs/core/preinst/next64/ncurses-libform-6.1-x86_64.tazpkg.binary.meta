@@ -1,0 +1,4 @@
+filename=ncurses-libform-6.1-x86_64.tazpkg
+size=24	pkgs/core/preinst/next64/ncurses-libform-6.1-x86_64.tazpkg 
+checksum.md5=1adc4e104403541272f7a1c5b23f81fb  pkgs/core/preinst/next64/ncurses-libform-6.1-x86_64.tazpkg
+checksum.sha256=4d5918db009624dac9957e2cb36abb7a113eca3c1189f7110ae673a04a1cdff4  pkgs/core/preinst/next64/ncurses-libform-6.1-x86_64.tazpkg

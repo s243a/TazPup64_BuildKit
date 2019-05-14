@@ -1,0 +1,4 @@
+filename=libmysqlclient-5.5.59-x86_64.tazpkg
+size=596	pkgs/applications/dependencies/next64/libmysqlclient-5.5.59-x86_64.tazpkg 
+checksum.md5=1ce5c57bf0d298fe7fcb50a0bd0a2fa3  pkgs/applications/dependencies/next64/libmysqlclient-5.5.59-x86_64.tazpkg
+checksum.sha256=097a471cab28c7e981fbb9206749950d5344211d438f369bb79dc8b34a3e408f  pkgs/applications/dependencies/next64/libmysqlclient-5.5.59-x86_64.tazpkg

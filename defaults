@@ -1,0 +1,76 @@
+#curdir=${curdir:-`pwd`} #This should be already set in the make-tazpup.sh script
+
+branch=next64 #This is the repo branch where the packages are located
+arch="x86_64" #This must be x86_64 for 64bit versions
+prefix="/64"  #If the base slitaz ISO doesn't have 64 bit libraries then it must be installed under a prefix
+
+########## can copy tazpkg into the build system if it isn't on the base ISO ###########
+cpytaz_target=0 # "0" means don't copy tazpkg into the target enviornment
+cpytaz=0 # "0" means don't copy tazpkg into the build eniovnrment
+
+bla=/mnt/sda2
+
+############### If you want to avoid being prompted then specify iso location ########
+IMGPUP="$bla/slacko64-6.9.9.9-uefi-k4.9-FF-LO.iso"
+IMG="$bla/slitaz-rolling-core64.iso"
+
+################ Build Modes ##############################
+xforced=1 #Force Install of pet packages
+xmode="local" #Local Build Mode
+xinteractive=1
+
+############## User and Desktop Related Stuff ##############################
+users='tux,root,spot:jwm' #Deleting this line will make the iso slightly smaller. 
+install_WM_jwm=1 #TODO write a function to pull this info from the users variable
+
+############ If we don't know where stuff comes from #####################
+cpy_unknown=1 #Test to see if we can set this to zero. 
+
+############### Choose Applications to Install ###########################
+TO_INSTALL_console_editors=( "nano" )
+TO_INSTALL_terminal_emulators=( "sakura" "xterm" "urxvt" )
+TO_INSTALL_text_editors=( "geany" "leafpad" ) #TODO move leafpad so we can add it to this lixt
+TO_INSTALL_graphics=( "mtpaint" )
+TO_INSTALL_games=( "nanochess" )
+WOOF_CE_PKGS_TO_INSTALL=( "get_java" "pburn" "pclock" "pdiag" "pclock" "pmusic" 
+"pprocess" "pschedule" "pupzip" "redshiftgui_wrapper" "wallpaper" )
+
+################ Package Locations for the three installation phases ##############
+
+# 1st
+#Around line number 221 of make-tazpup.sh
+#These are mostly terminal type applications
+slitaz_preinst_pkg_dir=$curdir/pkgs/core/preinst/$branch
+
+# snd
+#Around line number 240 of make-tazpup.sh
+#Most of these are the packages one would find on a typical SliTaz ISO
+slitaz_base_pkg_dir=$curdir/pkgs/core/base/$branch
+
+#Maybe install eudev after the core packages have been installed
+#This would be around line 255 but it won't re-install unless we add the forced tag. 
+slitaz_post_patch_pkg_dir=$curdir/pkgs/other/post-patch/$branch
+
+#This directory is based on mistfire's TazPup
+slitaz_packages_dir=$curdir/pkgs/core/other/$branch       #Around line# 264 of make-tazpup.sh
+special_packages_dir=$curdir/pkgs/other/special/$branch   #Around line# 264 of make-tazpup.sh
+
+#Currently removed but may bring back
+##Around line #275 of make-tazpup.sh
+#custom_packages_dir=
+
+#Around line #294 of make-tazpup.sh
+converted_aliens_pkg_dir=$curdir/pkgs/other/aliens/$branch 
+
+
+
+############# Let's not forget about the dependencies ########################3
+slitaz_dependency_pkg_dir=$curdir/pkgs/applications/dependencies/$branch 
+
+#pkgs/slitaz-base pkgs/slitaz-dependencies pkgs/slitaz-packages pkgs/slitaz-preinst-pkg
+#/pkgs/applications/dependencies/next64
+
+
+pkg_dirs_to_copy=( "$slitaz_base_pkg_dir" "$slitaz_dependency_pkg_dir" "$slitaz_packages_dir" \
+                  "$slitaz_preinst_pkg_dir" )
+

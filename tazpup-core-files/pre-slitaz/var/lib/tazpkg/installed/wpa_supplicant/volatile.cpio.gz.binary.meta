@@ -1,0 +1,4 @@
+filename=volatile.cpio.gz
+size=24	tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/wpa_supplicant/volatile.cpio.gz 
+checksum.md5=841ef67d9582bdb3e22ac046c89fe816  tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/wpa_supplicant/volatile.cpio.gz
+checksum.sha256=b982bd2ebccc76f11908253cd98720f09acbab34aa3faa3cf95c38f57072203f  tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/wpa_supplicant/volatile.cpio.gz

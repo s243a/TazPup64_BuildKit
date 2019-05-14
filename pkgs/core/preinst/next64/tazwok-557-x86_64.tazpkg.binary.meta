@@ -1,0 +1,4 @@
+filename=tazwok-557-x86_64.tazpkg
+size=48	pkgs/core/preinst/next64/tazwok-557-x86_64.tazpkg 
+checksum.md5=702700868cbfdd2a1c38d20267caebe3  pkgs/core/preinst/next64/tazwok-557-x86_64.tazpkg
+checksum.sha256=5fa2361bb989a84f002cccda966775fd3d1f377a1f8c4c355828f89ad517374a  pkgs/core/preinst/next64/tazwok-557-x86_64.tazpkg

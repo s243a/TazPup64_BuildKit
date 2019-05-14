@@ -1,0 +1,4 @@
+filename=grep-3.1-x86_64.tazpkg
+size=56	pkgs/core/other/next64/grep-3.1-x86_64.tazpkg 
+checksum.md5=663ed51665e31b9799ad18faf8f7823f  pkgs/core/other/next64/grep-3.1-x86_64.tazpkg
+checksum.sha256=0bc258b6cfc72c5d143a8c2d746561382f9ef025183942f6e595d25930c54b08  pkgs/core/other/next64/grep-3.1-x86_64.tazpkg

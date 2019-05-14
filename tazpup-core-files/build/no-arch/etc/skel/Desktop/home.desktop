@@ -1,0 +1,9 @@
+[Desktop Entry]
+		Version=1.0
+		Type=Application
+		Name=Home
+		Comment=Show home folder
+		Exec=pcmanfm /root
+		Icon=/usr/share/pixmaps/puppy/home.svg
+		Terminal=false
+		StartupNotify=false

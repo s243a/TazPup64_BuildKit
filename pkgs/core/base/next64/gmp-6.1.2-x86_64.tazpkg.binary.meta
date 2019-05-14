@@ -1,0 +1,4 @@
+filename=gmp-6.1.2-x86_64.tazpkg
+size=180	pkgs/core/base/next64/gmp-6.1.2-x86_64.tazpkg 
+checksum.md5=a9cf69be76ae701b4d649c212b18d011  pkgs/core/base/next64/gmp-6.1.2-x86_64.tazpkg
+checksum.sha256=274c220e2b57248426cae8645fb859f7c5dc4a02d3a6c7a4d0f65693ac1731ea  pkgs/core/base/next64/gmp-6.1.2-x86_64.tazpkg

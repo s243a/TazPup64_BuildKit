@@ -1,0 +1,27 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# reconfigure - TazPkg module
+# Replay post_install from receipt
+
+. /usr/libexec/tazpkg/header
+
+log_pkg() {
+local extra
+[ -e "$LOG" ] || touch $LOG
+[ -w "$LOG" ] &&
+echo "$(date +'%F %T') - $1 - $PACKAGE ($VERSION$EXTRAVERSION)$extra">> $LOG
+}
+PACKAGE="$1"
+if grep -q '^post_install()' "$INSTALLED/$PACKAGE/receipt"; then
+action 'Execute post-install commands...'
+tmp="$(mktemp)"
+cp "$INSTALLED/$PACKAGE/receipt" "$tmp"
+sed -i 's|$1/*$INSTALLED|$INSTALLED|g' "$tmp"
+( . "$tmp"; post_install "$root" )
+status
+rm "$tmp"
+log_pkg Reconfigured
+else
+newline
+_ 'Nothing to do for package "%s".' "$PACKAGE"
+fi

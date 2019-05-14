@@ -1,0 +1,2 @@
+- Changed "exec pcmanfm #U" to "exec pcmanfm ~"
+- Changed category of pcmanfm to FileManager #Verify

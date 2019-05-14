@@ -1,0 +1,480 @@
+#!/bin/sh
+#
+# /etc/init.d/rcS    : Initial boot script for SliTaz GNU/Linux
+# Configuration file : /etc/rcS.conf
+#
+# rcS is the main initialization script used to check fs, mount, clean,
+# run scripts and start daemons.
+#
+. /etc/init.d/rc.functions
+. /etc/rcS.conf
+
+# Set PATH, TZ and boot time.
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+
+fix_nodes(){
+ echo "Fixing device nodes..."
+ #device nodes created by kernel in initrd are all 'root' group. fix (before starting udevd)...
+ chmod 666 /dev/* 2>/dev/null
+ chmod 666 /dev/pts/* 2>/dev/null
+ chown -R root:tty /dev/pts/ 2>/dev/null
+ chmod 666 /dev/null
+ chmod 666 /dev/zero
+ chmod 666 /dev/[pt]ty* 2>/dev/null
+ chmod 666 /dev/ptmx 2>/dev/null
+ chmod 777 /dev/pts/
+ chgrp tty /dev/[pt]ty* 2>/dev/null
+ chown -R root:tty /dev/pts/
+ chown root:tty /dev/tty1
+ chown root:tty /dev/ptmx
+ chgrp tty /dev/console #bugfix 140617
+ chmod 777 /dev/console
+ chgrp video /dev/fb0 2>/dev/null
+ chgrp floppy /dev/fd[0-9] 2>/dev/null
+ chgrp disk /dev/[hs]d[a-z]* 2>/dev/null
+ chgrp disk /dev/fuse
+ chgrp disk /dev/mmcblk* 2>/dev/null
+ chgrp disk /dev/nvme* 2>/dev/null
+ chgrp cdrom /dev/sr[0-9] 2>/dev/null
+ chgrp cdrom /dev/scd[0-9] 2>/dev/null
+ chmod 666 /dev/usb/* 2>/dev/null #rcrsn51 finally added 140618
+ chmod -R 1777 /dev/shm #SFR .. ditto
+ chmod 666 /dev/urandom #and again
+}
+
+config_soundcard(){
+
+nscard="$(cat /proc/asound/cards)"
+
+if [ -f /var/hwdata/soundcards.lst ]; then
+   oscard="$(cat /var/hwdata/soundcards.lst)"
+	if [ "$nscard" != "$oscard" ]; then
+	 if [ -d /usr/share/alsa/init ]; then
+	  mv -f /etc/asound.conf /etc/asound.conf.old 2>/dev/null
+	  mv -f /etc/asound.state /etc/asound.state.old 2>/dev/null
+	 fi
+	 
+	 rm -f /etc/modprobe.d/soundcards.conf 2>/dev/null	  
+	 
+	 echo "$nscard" > /var/hwdata/soundcards.lst
+	fi
+else
+   echo "$nscard" > /var/hwdata/soundcards.lst
+   if [ -d /usr/share/alsa/init ]; then
+	  mv -f /etc/asound.conf /etc/asound.conf.old 2>/dev/null
+	  mv -f /etc/asound.state /etc/asound.state.old 2>/dev/null
+   fi
+   rm -f /etc/modprobe.d/soundcards.conf 2>/dev/null
+fi
+	
+}
+
+config_backlight(){
+if [ ! -d /etc/backlight-configs ]; then
+  mkdir /etc/backlight-configs
+fi
+		
+if [ -d /sys/class/backlight ]; then
+
+ vbacklight="$(ls -1 /sys/class/backlight | sort)"
+ 
+	if [ ! -f /var/hwdata/backlights.lst ]; then
+	  rm -f /etc/xdg/autostart/SSB_*.desktop 2>/dev/null
+	  echo "$vbacklight" > /var/hwdata/backlights.lst
+	else
+	 blist="$(cat /var/hwdata/backlights.lst)"
+		if [ "$blist" != "$vbacklight" ]; then
+		   while IFS='' read -r line || [[ -n $line ]] 
+		   do
+			bl1="$line"
+			xbl="$(basename "$bl1" | sed -e "s#---# #g")"
+			if [ ! -e "/sys/class/backlight/$bl1" ]; then
+			  if [ -e /etc/xdg/autostart/SSB_$xbl.desktop ]; then
+			   mv -f /etc/xdg/autostart/SSB_$xbl.desktop /etc/backlight-configs/ 2>/dev/null
+			  fi
+			else
+			  if [ ! -e /etc/xdg/autostart/SSB_$xbl.desktop ] && [ -e /etc/backlight-configs/SSB_$xbl.desktop ]; then
+			   mv -f /etc/backlight-configs/SSB_$xbl.desktop /etc/xdg/autostart/ 2>/dev/null
+			  fi
+			fi
+		   done < /var/hwdata/backlights.lst
+		fi
+	 echo "$vbacklight" > /var/hwdata/backlights.lst   
+	fi
+else
+ if [ "$(ls -1 /etc/xdg/autostart/ | grep "SSB_")" != "" ]; then
+  mv -f /etc/xdg/autostart/SSB_*.desktop /etc/backlight-configs/ 2>/dev/null
+ fi
+ echo "" > /var/hwdata/backlights.lst 
+fi	
+}
+
+get_edid_hash(){
+
+for medid in $(ls -1 /sys/class/drm/*/edid 2>/dev/null | grep "card" | grep "-")
+do
+ sc1="$(dirname $medid)/status"
+ if [ "$(cat $sc1)" == "connected" ]; then
+  md5sum $medid
+ fi
+done
+		
+}
+
+set_screen(){
+ echo "$1"
+ HOME='/root' 
+ tazx init 2>/dev/null
+ echo "$screens" > /var/hwdata/screen.lst
+}
+
+config_screen(){
+	
+screens="$(get_edid_hash)"	
+
+if [ ! -f /var/hwdata/screen.lst ]; then
+ set_screen "Configuring Xorg..."
+else
+	if [ "$screens" != "$(cat /var/hwdata/screen.lst)" ]; then
+	 set_screen "Display setup changed. Configuring Xorg..."
+	fi
+fi	
+	
+}
+
+config_videocard(){
+vlist="$(busybox lspci | grep "Class 03" | cut -c 21-29 | sort)"
+
+if [ ! -f /var/hwdata/videocards.lst ]; then
+	echo 'Configuring Xorg server...' 
+	HOME='/root'
+	tazx init 2>/dev/null
+	echo "$vlist" > /var/hwdata/videocards.lst	
+	get_edid_hash > /var/hwdata/screen.lst	
+else
+	ocard=$(cat /var/hwdata/videocards.lst)	
+	if [ "$vlist" != "$ocard" ]; then
+		echo 'Graphics card setup changed. Configuring Xorg server...' 
+		HOME='/root'
+		tazx init 2>/dev/null
+		echo "$vlist" > /var/hwdata/videocards.lst
+	    get_edid_hash > /var/hwdata/screen.lst
+	else
+	  config_screen
+	fi
+fi	
+}
+
+config_hardware(){
+idev=$(listdev)
+
+if [ ! -d /var/hwdata ]; then
+ mkdir /var/hwdata
+fi
+
+if [ ! -f /var/hwdata/onboard-devices.lst ] || [ "$idev" != "$(cat /var/hwdata/onboard-devices.lst)" ]; then
+	rm -f /var/lib/detected-modules 2>/dev/null
+	tazhw init
+	echo "$idev" > /var/hwdata/onboard-devices.lst
+elif [ ! -f /var/hwdata/kernel.lst ] || [ "$(uname -r)" != "$(cat /var/hwdata/kernel.lst)" ]; then
+	rm -f /var/lib/detected-modules 2>/dev/null
+	tazhw init
+	uname -r > /var/hwdata/kernel.lst
+fi
+
+if [ ! -e '/var/lib/detected-modules' ]; then
+	tazhw init
+fi
+}
+
+init_readonly(){
+		
+# Mount /proc
+if [ "$(mount | grep "/proc")" == "" ]; then
+ action 'Mounting proc filesystem on /proc' 
+ mount -t proc none /proc
+ status
+fi
+		
+}
+
+init_readwrite(){
+
+# Be quiet
+		echo '0 0 0 0' > /proc/sys/kernel/printk
+
+		# Store boot messages to log files.
+		dmesg > /var/log/dmesg.log &
+		
+		##########new udev#################
+		
+		# Clean up the system and set up tmp dirs.
+		# */run/* are tmpfs so they are cleaned up at shutdown.
+		if [ "$CLEAN_UP_SYSTEM" == 'yes' ]; then
+			action 'Cleaning up the system...'
+			mv -f /tmp/bootsysinit.log /var/tmp/ 
+			rm -rf /tmp/* > /dev/null
+			mkdir -p /tmp/.X11-unix /tmp/.ICE-unix
+			mv -f /var/tmp/bootsysinit.log /tmp/
+			chmod -R 1777 /tmp
+			status
+		else
+			echo 'System clean up is disabled in /etc/rcS.conf' 
+		fi
+		
+		if [ -f /initrd/tmp/bootinit.log ]; then
+		 cat /initrd/tmp/bootinit.log > /tmp/puppyboot.log
+		fi
+
+		cat /tmp/bootsysinit.log >> /tmp/puppyboot.log
+		
+		mkdir /tmp/pup_event_backend > /dev/null #101210 for logging into, see /sbin/pup_event_backend_modprobe.
+		mkdir /tmp/simple_network_setup > /dev/null #101216
+		mkdir -p /tmp/pup_event_ipc > /dev/null #130629 for new pup_event IPC.
+
+		# Trigger udev and handle hotplug events
+		if [ "$UDEV" == 'yes' ]; then
+			
+			if [ "$(mount | grep "/dev")" == "" ]; then
+			 action 'Mounting devtmpfs filesystem on /dev' 
+			 mount -t devtmpfs devtmpfs /dev 
+			 status
+			fi
+			
+			[ -d '/lib/udev/devices' ] && cp -af /lib/udev/devices/* /dev/
+
+			fix_nodes
+
+			if [ -d '/etc/udev/hwdb.d' ]; then
+				echo 'Creating the udev hardware database...' 
+				udevadm hwdb --update
+			fi
+			
+			#killall udevd 2>/dev/null
+			
+			if [ "$(pidof udevd)" == "" ]; then
+			 echo 'Starting udev daemon...'
+			 udevd --daemon 2>/dev/null
+			fi
+
+			echo 'Udevadm requesting events from the Kernel...' 
+			udevadm trigger
+
+			echo 'Udevadm waiting for the event queue to finish...' 
+			udevadm settle --timeout=120
+			# Disable hotplug helper since udevd listen to netlink
+			echo '' > /proc/sys/kernel/hotplug
+		else
+			action 'Executing mdev -s to populate /dev...' 
+			mdev -s && echo 'mdev' > /proc/sys/kernel/hotplug
+			status
+		fi
+		
+		#############################
+
+		# Parse cmdline args for earlier boot options. All other boot options
+		# are in /etc/init./bootopts.sh.
+		action 'Searching for early boot options...'
+		opt=$(cmdline_option modprobe); [ -z "$opt" ] || export MODPROBE='yes'
+		opt=$(cmdline_option config);   [ -z "$opt" ] || export CONFIG="$opt"
+		opt=$(cmdline_option screen);   [ -z "$opt" ] || export SCREEN="$opt"
+		
+		if [ "$(echo $(cmdline_option pfix) | grep "nox")" != "" ]; then
+		export SCREEN="text"
+		fi
+		
+		status
+
+		# Handle kernel cmdline parameter modprobe=<module_list>
+		if [ -n "$MODPROBE" ]; then
+			for i in $(cmdline_option modprobe | tr ',' '\n'); do
+				action 'Loading kernel module: %s' "$i" 
+				modprobe $i
+				status
+			done
+		fi
+
+		# Handle kernel cmdline parameter config=<device>,<path> to source a
+		# disk init script
+		if [ -n "$CONFIG" ]; then
+			DEVICE=${CONFIG%,*}
+			SCRIPT=${CONFIG#*,}
+			echo "Probing $DEVICE..."
+			if ! mount -r $DEVICE /mnt; then
+				if echo $DEVICE | grep -Eq '/dev/sd|UUID=|LABEL='; then
+					USBDELAY=$(cat /sys/module/usb_storage/parameters/delay_use)
+					USBDELAY=$((1+$USBDELAY))
+					echo "$DEVICE is potentially a USB device: sleep for $USBDELAY seconds" 
+					sleep $USBDELAY
+				fi
+				if ! mount -r $DEVICE /mnt; then
+					CONFIG=''
+				fi
+			fi
+			action 'Source %s from %s...' "$SCRIPT" "$DEVICE" 
+			if [ -n "$CONFIG" ]; then
+				. /mnt/$SCRIPT
+				umount /mnt 2>/dev/null || true
+			fi
+			status
+		fi
+
+		# Mount /proc/bus/usb
+		if [ -d '/proc/bus/usb' ]; then
+			action 'Mounting usbfs filesystem on /proc/bus/usb' 
+			mount -t usbfs usbfs /proc/bus/usb
+			status
+		fi
+
+		# Start syslogd and klogd
+		action 'Starting system log daemon: syslogd...' 
+		syslogd -s $SYSLOGD_ROTATED_SIZE; status
+		action 'Starting kernel log daemon: klogd...' 
+		klogd
+		status
+	
+		
+		if [ ! -f /var/hwdata/kernel.lst ] || [ "$(uname -r)" != "$(cat /var/hwdata/kernel.lst)" ]; then
+		 rm -f /var/lib/detected-modules 2>/dev/null
+		 sed -i s/"LOAD_MODULES=.*"/"LOAD_MODULES=\"\""/ /etc/rcS.conf
+		 . /etc/rcS.conf
+		fi
+			
+		# Load all modules listed in config file
+		if [ -n "$LOAD_MODULES" ]; then
+			colorize 33 'Loading Kernel modules...'
+			
+			KVER1=$(uname -r)
+			modlist="/lib/modules/$KVER1/modules.order"
+						 
+			for mod in $LOAD_MODULES; do
+			  if [ "$(cat $modlist | grep "/${mod}.ko")" != "" ] || [ "$(cat $modlist | grep "/${mod}.o")" != "" ] || [ -d /sys/module/$mod ]; then
+				 action 'Loading module: %s' "$mod"
+				 modprobe $mod
+				 status
+			  fi
+			done
+		fi
+
+		# Detect PCI and USB devices with Tazhw from slitaz-tools. We load
+		# kernel modules only at first boot or in Live CD mode.
+		config_hardware
+
+		# Call udevadm trigger to ensure /dev is fully populated now that all
+		# modules are loaded.
+		if [ "$UDEV" == 'yes' ]; then
+			action 'Triggering udev events: --action=add'
+			udevadm trigger --action=add
+			status
+		fi
+		
+		/etc/init.d/pup_devinit
+		/etc/init.d/pup_preroot
+		
+		config_soundcard
+        config_backlight
+		
+		# Start all scripts specified with $RUN_SCRIPTS
+		for script in $RUN_SCRIPTS; do
+			colorize 34 "Processing /etc/init.d/$script" 
+			
+			if [ -e /etc/init.d/$script ]; then
+			  /etc/init.d/$script 
+		    fi
+		done
+		
+		if [ -f /etc/net-random.cfg ]; then
+		 . /etc/net-random.cfg
+		 if [ "$(echo "$RANDOM_HWID" | tr "[a-z]" "[A-Z]")" == "ON" ]; then
+           cat /proc/sys/kernel/random/uuid | sed -e "s#-##g" > /var/lib/dbus/machine-id
+		 fi
+		fi
+				
+		if [ "$(echo $(cmdline_option pfix) | grep "nox")" != "" ]; then
+			export SCREEN="text"
+		fi		
+		
+		# Back to a verbose mode
+		#(sleep 6; echo '7 4 1 7' > /proc/sys/kernel/printk) &
+		
+		#if [ "$(mount | grep "/dev")" != "" ]; then
+		# fix_nodes
+		#fi
+		
+		if [ -e /etc/init.d/hald ] && [ "$(echo "$RUN_DAEMONS" | grep "hald")" != "" ]; then
+		  /etc/init.d/dbus start 
+		fi
+		
+		# Start all daemons specified with $RUN_DAEMONS
+		if [ -n "$RUN_DAEMONS" ]; then
+			colorize 33 "Starting all daemons..."
+			for daemon in $RUN_DAEMONS; do
+			    if [ -e "/etc/init.d/$daemon" ] && [ -x "/etc/init.d/$daemon" ]; then
+			     echo "Starting $daemon..." 
+			     echo -n "" 
+			     /etc/init.d/$daemon start 
+			    fi 
+			done
+		fi
+		
+		killall smbd nmbd 2>/dev/null
+		
+		# Start X session. Dbus must be started before Xorg and other daemons.
+		# We started it here because X is run before RUN_DAEMONS. Sleep, in
+		# some live modes we boot too fast and X can't initialize.
+
+		if [ "$SCREEN" != 'text' -a \
+			-n "$LOGIN_MANAGER" -a \
+			-x '/usr/bin/tazx' -a \
+			-s '/etc/slitaz/applications.conf' -a \
+			-x "/etc/init.d/$LOGIN_MANAGER" ]; then
+			# We need Xorg 40-Keyboard.conf and SliTaz applications.conf
+			 			
+			config_videocard
+			
+			if [ ! -f /etc/X11/xorg.conf.d/40-Keyboard.conf ]; then
+			  tazx keyboard		
+ 			fi
+ 			
+ 			if [ "$(pidof dbus-daemon)" == "" ]; then
+ 			 /etc/init.d/dbus start
+ 			 sleep 2
+ 			fi
+			
+			colorize 36 'Starting X environment in a moment...' 
+					    
+		    sleep 1
+		    
+		    exec /etc/init.d/$LOGIN_MANAGER start &
+		fi
+		
+		
+		
+		if [ -n "$MESSAGE" ]; then
+			newline 
+			colorize 32 "$MESSAGE" 
+		fi
+		
+		exit
+}
+
+
+# Main entry point.
+# --> readonly --> readwrite
+
+colorize 34 'Processing /etc/init.d/rcS...' 
+
+if [ ! -s '/run/boot.log' ]; then
+	# Mount /run as tmpfs runtime data are not written to disk
+	mount -t tmpfs tmpfs /run
+	# cp -a in tazpkg does not support /var/run symlink
+	mount --bind /run /var/run
+fi
+
+init_readonly 2>&1 | tee -a /run/boot.log
+
+mv -f /run/boot.log /var/log/boot.log
+
+init_readwrite  2>&1 | tee -a /var/log/boot.log
+
+exit

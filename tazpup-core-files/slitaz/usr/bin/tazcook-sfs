@@ -1,0 +1,550 @@
+#!/bin/sh
+#Build sfs module using tazpkg
+#written by mistfire
+
+if [ "$(whoami)" != "root" ]; then
+ exec sudo -A $0 $@
+exit
+fi
+
+error_msg() {
+	
+	icon='dialog-error'
+
+	yad --fixed --title="TazCook-SFS" --window-icon=$icon \
+		--on-top --center \
+		--image=$icon --image-on-top \
+		--text="\n <b>$1\n$2\n$3</b> \n" \
+		--button="gtk-ok:1"
+}
+
+info_msg() {
+	
+	icon='gtk-dialog-info'
+
+	yad --fixed --title="TazCook-SFS" --window-icon=$icon \
+		--on-top --center \
+		--image=$icon --image-on-top \
+		--text="\n$1\n$2\n$3 \n" \
+		--button="gtk-ok:1"
+}
+
+yesno_msg() {
+	
+	icon='gtk-dialog-question'
+
+	yad --fixed --title="TazCook-SFS" --window-icon=$icon \
+		--on-top --center \
+		--image=$icon --image-on-top \
+		--text="\n$1\n$2\n$3 \n" \
+		--button="gtk-yes:0" \
+		--button="gtk-no:1"
+}
+
+hide_current_fs(){
+
+clear
+echo "Setting up tazpkg..."
+
+#mkdir -p /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/installed/ 2>/dev/null
+
+EXCEPTIONS='	
+915resolution
+acl
+attr
+bash
+bc
+busybox
+bzlib
+cairo
+cdrkit
+cookutils
+coreutils-multicall
+dbus
+dbus-glib
+dbus-helper
+dialog
+disktype
+dmidecode
+dropbear
+dvd+rw-tools
+e2fsprogs
+elfutils
+expat
+file
+findutils
+fontconfig
+freetype
+fuse
+gcc-lib-base
+gettext-base
+glib
+glibc-base
+grep
+grub2-efi
+grub4dos
+grub4dos-linux
+harfbuzz
+ipxe
+isapnptools
+jpeg
+kbd-base
+kmod
+libcap
+libcomerr
+libdrm
+libffi
+libgcrypt
+libgio
+libgpg-error
+libjpeg
+liblzma
+libpng
+libsqlite
+libtic
+libtinfo
+libxcb
+libxml2
+linux
+linux-modules
+locale-de
+locale-en
+locale-es
+locale-fr
+locale-pt_BR
+locale-ru
+lzlib
+lzma
+macchanger
+minicom
+mtools
+nano
+ncurses
+ncurses-common
+ncursesw
+pango
+parted
+pciids
+pcmciautils
+pcre
+pixman
+popt
+posixovl
+ppp
+rfkill
+rp-pppoe
+sdft
+setserial
+slim
+slitaz-base-files
+slitaz-boot-scripts
+slitaz-configs
+slitaz-configs-base
+slitaz-doc
+slitaz-polar-cursors
+slitaz-tools
+sqlite
+squashfs
+startup-notification
+sudo
+sysfsutils
+syslinux
+syslinux-extra
+tazinst
+tazirc
+tazlito
+tazpkg
+tazusb
+terminus-font-base
+tiff
+transset-df
+ttf-dejavu
+udev
+usbids
+util-linux-blkid
+util-linux-losetup
+util-linux-mount
+util-linux-smartcols
+util-linux-uuid
+wvdial
+wvstreams
+xcb-util
+xdelta
+xorg-base-fonts
+xorg-libfontenc
+xorg-libICE
+xorg-libpciaccess
+xorg-libSM
+xorg-libX11
+xorg-libXau
+xorg-libXaw3d
+xorg-libXcomposite
+xorg-libXcursor
+xorg-libXdamage
+xorg-libXdmcp
+xorg-libXext
+xorg-libXfixes
+xorg-libXfont
+xorg-libXft
+xorg-libXinerama
+xorg-libxkbfile
+xorg-libXmu
+xorg-libXpm
+xorg-libXrandr
+xorg-libXrender
+xorg-libXt
+xorg-libXxf86vm
+xorg-server
+xorg-setxkbmap
+xorg-xauth
+xorg-xcompmgr
+xorg-xf86-input-evdev
+xorg-xf86-video-fbdev
+xorg-xf86-video-vesa
+xorg-xkbcomp
+xorg-xkeyboard-config
+xorg-xsetroot
+xterm
+zlib
+'
+
+for fld in $(ls -1 /var/tmp/sfs-cook/root_ro/var/lib/tazpkg/installed | tr '\n' ' ')
+do
+ if [ "$(echo "$EXCEPTIONS" | grep -E "^$fld\$")" == "" ]; then
+  rm -rf /var/tmp/sfs-cook/root_mnt/var/lib/tazpkg/installed/$fld
+ fi
+done	
+	
+}
+
+
+mount_layer_root(){
+echo "Mounting layared filesystem..."
+
+if [ -f /etc/rc.d/PUPSTATE ]; then
+ . /etc/rc.d/PUPSTATE
+ if [ $PUPMODE -ne 2 ]; then	
+  mount -t aufs -o udba=reval,diropq=w,dirs=/initrd${SAVE_LAYER}/var/tmp/sfs-cook/root_rw=rw:/var/tmp/sfs-cook/root_ro=ro unionfs /var/tmp/sfs-cook/root_mnt
+  retval=$?
+ else
+  mount -t aufs -o udba=reval,diropq=w,dirs=/var/tmp/sfs-cook/root_rw=rw:/var/tmp/sfs-cook/root_ro=ro unionfs /var/tmp/sfs-cook/root_mnt 
+  retval=$?
+ fi
+else
+ mount -t aufs -o udba=reval,diropq=w,dirs=/var/tmp/sfs-cook/root_rw=rw:/var/tmp/sfs-cook/root_ro=ro unionfs /var/tmp/sfs-cook/root_mnt
+ retval=$?
+fi
+
+ if [ $retval -ne 0 ]; then
+ error_msg  "Failed to create layered filesystem"
+ exit
+ fi
+
+ mkdir /var/tmp/sfs-cook/root_mnt/sys 2> /dev/null
+ mkdir /var/tmp/sfs-cook/root_mnt/dev 2> /dev/null
+ mkdir /var/tmp/sfs-cook/root_mnt/proc 2> /dev/null
+ 
+ mount -t sysfs none /var/tmp/sfs-cook/root_mnt/sys
+ mount -t proc none /var/tmp/sfs-cook/root_mnt/proc
+ mount -o rbind /dev /var/tmp/sfs-cook/root_mnt/dev
+ 
+}
+
+mount_ro_root(){
+
+if [ -f /etc/rc.d/PUPSTATE ]; then
+ . /etc/rc.d/PUPSTATE
+ if [ $PUPMODE -ne 2 ]; then
+  #Use pristine root fs if exists
+  mount --bind /initrd${PUP_LAYER} /var/tmp/sfs-cook/root_ro
+  retval=$?
+  fullmode=0
+ else
+  mount -o bind / /var/tmp/sfs-cook/root_ro
+  mount -o remount,ro,bind /var/tmp/sfs-cook/root_ro
+  retval=$?
+  fullmode=1
+ fi
+else
+ mount -o bind / /var/tmp/sfs-cook/root_ro
+ mount -o remount,ro,bind /var/tmp/sfs-cook/root_ro
+ retval=$?
+ fullmode=1
+fi
+
+ if [ $retval -ne 0 ]; then
+ error_msg "Failed to mount read-only root filesystem"
+ exit
+ elif [ $fullmode -ne 0 ]; then
+ info_msg "WARNING: The system setup was a full installed linux (very risky)" "Backup your personal data first and unmount the personal storage devices" "After you do that you may now proceed"
+ fi	
+	
+}
+
+umount_layer_root(){
+umount -l /var/tmp/sfs-cook/root_mnt/sys 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_mnt/sys 2>/dev/null
+
+umount -l /var/tmp/sfs-cook/root_mnt/proc 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_mnt/proc 2>/dev/null
+
+umount -l /var/tmp/sfs-cook/root_mnt/dev 2> /dev/null
+
+umount -l /var/tmp/sfs-cook/root_mnt 2> /dev/null
+umount -l /var/tmp/sfs-cook/root_ro	2> /dev/null
+}
+
+cleanup_exit(){
+umount -l /var/tmp/sfs-cook/root_mnt/sys 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_mnt/sys 2>/dev/null
+
+umount -l /var/tmp/sfs-cook/root_mnt/proc 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_mnt/proc 2>/dev/null
+
+umount -l /var/tmp/sfs-cook/root_mnt/dev 2> /dev/null
+umount -l /var/tmp/sfs-cook/root_mnt 2> /dev/null
+umount -l /var/tmp/sfs-cook/root_ro	2> /dev/null
+
+rm -rf /var/tmp/sfs-cook/ 2>/dev/null
+}
+
+trap cleanup_exit EXIT
+trap cleanup_exit SIGKILL
+trap cleanup_exit SIGTERM
+
+make_lock_files(){
+ mkdir /var/tmp/sfs-cook/root_mnt/tmp 2> /dev/null
+ touch /var/tmp/sfs-cook/root_mnt/tmp/tazpkg-dontbreak.lock
+ touch /var/tmp/sfs-cook/root_mnt/tmp/tazpkg-skipremovedep.lock
+ touch /var/tmp/sfs-cook/root_mnt/tmp/tazpkg-skipupdate.lock
+ touch /var/tmp/sfs-cook/root_mnt/tmp/tazpkg-editreceipt.lock
+ touch /var/tmp/sfs-cook/root_mnt/tmp/tazpkg-autoconfirm.lock
+ touch /var/tmp/sfs-cook/root_mnt/tmp/tazpkg-skiprefresh.lock
+}
+
+remove_tazpkg_empty_dir(){
+if [ -d /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/installed ] && [ $(ls -1 /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/installed | wc -l) -ne 0 ]; then
+  for fld in $(ls -1 /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/installed/ | tr '\n' ' ')
+  do
+	if [ $(ls -1 /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/installed/$fld/ | wc -l) -eq 0 ]; then
+	 rm -rf /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/installed/$fld 2>/dev/null
+	fi
+  done
+fi
+}
+
+info_msg "NOTICE: This tool will create an SFS module of certain applications" "It will run tazpkg in interactive mode to install some applications that the user's want" "Use this tool under your own risk" 
+
+SFSMOD="$(yad --center --title "New SFS module file" --file --save --confirm-overwrite="Overwrite the existing file?" --geometry=500x400)"
+
+if [ $? -ne 0 ] || [ "$SFSMOD" == "" ]; then
+echo "Operation cancelled"
+exit
+fi
+
+rm -rf /var/tmp/sfs-cook 2> /dev/null
+
+if [ ! -d /var/tmp/sfs-cook ]; then
+ mkdir -p /var/tmp/sfs-cook/root_ro
+ mkdir -p /var/tmp/sfs-cook/root_rw
+ mkdir -p /var/tmp/sfs-cook/root_mnt
+fi
+
+mkdir -p /var/tmp/sfs-cook/root_rw/etc 2>/dev/null
+mkdir -p /var/tmp/sfs-cook/root_rw/var/lib/tazpkg 2>/dev/null
+
+cp -f /etc/resolv.conf /var/tmp/sfs-cook/root_rw/etc/resolv.conf
+
+cp -f /var/lib/tazpkg/packages.* /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/ 2>/dev/null
+cp -f /var/lib/tazpkg/files* /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/ 2>/dev/null
+cp -f /var/lib/tazpkg/ID* /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/ 2>/dev/null
+cp -f /var/lib/tazpkg/descriptions.txt /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/ 2>/dev/null
+cp -f /var/lib/tazpkg/extra.list /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/ 2>/dev/null
+
+mount_ro_root
+
+mount_layer_root
+
+yad --fixed --title="TazCook-SFS" --window-icon=$icon --on-top --center \
+		--text="\nSelect tazpkg filesystem setup\n\n<b>Pristine:</b> Default filesystem state\n<b>Base:</b> Basic filesystem with Xorg. Good for packing desktop environment in sfs module\n" \
+		--button="PRISTINE:0" --button="BASE:1"
+
+retval=$?		
+
+if [ $retval -eq 1 ]; then
+ hide_current_fs
+elif [ $retval -ne 0 ]; then
+ echo "Operation Cancelled"
+ exit
+fi
+
+make_lock_files
+
+echo "#!/bin/sh
+tazpkg shell" > /var/tmp/sfs-cook/root_mnt/execute.sh
+
+chmod +x /var/tmp/sfs-cook/root_mnt/execute.sh
+
+echo "Entering tazpkg shell"
+
+info_msg "tazpkg shell will now started" "Type 'help' or 'usage' and press enter to see the tazpkg documentation" "To exit type 'quit' and press enter" 
+
+chroot /var/tmp/sfs-cook/root_mnt/ "/execute.sh"
+
+yesno_msg "tazpkg shell session has ended. Go to sandboxed terminal?" "This is useful if the installed package\ncontains script for fetching larger package\n(Example: get-LibreOffice)\nor performing some task before packing into sfs modules" "\nTo exit the sandboxed shell type 'exit' and press enter"
+retval=$?
+
+if [ $retval -eq 0 ]; then
+
+ echo "#!/bin/sh
+ clear
+ echo \"Sandboxed shell. To quit type 'exit' and press enter\"
+ sh" > /var/tmp/sfs-cook/root_mnt/execute.sh
+
+ chroot /var/tmp/sfs-cook/root_mnt/ "/execute.sh"
+ info_msg "sandboxed session has ended. Making SFS modules will started"
+else
+ info_msg "Making SFS modules will start"
+fi
+
+clear
+
+echo "Umounting layared filesystem..."
+umount_layer_root
+
+rm -f /var/tmp/sfs-cook/root_rw/etc/profile 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/resolv.conf 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/rcS.conf 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/daemons.conf 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/inittab 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/slitaz/applications.conf 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/slitaz/slitaz.conf 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/slitaz/tazpkg.conf 2>/dev/null
+
+rm -f /var/tmp/sfs-cook/root_rw/execute.sh
+rm -rf /var/tmp/sfs-cook/root_rw/tmp 2> /dev/null
+
+echo "Removing whiteout files..."
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type f -name ".wh.*")
+do
+rm -f "$d1" 2> /dev/null
+done
+
+echo "Looking for modifications in filesystem..."
+if [ "$(find /var/tmp/sfs-cook/root_rw/ -type d -maxdepth 1 2>/dev/null | grep -E "^\/bin|^\/sbin|^\/usr|^\/lib|^\/etc|^\/opt|^\/var|^\/srv|^\/snap|^\/dev|^\/root")" == "" ]; then
+ error_msg "No filesystem files found for creating sfs files"
+ exit 
+fi
+
+echo "Removing some tazpkg files..."
+rm -f /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/* 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_rw/var/cache/* 2> /dev/null
+rm -f /var/tmp/sfs-cook/root_rw/var/lib/dbus/machine-id 2> /dev/null
+rm -f /var/tmp/sfs-cook/root_rw/var/lib/dbus/detected-modules 2> /dev/null
+
+echo "Removing some var files..."
+rm -rf /var/tmp/sfs-cook/root_rw/var/log 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_rw/var/lock 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_rw/var/run 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_rw/root/tmp 2> /dev/null
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type d -name ".thumbnails" 2>/dev/null)
+do
+ rm -rf "$d1" 2>/dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type d -name ".cache" 2>/dev/null)
+do
+ rm -rf "$d1" 2>/dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type f -name ".bash_history" 2>/dev/null)
+do
+ rm -f "$d1" 2>/dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type f -name ".ash_history" 2>/dev/null)
+do
+rm -f "$d1" 2>/dev/null
+done
+
+echo "Removing some cache files..."
+rm -f /var/tmp/sfs-cook/root_rw/usr/share/applications/mimeinfo.cache 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/ld.so.cache 2>/dev/null
+rm -f /var/tmp/sfs-cook/root_rw/etc/gtk-2.0/gdk-pixbuf.loaders 2> /dev/null
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type f -name "modules.*" 2>/dev/null | grep -E "^\/lib[32|64]\/modules\/" )
+do
+rm -f "$d1" 2>/dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type f -name "gdk-pixbuf.loaders" 2>/dev/null)
+do
+rm -f "$d1" 2>/dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/usr/ -type f -name "loaders.cache" 2>/dev/null)
+do
+rm -f "$d1" 2>/dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/usr/ -type f -name "giomodule.cache" 2>/dev/null)
+do
+rm -f "$d1" 2> /dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/usr/ -type f -name "gconv-modules.cache" 2>/dev/null)
+do
+rm -f "$d1" 2> /dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type f -name "pango.modules" 2>/dev/null)
+do
+rm -f "$d1" 2> /dev/null
+done
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/ -type f -name "gtk.immodules" 2>/dev/null)
+do
+rm -f "$d1" 2> /dev/null
+done
+
+rm -f /var/tmp/sfs-cook/root_rw/usr/share/icons/hicolor/icon-theme.cache 2> /dev/null
+rm -f /var/tmp/sfs-cook/root_rw/usr/share/glib-2.0/schemas/gschemas.compiled 2> /dev/null
+rm -rf /var/tmp/sfs-cook/root_rw/var/cache/fontconfig/* 2> /dev/null
+
+for d1 in $(ls -1 /var/tmp/sfs-cook/root_rw/usr/share/mime/ 2>/dev/null | grep -v "packages" | tr '\n' ' ')
+do
+ if [ -f /var/tmp/sfs-cook/root_rw/usr/share/mime/$d1 ]; then
+  rm -f /var/tmp/sfs-cook/root_rw/usr/share/mime/$d1 2> /dev/null
+ elif [ -d $d1 ]; then
+  rm -rf /var/tmp/sfs-cook/root_rw/usr/share/mime/$d1 2> /dev/null
+ fi 
+done
+
+echo "Removing modifier files..."
+
+for d1 in $(find /var/tmp/sfs-cook/root_rw/var/lib/tazpkg/ -type f -name "modifiers" 2>/dev/null)
+do
+rm -f "$d1" 2>/dev/null
+done
+
+echo "Removing some empty folders..."
+remove_tazpkg_empty_dir
+
+if [ $(find /var/tmp/sfs-cook/root_rw -type f -name "*" | wc -l) -eq 0 ]; then
+error_msg "No files for packing"
+exit
+fi
+
+mksquashfs "/var/tmp/sfs-cook/root_rw" "${SFSMOD}" -comp xz -Xbcj x86 -b 1M -Xdict-size 100%
+
+if [ "$(mount | grep "/var/tmp/sfs-cook/root_ro")" != "" ]; then
+ umount -l "/var/tmp/sfs-cook/root_ro" 2> /dev/null
+fi
+
+rm -rf /var/tmp/sfs-cook
+
+info_msg "$SFSMOD has been created"
+
+exit

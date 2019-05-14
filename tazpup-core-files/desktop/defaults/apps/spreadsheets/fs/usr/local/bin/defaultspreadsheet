@@ -1,0 +1,3 @@
+#!/bin/sh
+#exec puppyapps defaultspreadsheet "$@"
+exec browser http://localhost/wiki/index.sh\?page=Calc

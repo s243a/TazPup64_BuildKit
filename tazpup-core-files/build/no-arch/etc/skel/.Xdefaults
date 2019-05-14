@@ -1,0 +1,36 @@
+!~/.Xdefault: Control the behavior of x-clients
+!
+
+! Xcursor theme: ~/.icons
+!
+Xcursor.theme:		slitaz-polar
+
+! XTerm settings
+!
+xterm*background:	#000000
+xterm*foreground:	#ffffff
+xterm*cursorColor:	#d66018
+xterm*scrollBar:	off
+xterm*faceSize:		11
+xterm*faceName:		xft:Monospace:autohint=true
+xterm*faceNameDoublesize: WenQuanYi WenQuanYi Micro Hei Mono-11
+xterm*deleteIsDEL:	false
+xterm*metaSendsEscape:	true
+xterm*eightBitInput:	true
+xterm*termName:		xterm
+xterm*saveLines:	8192
+xterm*cursorBlink:	true
+
+
+! Xload settings
+!
+!xload*background:	       black
+!xload*foreground:	       lightblue
+
+! FLTK Theming
+!
+!Text.background:          #111111
+!fltk*scheme:              gtk+
+fltk*background:          #ededed
+fltk*foreground:          #000000
+

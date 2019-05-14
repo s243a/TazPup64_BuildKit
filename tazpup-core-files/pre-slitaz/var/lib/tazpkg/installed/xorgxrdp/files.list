@@ -1,0 +1,7 @@
+/etc/X11/xrdp/xorg.conf
+/usr/lib/X11/modules/input/xrdpkeyb_drv.so
+/usr/lib/X11/modules/input/xrdpmouse_drv.so
+/usr/lib/X11/modules/libxorgxrdp.so
+/usr/lib/X11/modules/drivers/xrdpdev_drv.so
+/usr/share/doc/COPYING
+/usr/share/doc/README.md

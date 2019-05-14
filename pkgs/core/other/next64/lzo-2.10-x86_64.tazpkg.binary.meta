@@ -1,0 +1,4 @@
+filename=lzo-2.10-x86_64.tazpkg
+size=32	pkgs/core/other/next64/lzo-2.10-x86_64.tazpkg 
+checksum.md5=43335a89caec1c753d82e8856220809c  pkgs/core/other/next64/lzo-2.10-x86_64.tazpkg
+checksum.sha256=bdc879ce5c468619e4af666d7b39d4c604aa9c45a0f879982887a78ad411be3f  pkgs/core/other/next64/lzo-2.10-x86_64.tazpkg

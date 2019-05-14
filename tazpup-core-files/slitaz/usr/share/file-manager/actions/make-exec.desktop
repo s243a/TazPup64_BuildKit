@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Action
+Name=Make executable
+Icon=gtk-execute
+Profiles=make_exec;
+
+[X-Action-Profile make_exec]
+MimeTypes=*;
+Exec=make-exec '%F'

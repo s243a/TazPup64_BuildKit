@@ -1,0 +1,30 @@
+#!/bin/sh
+#count active network interfaces
+#written by mistfire
+
+nics="$(ls -1 /sys/class/net | grep -vE "^lo\$" 2>/dev/null)"
+
+if [ "$nics" == "" ]; then
+ echo 0
+ exit
+fi
+
+cnt=0
+
+for nic in $nics
+do
+ if [ -e /sys/class/net/$nic ]; then
+ 
+  ostate="$(cat /sys/class/net/$nic/operstate 2>/dev/null)"
+  netcar="$(cat /sys/class/net/$nic/carrier 2>/dev/null)"
+  
+  if [ "$ostate" != "" ] && [ "$ostate" != "down" ]; then
+   if [ "$netcar" == "1" ]; then
+    cnt=`expr $cnt + 1`
+   fi
+  fi
+  
+ fi
+done
+
+echo $cnt

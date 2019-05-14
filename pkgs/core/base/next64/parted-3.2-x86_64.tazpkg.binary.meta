@@ -1,0 +1,4 @@
+filename=parted-3.2-x86_64.tazpkg
+size=140	pkgs/core/base/next64/parted-3.2-x86_64.tazpkg 
+checksum.md5=e4a182e1f52f65197aac4a3521f3d482  pkgs/core/base/next64/parted-3.2-x86_64.tazpkg
+checksum.sha256=5fbcd16d390af8a1777a72413c68eaf09e5be6a2f93abc1c7c9fc3dc61822535  pkgs/core/base/next64/parted-3.2-x86_64.tazpkg

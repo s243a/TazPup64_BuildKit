@@ -1,0 +1,44 @@
+a0a91db46434d4b47d7155e3f386d6c8  /usr/share/themes/Clearlooks Wise/gtk-2.0/panel.rc
+78dece719c181067cbddeb52f56e4fd0  /usr/share/themes/Clearlooks Wise/gtk-2.0/gtkrc
+848eff2f03147410c2ffe028e9280433  /usr/share/themes/Clearlooks Wise/gtk-2.0/Menu-Menubar/menu-line.png
+bbc666b25a61de58548a2748eae09a39  /usr/share/themes/Clearlooks Wise/gtk-2.0/Panels/panel-bg.png
+a9f403afef54c20e8d4bb353c63399cc  /usr/share/themes/Clearlooks Wise/gtk-2.0/Panels/panel-bg-dark.png
+955cb990154e965f32ca0c6fbecf5363  /usr/share/themes/Clearlooks Wise/index.theme
+a0a91db46434d4b47d7155e3f386d6c8  /usr/share/themes/Clearlooks Brave/gtk-2.0/panel.rc
+7b39fbcbb47a14de83b32b0597a331b2  /usr/share/themes/Clearlooks Brave/gtk-2.0/gtkrc
+848eff2f03147410c2ffe028e9280433  /usr/share/themes/Clearlooks Brave/gtk-2.0/Menu-Menubar/menu-line.png
+bbc666b25a61de58548a2748eae09a39  /usr/share/themes/Clearlooks Brave/gtk-2.0/Panels/panel-bg.png
+a9f403afef54c20e8d4bb353c63399cc  /usr/share/themes/Clearlooks Brave/gtk-2.0/Panels/panel-bg-dark.png
+ad21d06e8b4907319e442427dbd50e4c  /usr/share/themes/Clearlooks Brave/index.theme
+a0a91db46434d4b47d7155e3f386d6c8  /usr/share/themes/Clearlooks Wine/gtk-2.0/panel.rc
+7f5b1b4485f593f052114fc9a2cfdc02  /usr/share/themes/Clearlooks Wine/gtk-2.0/gtkrc
+848eff2f03147410c2ffe028e9280433  /usr/share/themes/Clearlooks Wine/gtk-2.0/Menu-Menubar/menu-line.png
+bbc666b25a61de58548a2748eae09a39  /usr/share/themes/Clearlooks Wine/gtk-2.0/Panels/panel-bg.png
+a9f403afef54c20e8d4bb353c63399cc  /usr/share/themes/Clearlooks Wine/gtk-2.0/Panels/panel-bg-dark.png
+96607244dbc75f508b2b12401b62b13f  /usr/share/themes/Clearlooks Wine/index.theme
+131e7f562b514d4fe53a7ee4cdb31587  /usr/share/themes/Clearlooks Human Dark/gtk-2.0/panel.rc
+be2e044f8b79b10ca1eeee0620a0fb31  /usr/share/themes/Clearlooks Human Dark/gtk-2.0/gtkrc
+9e060306dbb6d680c12ba23fa7b40c65  /usr/share/themes/Clearlooks Human Dark/gtk-2.0/Menu-Menubar/menu-line.png
+a9f403afef54c20e8d4bb353c63399cc  /usr/share/themes/Clearlooks Human Dark/gtk-2.0/Panels/panel-bg-dark.png
+44f8ebaf6372dfc1f82d0ebd89490f05  /usr/share/themes/Clearlooks Human Dark/index.theme
+a0a91db46434d4b47d7155e3f386d6c8  /usr/share/themes/Clearlooks Human/gtk-2.0/panel.rc
+81d1947f54069b5ad68f11a5a9ed32a4  /usr/share/themes/Clearlooks Human/gtk-2.0/gtkrc
+848eff2f03147410c2ffe028e9280433  /usr/share/themes/Clearlooks Human/gtk-2.0/Menu-Menubar/menu-line.png
+bbc666b25a61de58548a2748eae09a39  /usr/share/themes/Clearlooks Human/gtk-2.0/Panels/panel-bg.png
+a9f403afef54c20e8d4bb353c63399cc  /usr/share/themes/Clearlooks Human/gtk-2.0/Panels/panel-bg-dark.png
+aeaefc88cf44cad58e1862829677c0dd  /usr/share/themes/Clearlooks Human/index.theme
+131e7f562b514d4fe53a7ee4cdb31587  /usr/share/themes/Clearlooks Wine Dark/gtk-2.0/panel.rc
+1cfb9774dbda3013cd8c7aabf51d3c03  /usr/share/themes/Clearlooks Wine Dark/gtk-2.0/gtkrc
+9e060306dbb6d680c12ba23fa7b40c65  /usr/share/themes/Clearlooks Wine Dark/gtk-2.0/Menu-Menubar/menu-line.png
+a9f403afef54c20e8d4bb353c63399cc  /usr/share/themes/Clearlooks Wine Dark/gtk-2.0/Panels/panel-bg-dark.png
+000642ee79d7893d328584de0bbf167e  /usr/share/themes/Clearlooks Wine Dark/index.theme
+131e7f562b514d4fe53a7ee4cdb31587  /usr/share/themes/Clearlooks Brave Dark/gtk-2.0/panel.rc
+5dcbdda94f4f4c5f1dd86a8716340016  /usr/share/themes/Clearlooks Brave Dark/gtk-2.0/gtkrc
+9e060306dbb6d680c12ba23fa7b40c65  /usr/share/themes/Clearlooks Brave Dark/gtk-2.0/Menu-Menubar/menu-line.png
+a9f403afef54c20e8d4bb353c63399cc  /usr/share/themes/Clearlooks Brave Dark/gtk-2.0/Panels/panel-bg-dark.png
+44729c83e12db9f4db85089f6b442cbf  /usr/share/themes/Clearlooks Brave Dark/index.theme
+131e7f562b514d4fe53a7ee4cdb31587  /usr/share/themes/Clearlooks Wise Dark/gtk-2.0/panel.rc
+b853c3896cd8981965335033ec10e862  /usr/share/themes/Clearlooks Wise Dark/gtk-2.0/gtkrc
+9e060306dbb6d680c12ba23fa7b40c65  /usr/share/themes/Clearlooks Wise Dark/gtk-2.0/Menu-Menubar/menu-line.png
+a9f403afef54c20e8d4bb353c63399cc  /usr/share/themes/Clearlooks Wise Dark/gtk-2.0/Panels/panel-bg-dark.png
+b81c219773d7ea174cf8ac84f9ef6b9e  /usr/share/themes/Clearlooks Wise Dark/index.theme

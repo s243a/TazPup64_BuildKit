@@ -1,0 +1,4 @@
+filename=util-linux-fdisk-2.32.1-x86_64.tazpkg
+size=156	pkgs/core/other/next64/util-linux-fdisk-2.32.1-x86_64.tazpkg 
+checksum.md5=fed65f09422e8ed17fe1cfa8d036c10d  pkgs/core/other/next64/util-linux-fdisk-2.32.1-x86_64.tazpkg
+checksum.sha256=f8480c1332aeb78ba7e2140a7d722e478d24b5851b6b4ced31fab7f9d1893c42  pkgs/core/other/next64/util-linux-fdisk-2.32.1-x86_64.tazpkg

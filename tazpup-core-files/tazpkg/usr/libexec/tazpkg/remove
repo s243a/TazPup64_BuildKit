@@ -1,0 +1,515 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# remove - TazPkg module
+# Remove packages
+#180822 mistfire: added rollback features for non-full installation
+
+
+. /lib/libtaz.sh
+. /usr/libexec/tazpkg/getenv
+. /etc/rc.d/PUPSTATE
+
+edit_line(){
+	
+#echo "Editing receipt..."
+
+if [ "$1" != "" ]; then
+ echo "Editing receipt..."
+ xline2="$(echo "$1")"
+ xcount="$(echo "$1" | wc -l)"
+ if [ "$xcount" -gt 1 ]; then
+	echo "$xline2" |
+	while read d1
+	do
+	 sed -i -e "s%$d1%echo>\/dev\/null%g" $INSTALLED/$PACKAGE/receipt
+	done
+ elif [ "$xcount" -ne 0 ]; then
+   sed -i -e "s%$xline2%echo>\/dev\/null%g" $INSTALLED/$PACKAGE/receipt
+ fi
+fi 	
+	
+}
+
+edit_pkg_receipt(){
+	
+xstart="$(cat $INSTALLED/$PACKAGE/receipt | grep "/etc/init.d/" | grep " start")"
+xstop="$(cat $INSTALLED/$PACKAGE/receipt | grep "/etc/init.d/" | grep " stop")"
+xrestart="$(cat $INSTALLED/$PACKAGE/receipt | grep "/etc/init.d/" | grep " restart")"
+xdepmod="$(cat $INSTALLED/$PACKAGE/receipt | grep "depmod -a")"
+xgio="$(cat $INSTALLED/$PACKAGE/receipt | grep "gio-query")"
+xpixbuf="$(cat $INSTALLED/$PACKAGE/receipt | grep "gdk-pixbuf-query")"
+xglib="$(cat $INSTALLED/$PACKAGE/receipt | grep "glib-compile-schema")"
+xfont="$(cat $INSTALLED/$PACKAGE/receipt | grep "fc-cache")"
+xmime="$(cat $INSTALLED/$PACKAGE/receipt | grep "update-mime-database")"
+xdesktop="$(cat $INSTALLED/$PACKAGE/receipt | grep "update-desktop-database")"
+xicon="$(cat $INSTALLED/$PACKAGE/receipt | grep "gtk-update-icon-cache")"
+
+edit_line "$xstart"
+edit_line "$xstop"
+edit_line "$xrestart"
+edit_line "$xdepmod"
+edit_line "$xgio"
+edit_line "$xpixbuf"
+edit_line "$xglib"
+edit_line "$xfont"
+edit_line "$xmime"
+edit_line "$xdesktop"
+edit_line "$xicon"
+
+}
+
+log_pkg() {
+[ -w "$LOG" ] && echo "$(date +'%F %T') - $1 - $PACKAGE ($VERSION$EXTRAVERSION)">> "$LOG"
+}
+
+file_list_check(){
+
+fl="$INSTALLED/$PACKAGE/files.list"; upd=0
+fgrep    /usr/share/applications/    "$fl" | fgrep -q .desktop && udesk='yes'
+fgrep -q /usr/share/mime             "$fl" && umime='yes'
+fgrep -q /usr/share/icon/hicolor     "$fl" && uicon='yes'
+fgrep    /usr/share/glib-2.0/schemas "$fl" | fgrep -q .xml && uschm='yes'
+fgrep    /usr/lib/gdk-pixbuf         "$fl" | fgrep -q .so && upixb='yes'
+fgrep    /usr/lib/gio/modules        "$fl" | fgrep -q .so && ugio='yes'
+fgrep    /usr/share/fonts            "$fl" && ufont='yes'
+
+
+if fgrep -q /lib/modules             "$fl"; then
+ukrnl='yes'
+	if fgrep -q /kernel/fs/ "$fl"; then
+	ukrnlfs='yes'
+	fi
+fi	
+	
+}
+
+update_system(){
+if [ ! -f /tmp/tazpkg-skipupdate.lock ]; then
+
+[ -n "$udesk" ] && chroot "$root/" /usr/bin/update-desktop-database /usr/share/applications 2>/dev/null
+[ -n "$umime" ] && chroot "$root/" /usr/bin/update-mime-database /usr/share/mime
+[ -n "$uicon" ] && chroot "$root/" /usr/bin/gtk-update-icon-cache /usr/share/icons/hicolor
+[ -n "$uschm" ] && chroot "$root/" /usr/bin/glib-compile-schemas /usr/share/glib-2.0/schemas 2>&1 | fgrep -v '/apps/'
+[ -n "$upixb" ] && chroot "$root/" /usr/bin/gdk-pixbuf-query-loaders --update-cache
+[ -n "$ugio" ] && chroot "$root/" /usr/bin/gio-querymodules /usr/lib/gio/modules
+[ -n "$ufont" ] && chroot "$root/" /usr/bin/fc-cache -f	
+
+if [ -n "$ukrnlfs" ]; then
+	for i in $(awk -F/ '{if($6=="fs" && $8~$7)print $7}' "$fl" | sort -u); do
+		grep -i "/^$i\$/d" "$root/etc/filesystems"
+	done
+fi
+
+if [ $(ls -1 /lib/modules | wc -l) -ne 0 ]; then
+ [ -n "$ukrnl" ] && grep '/lib/modules' "$fl" | cut -d'/' -f4 | uniq | xargs chroot "$root/" /sbin/depmod -a
+fi
+
+fi
+}
+
+fix_symlinks(){
+
+for xONESPEC in $(cat /tmp/libfiles.txt)
+do
+xBN="$(basename $xONESPEC)"
+xDN="$(dirname $xONESPEC)"
+	if [ -f ${xONESPEC} ] && [ ! -L ${xONESPEC} ]; then
+	   LBN="$(echo "$xBN" | sed -e "s#\.so#\|#g")"
+	   xLIB="$(echo "$LBN" | cut -f 1 -d '|')"
+	   if [ "$xLIB" != "" ]; then
+		 SLL=$(find ${xDN} -type l -name "${xLIB}.so*" -maxdepth 1 | tr '\n' ' ')
+			if [ "$SLL" != "" ]; then
+			  for SLINK in $SLL
+			  do
+				BLINK="$(basename $SLINK)"
+				RL="$(readlink ${xDN}/$BLINK)"
+				  if [ "$(echo $RL | cut -c 1)" != "/" ]; then
+				   xRL="$(basename $RL)"
+					if [ ! -f ${xDN}/$xRL ]; then
+					 rm -f $SLINK
+					 ln -sr ${xONESPEC} $SLINK
+					fi
+				  elif [ "$(echo $RL | cut -c 1)" == "/" ]; then
+					if [ ! -f $RL ]; then
+					 rm -f $SLINK
+					 ln -sr ${xONESPEC} $SLINK
+					fi
+				  else
+					 rm -f $SLINK
+					 ln -sr ${xONESPEC} $SLINK					    
+				  fi
+			  done
+			fi
+	   fi
+	fi	
+done	
+	
+	
+}
+
+restore_factory(){
+	
+PKG1="$1"
+
+if [ "$PKG1" == "" ]; then
+ continue
+fi	
+	
+if [ "$PUP_LAYER" = '/pup_ro2' ] && [ "$SAVE_LAYER" = '/pup_rw' ] && [ -f /initrd${PUP_LAYER}$INSTALLED/$PKG1/files.list ]; then #120103 shinobar.
+  action '"%s" was builtin. Restoring factory default...' "$PKG1"
+  echo ""
+  echo -n ""
+  cat /initrd${PUP_LAYER}$INSTALLED/$PKG1/files.list |
+  while read ONESPEC
+  do   
+	   BN="`basename "$ONESPEC"`"
+	   DN="`dirname "$ONESPEC"`"
+	   
+	   LIBFILE="$(echo $BN | grep "\.so")"
+	   
+	   if [ -f "/initrd${SAVE_LAYER}${ONESPEC}" ]; then
+		rm -f /initrd${SAVE_LAYER}${ONESPEC}
+	   fi
+	   
+	   if [ -f "/initrd${SAVE_LAYER}${DN}/.wh.${BN}" ]; then
+		rm -f "/initrd${SAVE_LAYER}${DN}/.wh.${BN}"
+	   fi
+	   
+	   if [ "$LIBFILE" != "" ] && [ -f ${ONESPEC} ] && [ ! -L ${ONESPEC} ]; then
+			if [ ! -f /tmp/libfiles.txt ]; then
+			 echo ${ONESPEC} > /tmp/libfiles.txt
+			else
+			 echo ${ONESPEC} >> /tmp/libfiles.txt
+			fi
+	   fi
+	   
+  done
+  
+  
+  if [ -d /initrd${SAVE_LAYER}$INSTALLED/$PKG1 ]; then
+   rm -rf /initrd${SAVE_LAYER}$INSTALLED/$PKG1
+  fi
+ 
+  if [ -f "/initrd${SAVE_LAYER}${INSTALLED}/.wh.${PKG1}" ]; then
+    rm -f "/initrd${SAVE_LAYER}${INSTALLED}/.wh.${PKG1}"
+  else
+    cp -rf /initrd${PUP_LAYER}$INSTALLED/$PKG1 $INSTALLED/
+  fi
+  
+  if [ -f /tmp/libfiles.txt ]; then
+   fix_symlinks
+   rm -f /tmp/libfiles.txt
+  fi
+  
+ #encode pkginfo back
+ 
+ . $INSTALLED/$PKG1/receipt
+ 
+ sed -i "/^$PACKAGE	/d" /var/lib/tazpkg/installed.info
+ 
+ echo "$PACKAGE	$VERSION$EXTRAVERSION	$CATEGORY	$SHORT_DESC	$WEB_SITE	$TAGS	$SIZES	$DEPENDS	$PKG_SUM" >> /var/lib/tazpkg/installed.info
+ 
+ sort /var/lib/tazpkg/installed.info > /var/lib/tazpkg/installed.info.new
+
+ mv -f /var/lib/tazpkg/installed.info.new /var/lib/tazpkg/installed.info
+ 
+ xPTRN="$PACKAGE-$VERSION$EXTRAVERSION.tazpkg\$"
+ 
+ sed -i "/$xPTRN/d" /var/lib/tazpkg/installed.$SUM
+
+ md5entry="$(cat /initrd${PUP_LAYER}/var/lib/tazpkg/installed.$SUM | grep -E "$xPTRN")"
+
+ echo "$md5entry" >> /var/lib/tazpkg/installed.$SUM
+
+fi
+}
+
+call_pre_remove() {
+local tmp
+if grep -q '^pre_remove()' "$1"; then
+action 'Execute pre-remove commands...'
+tmp="$(mktemp)"
+cp "$1" "$tmp"
+sed -i 's|$1/*$INSTALLED|$INSTALLED|g' "$tmp"
+echo ""
+( . "$tmp"; pre_remove "$root" )
+separator '-'
+status
+rm "$tmp"
+fi
+}
+
+call_post_remove() {
+local tmp
+if grep -q '^post_remove()' "$1"; then
+action 'Execute post-remove commands...'
+tmp="$(mktemp)"
+cp "$1" "$tmp"
+sed -i 's|$1/*$INSTALLED|$INSTALLED|g' "$tmp"
+echo ""
+( . "$tmp"; post_remove "$root" )
+separator '-'
+status
+rm "$tmp"
+fi
+}
+
+virtual_pkg() {
+debug "\nvirtual_pkg('$1', '$2')"
+local i
+unset IFS
+for i in $(grep -hs "^$1=" "$2/packages.equiv" | sed "s/^$1=//"); do
+if echo $i | fgrep -q : ; then
+if [ -f $INSTALLED/${i%:*}/receipt ]; then
+echo ${i#*:}
+return
+fi
+elif ! grep -q "^$1	" "$2/packages.info" || [ -f "$INSTALLED/$i/receipt" ]; then
+echo $i
+return
+fi
+done
+echo $1
+}
+
+for rep in $PRIORITY; do
+	[ ! -f "$rep/packages.info" ] && continue
+	PACKAGE="$(virtual_pkg "$1" "$rep")"
+	[ "$PACKAGE" != "$1" ] && break
+done
+
+if [ ! -f "$INSTALLED/$PACKAGE/receipt" ]; then
+	newline; _ 'Package "%s" is not installed.' "$PACKAGE"
+	exit 1
+fi
+
+PTRN="^$PACKAGE"
+
+if [ "$(cat $PKGS_DB/locked-packages | grep -E "$PTRN")" != "" ]; then
+	newline; _ 'Package "%s" cannot uninstalled.' "$PACKAGE"
+	exit 1
+fi
+
+. "$INSTALLED/$PACKAGE/receipt"
+
+ALTERED="$(awk -F$'\t' -vp=" $PACKAGE " 'index(" " $8 " ", p) { printf "  %s\n", $1 }' "$PKGS_DB/installed.info")"
+
+if [ -n "$ALTERED" ]; then
+	_ 'The following packages depend on package "%s":' "$PACKAGE"
+	echo "$ALTERED"
+fi
+
+REFRESH=$(cd "$INSTALLED"; grep -sl "^$PACKAGE$" */modifiers)
+if [ -n "$REFRESH" ]; then
+	_ 'The following packages have been modified by package "%s":' "$PACKAGE"
+	for i in $REFRESH; do
+		echo "  ${i%/modifiers}"
+	done
+fi
+
+if [ ! -f /tmp/tazpkg-autoconfirm.lock ]; then
+
+	if [ -n "$noconfirm" ] || im && [ -z "$auto" ]; then
+	confirm "$(_ 'Remove package "%s" (%s)? (y/N)' "$PACKAGE" "$VERSION$EXTRAVERSION")"
+		if [ "$?" -ne 0 ]; then
+			newline; _ 'Uninstallation of package "%s" cancelled.' "$PACKAGE"
+			exit 0
+		fi
+	fi
+
+fi
+
+if [ $PUPMODE -ne 2 ]; then
+	if [ "$PUP_LAYER" = '/pup_ro2' ] && [ -d /initrd${SAVE_LAYER}$INSTALLED/$PACKAGE ] && [ -d /initrd${PUP_LAYER}$INSTALLED/$PACKAGE ]; then
+	 rwmd5="$(md5sum /initrd${SAVE_LAYER}$INSTALLED/$PACKAGE/receipt | cut -f 1 -d ' ')"
+	 romd5="$(md5sum /initrd${PUP_LAYER}$INSTALLED/$PACKAGE/receipt | cut -f 1 -d ' ')"
+		 if [ "$rwmd5" != "$romd5" ]; then
+		  PKGROLLBACK=1
+		 else
+		  PKGROLLBACK=0
+		 fi
+	else
+	 PKGROLLBACK=0
+	fi
+fi
+
+#111228 if snapmergepuppy running, wait for it to complete (see also /usr/local/petget/installpkg.sh)...
+#note, inverse true, /sbin/pup_event_frontend_d will not run snapmergepuppy if removepreview.sh running.
+if [ $PUPMODE -eq 3 -o $PUPMODE -eq 7 -o $PUPMODE -eq 13 ];then
+action 'Waiting for snapmergepuppy to finish...'
+  while [ "`pidof snapmergepuppy`" != "" ];do
+   sleep 1
+  done
+fi
+
+title 'Removing package "%s"' "$PACKAGE"
+tazpkg -u "$PACKAGE" --nowarning | grep -v '^$'
+
+cp -f $INSTALLED/$PACKAGE/receipt $INSTALLED/$PACKAGE/receipt.bak
+
+if [ -f /tmp/tazpkg-editreceipt.lock ]; then
+ edit_pkg_receipt
+fi
+
+call_pre_remove "$INSTALLED/$PACKAGE/receipt"
+
+action 'Removing all files installed...'
+IFS=$'\n'
+files2remove="$(mktemp)"
+debug '\nDetermine which files to remove...'
+
+if [ -f "$INSTALLED/$PACKAGE/modifiers" ]; then
+	debug '  (modifiers detected)'
+	mods="$(mktemp)"
+
+	for mod in $(cat "$INSTALLED/$PACKAGE/modifiers"); do
+	 cat "$INSTALLED/$mod/files.list">> "$mods" 2>/dev/null
+	done
+
+	awk -vroot="$root" -vfl="$INSTALLED/$PACKAGE/files.list" '
+	{
+	if (FILENAME == fl)
+	f[$0] = 1;
+	else
+	f[$0] = "";
+	}
+	END {
+	for (i in f) {
+	if (f[i] == 1) printf "%s%s\n", root, i;
+	}
+	}' "$INSTALLED/$PACKAGE/files.list" "$mods"> "$files2remove"
+	rm "$mods"
+	
+else
+	debug '  (modifiers not detected)'
+	awk -vroot="$root" '{ printf "%s%s\n", root, $0; }' \
+	"$INSTALLED/$PACKAGE/files.list"> "$files2remove"
+fi
+
+debug 'Removing files...'
+xargs rm -f < "$files2remove"
+
+debug 'Removing folders...'
+awk '
+BEGIN {
+FS = "/"; OFS = "/";
+}
+{
+$NF = "";
+if (! a[$0]) {
+a[$0] = 1; print;
+}
+}' "$files2remove" | xargs rmdir -p 2>/dev/null
+
+rm "$files2remove"
+unset IFS
+
+status
+
+call_post_remove "$INSTALLED/$PACKAGE/receipt"
+
+mv -f $INSTALLED/$PACKAGE/receipt.bak $INSTALLED/$PACKAGE/receipt
+
+. /usr/libexec/tazpkg/bb restore
+
+file_list_check
+
+action 'Removing package receipt...'
+rm -rf "$INSTALLED/$PACKAGE"
+sed -i "/ $PACKAGE-$VERSION$EXTRAVERSION.tazpkg$/d" "$PKGS_DB/installed.$SUM"
+sed -i "/^$PACKAGE	/d" "$PKGS_DB/installed.info"
+status
+
+if [ $PUPMODE -ne 2 ] ; then
+ if [ $PKGROLLBACK -eq 1 ]; then
+  sPKG=$PACKAGE
+  xVERSION=$VERSION
+  xEXTRAVERSION=$EXTRAVERSION
+   restore_factory "$PACKAGE"
+   file_list_check
+  PACKAGE="$sPKG"
+  VERSION="$xVERSION"
+  EXTRAVERSION="$xEXTRAVERSION"
+ fi
+fi
+
+if [ -n "$udesk$umime$uicon$uschm$upixb$ukrnl" ]; then
+	action 'Update system databases...'
+	upd=1
+fi
+
+update_system
+
+[ "$upd" -eq 1 ] && status
+
+footer "$(_ 'Package "%s" (%s) removed.' "$PACKAGE" "$VERSION$EXTRAVERSION")"
+
+log_pkg Removed
+
+if [ -f /tmp/tazpkg-skipremovedep.lock ]; then
+ exit
+fi
+
+if [ ! im ] && [ -z "$auto" ];then
+exit 0
+fi
+
+if [ -n "$ALTERED" ]; then
+	if [ -f /tmp/tazpkg-autoconfirm.lock ]; then
+	 answer=0
+	elif [ -n "$auto" ]; then
+	 answer=0
+	else
+	 confirm "$(_ 'Remove packages depending on package "%s"? (y/N)' "$PACKAGE")"
+	 answer=$?
+	fi
+	if [ $answer -eq 0 ]; then
+		for i in $ALTERED; do
+			if [ -d "$INSTALLED/$i" ]; then
+				tazpkg remove "$i"
+			fi
+		done
+	fi
+fi
+
+if [ -n "$REFRESH" ] && [ ! -f /tmp/tazpkg-skiprefresh.lock ]; then
+
+	if [ -n "$auto" ]; then
+	 answer=0
+	else
+	 confirm "$(_ 'Reinstall packages modified by package "%s"? (y/N)' "$PACKAGE")"
+	 answer=$?
+	fi
+	
+	if [ "$answer" -eq 0 ] && [ $PUPMODE -ne 2 ]; then
+	 if [ -n "$auto" ]; then
+	  answer2=0
+	 else
+	  confirm "$(_ 'Use factory default package for reinstallation? (y/N)')"
+	  answer2=$?
+	 fi
+	fi
+	
+	if [ "$answer" -eq 0 ]; then
+		for i in $REFRESH; do
+			if [ "$(wc -l < "$INSTALLED/$i")" -gt 1 ]; then
+				_ 'Package "%s" was modified by "%s" and other packages. It will not be reinstalled.' \
+				"${i%/modifiers}" "$PACKAGE"
+				_ 'Check "%s" for reinstallation.' "$INSTALLED/$i"
+				continue
+			fi
+		    rm -r "$INSTALLED/$i"
+			if [ $PUPMODE -eq 2 ]; then
+			 tazpkg get-install "${i%/modifiers}" --forced
+			else
+				 if [ "$answer2" -eq 0 ]; then			
+				  restore_factory "${i%/modifiers}"
+				  file_list_check
+				  update_system
+				 else
+				  tazpkg get-install "${i%/modifiers}" --forced
+				 fi
+			fi
+		done
+	fi
+fi

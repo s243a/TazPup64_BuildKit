@@ -1,0 +1,306 @@
+Changelog: 
+
+Version 0.90:
+- initial release
+
+Version 0.91: 
+- 'urxvt' replaced with 'xterm' in AppRun (thanks to Sc0ttman) 
+- better differentiation between xz and gz compressed .pets (for Akita) 
+
+Version 0.92: 
+- more formats 
+- support for .7z multi-part archives (archive.7z.001 ...) 
+- if given extension is not supported, don't exit, but instead try to use 7z on it. 
+- added '-l' parameter that lists all supported extensions 
+
+Version 1.0: 
+- added: '-d' option - dependency check 
+- changed: output directory will be named 'fullarchname_extracted', e.g.: 'archive.tar.gz' will become 'archive.tar.gz_extracted' 
+
+Version 1.1: 
+- more formats 
+- .sfs (as well as .xzm and .sb) images are now being extracted directly, using unsquashfs4 
+- minor internal improvements 
+
+Version 1.2: 
+- more formats 
+- added exploderpm & rpm2cpio as possible tools for extracting .rpm 
+- added warning message and prompt if '.run' or '.shar' archive is about to be launched 
+
+Version 1.3: 
+- exploderpm is now default tool for extracting .deb (dpkg-deb as a fallback) 
+- now can extract multiple audio/video streams from video files 
+- command line option '-l|--list' has been changed to '-f|--formats' 
+- added '-l|--list' option that lists contents of an archive, instead of extracting 
+
+Version 1.4: 
+- added: 'rpm2cpio $ARCHPATH | unxz | cpio -idmv' for compatibility with full/older rpm2cpio (thanks to Amigo) 
+- added: extracting subtitles (if any) 
+- bugfix: extracting with avconv was broken in Precise 
+
+Version 1.5: 
+- fixed: problems with some .deb pkgs (thanks to Pemasu) 
+- added: warning message if given extraction tool isn't installed 
+- some minor corrections 
+
+Version 1.6: 
+- a couple of new formats 
+- bugfix: if an archive contains one or more empty directories, they won't get unpacked 
+- added: warning at install time about missing dependencies (if any) 
+- removed .mht 
+- minor internal improvements 
+
+Version 1.7: 
+- fixed typo (was 'unzx' instead of 'unxz') 
+- all 'xz -d' occurencies replaced with 'unxz' 
+- animated GIFs extraction (using gifsicle) 
+- can extract "naked" initrd 
+- more 'fool-proof' mechanisms 
+- got rid of awk dependency 
+- some internal rearrangements 
+
+Version 1.8: 
+- more extensions 
+- 2 new formats (El Torito boot floppy & Mozilla's .mar) 
+- some internal rearrangements 
+
+Version 1.9: 
+- more formats/extensions 
+- 'tar j/z/J' changed to 'bunzip2/gunzip/unxz | tar' 
+- 7z as a fallback if unzip fails 
+- fixed output of 'uextract -d | more' 
+- some fixes & cleanings 
+
+Version 1.10: 
+- removed .run 
+
+Version 1.11: 
+- more formats/extensions 
+- got rid of pet2tgz dependency 
+- minor fixes 
+
+Version 2.0: 
+- new extensions 
+- removed .j 
+- restored .run 
+- menu entry (Utility) 
+- custom icon 
+- 'Filetypes info' help page 
+- major rearrangements in package structure 
+
+Version 2.1: 
+- new formats/extensions 
+- ability to create a shortcut on the pinboard during install time 
+- various fixes and improvements 
+
+Version 2.2: 
+- new formats/extensions 
+- removed .mobi 
+- got rid of 'dd' dependency 
+- calculation of available space before extraction 
+- PATH & LD_LIBRARY_PATH extended to include directory where 'uextract' currently is 
+- if ar/arj/lha/xar is installed, it will be used in the first place (before the default 7z) 
+- some other fixes, improvements & general polishing 
+
+Version 2.3: 
+- bugfix: .hidden files won't get listed/extracted from .iso, .?fs, etc. images. 
+- 1 new extension (.egg) 
+- 1 new format (portablelinuxapps) 
+
+Version 2.4: 
+- a couple of new extensions 
+- fix: added '--no-absolute-filenames' to cpio extraction options (only if full version detected; 'busybox cpio' doesn't support this) 
+- fix: ability to unpack 'portablelinuxapps' also with .run suffix 
+
+Version 2.5: 
+- hidden formats have been revealed 
+- new extensions: .ext2/3/4 and .sfx 
+- can create a shortcut in $HOME/Desktop 
+- ffmpeg/avconv - extracted items now inherit the source names 
+- removed buttons from Gtkdialog's VTE Terminal 
+- xterm changed to $TERM 
+- lots of minor fixes/corrections 
+
+Version 2.6: 
+- pinstall.sh is now Woof-friendly (thanks to Pemasu) 
+- few new formats/extensions 
+
+Version 2.7: 
+- fix in AppRun: improper handling of dir/filenames with " 
+- one new extension 
+
+Version 2.8: 
+- AppRun: fixed improper handling of dir/filenames with ` (backtick) 
+- AppRun: added checkbox (checked by default) "Autoclose output window if no errors." 
+- partially gettext'ed (only AppRun & .createshortcut) 
+- 3 new extensions 
+
+Version 3.0: 
+- fully gettext'ed 
+- p(un)install.sh: can create right-click entries for Thunar 
+- some internal rearrangements 
+- 3 new extensions 
+
+Version 3.1: 
+- small bugfix in AppRun 
+- corrected gettext 
+
+Version 3.2: 
+- improved detection of possible extractions errors (set -o pipefail) 
+- fixed regression in extracting floppy images from ISO 
+- new formats/extensions 
+
+Version 3.3: 
+- improved GIF extraction (added -U/--unoptimize and --no-background options to gifsicle) 
+- can extract contents of individual paritions from multipartitioned *.img disk images 
+- new formats/extensions 
+
+Version 3.4: 
+- added Russian translation 
+- fixed extracting from .tar.lz/.tlz archives, which turned out to be compressed by lzip, not lzma 
+- a couple of new formats 
+
+Version 3.5: 
+- fix for extracting custom-named encrypted savefiles 
+- fix for extracting multipartitioned .img images that have extended partition 
+- better prevention of "false" extraction errors due to use of 'set -o pipefail' 
+- support for password protected PDF files 
+- can detect and extract "extensionless" .run installers/portable[apps|games] of both types (shell/ELF) 
+- can detect and extract TrueCrypt volumes 
+- can extract .vdi|.vmdk|.qcow|.qcow2 VM images 
+- other new extensions/formats: .gnumeric, .dms, .lzx 
+
+Version 3.6: 
+- added '-layout' to pdftotext in order to preserve original layout 
+- small fixes 
+- new extensions/formats 
+
+Version 3.7: 
+- fix for extracting .zpaq archives with absolute paths 
+- withdrawn: syncing after extraction 
+- files with .sh extension automatically assumed as .run installers 
+- added support for 'compress' for .run installers 
+- can extract FatDog's LUKS encrypted savefiles (req. cryptsetup) 
+- better compatibility with FatDog64-700 (ROX right-click integration in pinstall.sh) 
+- other minor fixes 
+- new formats/extensions 
+
+Version 3.8: 
+- added: LINKS.txt help file with weblinks to (un)archiving/(un)compressing/{en|de}crypting utilities used by UExtract 
+- withdrawn: checking available space 
+- lots of internal rearrangements, optimalizations and fixes 
+- new formats/extensions 
+
+Version 3.9: 
+- bugfix: unsquashfs exits with code 0 even if there's "No space left on device", therefore UExtract incorrectly reports successful extraction - a workaround has been applied 
+
+Version 3.10: 
+- .debs can be also extracted using 'ar' 
+- removed 'seq' dependency 
+- bugfix: extraction of LUKS .ext{2|3|4} images didn't work sometimes 
+- in Fatdog right-click entries are installed to /etc now 
+- some other fixes and rearrangements 
+
+Version 3.11: 
+- the suffix _extracted changed to .extracted 
+- the option '-d|--dependencies' renamed to '-b|--backends' 
+- 2 new formats/extensions 
+- minor bugfixes 
+
+Version 3.12: 
+- added extracting of .opus audio streams from video files 
+- fixed regression: filenames not listed instantly during extracting from ISO or other images 
+
+Version 3.13: 
+- 9 new formats/extensions 
+- version number in titlebar (thanks to ETP) 
+
+Version 3.14: 
+- Removed all but one '(s)' bits from text strings (e.g. "stream(s)" -> "streams") [thanks to L18L] 
+- Backward compatibility with Bash-3.0 
+- 12 new formats/extensions 
+
+Version 3.15: 
+- added support for encrypted zpaq archives 
+- removed tiffsplit dependency for extracting .djvu files - now it extracts to .ppm images 
+- pdfimages also extracts only to .ppm/.pbm now 
+- added 'nokernelcrypto' option to {gost|true|vera}crypt for systems (most of Pups) without dm-crypt and xts/gf128mul/twofish/serpernt modules compiled into kernel 
+- 8 new formats/extensions 
+- minor fixes 
+
+Version 3.16: 
+- fixed double extraction of DEBs (thanks to OscarTalks) 
+- added support for fusecompress(ed) files [req. fusecompress_offline] 
+- can extract BOINC installers 
+- 3 new formats/extensions 
+
+Version 3.17: 
+- improved handling of command line options 
+- new CLI option '-n|--no-colors' - "disable ANSI colors in output" 
+- 3 new formats/extensions 
+
+Version 3.18: 
+- fixed extracting of some .uu/.uue files 
+- simplified extracting of .sh(a)r archives 
+- can extract the old, legacy bzip (BZ0) compressed files (req. bunzip, not bunzip2) 
+- better handling of UPX-ed files (+ added .upx extension) 
+- fixed regression introduced in v3.17: not all backends were shown ('-b' option) 
+- some minor rearrangements/fixes 
+- 10 new formats/extensions 
+- added German translation (thanks to L18L) 
+
+Version 3.19: 
+- can extract DOTconfig from kernel images 
+- added description of extensionless filetypes to FILETYPES.txt 
+- regression fix: not recognizing extensionless, upx-ed files 
+- some minor clean ups 
+- 1 new extension 
+
+Version 3.20: 
+- add 'norock' option while mounting ISOs, if "permission denied" 
+- can extract 'Unity-editor' installer 
+- added warning that some actions require root privileges (shows only if UExtract was launched by regular user) 
+- fixed missing 'gettext' in one spot 
+- minor rearrangements/optimizations 
+- 10 new formats/extensions 
+
+Version 3.21:
+- if '-o' option wasn't specified, extraction directory gets set to input files' source dir(s), not to CWD, as it was before (thanks to MochiMoppel)
+- can extract MBR from multi-partitioned disk images
+- can extract LUKS encrypted partitions from multi-partitioned disk images (req. cryptsetup)
+- '7z' as a fallback for extracting vdi/vmdk/qcow/qcow2 disk images
+- changelog included into the package (/usr/local/apps/UExtract/help/CHANGELOG.txt)
+- some minor fixes and internal rearrangements
+- 3 new formats/extensions
+
+Version 3.22:
+- fix: don't extract MBR from regular (not multi-parititoned) disk images
+
+Version 3.23:
+- added handling of env variable UEXTRACT_TERM, where you can define terminal program to be used by UExtract's ROX AppRun (thanks to Step)
+- can extract multi-partitioned GPT disk images [req. gdisk]
+- 5 new formats/extensions
+
+Version 3.24:
+- regression: fix backward compatibility with Bash-3.0 (thanks to Don570)
+- can handle initrd files with .img extension (compressed using bzip2, gzip, lz4, lzma, lzop, xz)
+- added Spanish translation (thanks to Nilsonmorales)
+- added alternative icon (thanks to Nilsonmorales)
+- 1 new format/extension
+
+Version 3.25:
+- can extract PCLinuxOS' initrd, which isn't cpio archive, but an ext2 image
+- minor fixes
+- 5 new formats/extensions
+
+Version 3.26:
+- added [i]application/x-raw-disk-image-xz-compressed[/i] and [i]application/vnd.debian.binary-package[/i] MIME types (thanks to [b]don570[b/])
+- added support for 'innoextract' (thanks to [b]quirkian2new[/b])
+- updated Spanish translation (thanks to [b]vicmz[/b]
+- minor corrections
+- 1 new formats/extensions
+
+Version 3.26:
+- removed {gost|true|vera}crypt entropy test - it could give false positives/negatives in some circumstances
+- internal re-arrangements and simplifications of 'mount'-related mechanisms
+- 9 new formats/extensions

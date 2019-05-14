@@ -1,0 +1,4 @@
+filename=syslinux-tools-4.06-x86_64.tazpkg
+size=56	pkgs/core/base/next64/syslinux-tools-4.06-x86_64.tazpkg 
+checksum.md5=e9d2053ff85d2a9d0ffb45adb0b03d9d  pkgs/core/base/next64/syslinux-tools-4.06-x86_64.tazpkg
+checksum.sha256=96c354c8fd537f07e59afbd1f3b4dee1f1e60ec1ad85218e04b849fa55e99a5f  pkgs/core/base/next64/syslinux-tools-4.06-x86_64.tazpkg

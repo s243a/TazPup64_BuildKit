@@ -1,0 +1,4 @@
+filename=m4-1.4.18-x86_64.tazpkg
+size=52	pkgs/core/preinst/next64/m4-1.4.18-x86_64.tazpkg 
+checksum.md5=bc8b9f4699938d92bb4f0bf27515d48b  pkgs/core/preinst/next64/m4-1.4.18-x86_64.tazpkg
+checksum.sha256=8b6a873cb338aece78c7e2f57bfad55b21b22a4b1fa943040e5b6d02cbcd0079  pkgs/core/preinst/next64/m4-1.4.18-x86_64.tazpkg

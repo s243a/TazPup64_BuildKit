@@ -1,0 +1,81 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# mkdb - TazPkg module
+# Make TazPkg database for folder with *.tazpkg packages
+
+. /usr/libexec/tazpkg/header
+
+[ -z "$1" ] && die 'Input folder not specified'
+folder=$(realpath "$root$1") || exit 1
+[ ! -w "$folder" ] && die 'You are not allowed to write to the folder "%s"' "$folder"
+[ -z "$(find "$folder" -maxdepth 1 -name '*.tazpkg')" ] && \
+die 'Folder "%s" does not contain packages' "$folder"
+DBi="$folder/packages.info"
+DBe="$folder/packages.equiv"
+DBd="$folder/descriptions.txt"
+DBf="$folder/files.list"
+if [ -n "$forced" ]; then
+[ -e "$DBi" ] && rm "$DBi"
+[ -e "$DBe" ] && rm "$DBe"
+[ -e "$DBd" ] && rm "$DBd"
+[ -e "$DBf.lzma" ] && rm "$DBf.lzma"
+fi
+if [ -s "$DBi" ]; then
+_ 'Packages DB already exists.' >&2
+exit 1
+fi
+tempd="$(mktemp -d)"
+_n 'Calculate %s...' "$CHECKSUM"
+cd "$folder"; $CHECKSUM *.tazpkg > "$tempd/$SUM"
+status
+cd "$tempd"
+while read pkgsum pkgfile; do
+echo -n "$pkgfile"
+cpio -F "$folder/$pkgfile" -i receipt >/dev/null 2>&1
+unset EXTRAVERSION TAGS DEPENDS PROVIDE
+. receipt; rm receipt
+echo -en "$PACKAGE\t$VERSION$EXTRAVERSION\t$CATEGORY\t">> "$DBi"
+echo -en "$SHORT_DESC\t$WEB_SITE\t$TAGS\t">> "$DBi"
+echo -en "$PACKED_SIZE $UNPACKED_SIZE\t" | sed 's|\.0||g' >> "$DBi"
+echo -n $DEPENDS$'\t' >> "$DBi"
+echo $pkgsum >> "$DBi"
+for i in $PROVIDE; do
+case $i in
+*:*) DEST="${i#*:}:";;
+*)   DEST='';;
+esac
+PKG="${i%:*}"
+if grep -qs ^$PKG= "$DBe"; then
+sed -i "s|^$PKG=|\0 $DEST$PACKAGE|" "$DBe"
+else
+echo "$PKG=$DEST$PACKAGE">> "$DBe"
+fi
+done
+if cpio -F "$folder/$pkgfile" -t 2>/dev/null | fgrep -q 'description.txt'; then
+cpio -F "$folder/$pkgfile" -i description.txt >/dev/null 2>&1
+echo "$PACKAGE">> "$DBd"
+cat description.txt | sed 's|^$| |' >> "$DBd"
+echo >> "$DBd"
+rm description.txt
+fi
+if cpio -F "$folder/$pkgfile" -t 2>/dev/null | fgrep -q 'files.list'; then
+cpio -F "$folder/$pkgfile" -i files.list >/dev/null 2>&1
+sed "s|.*|$PACKAGE: \0|" files.list >> "$DBf"
+rm files.list
+fi
+status
+done < "$tempd/$SUM"
+sort -o "$tempd/pi" "$DBi"; mv -f "$tempd/pi" "$DBi"
+touch "$DBi" "$DBe" "$DBd" "$DBf"
+sort -k2 -o "$DBf.sorted" "$DBf"
+lzma e "$DBf.sorted" "$DBf.lzma"
+rm "$DBf" "$DBf.sorted"
+chmod a+r "$DBi" "$DBe" "$DBd" "$DBf.lzma"
+cd "$folder"
+( md5sum "$tempd/$SUM" | cut -d' ' -f1 | tr '\n' ' '; date -ur "$DBi" +%s ) > IDs
+md5sum "$DBf.lzma" | cut -d' ' -f1 | tr -d $'\n' > files-list.md5
+[ -f 'bundle.tar.lzma' ] && rm 'bundle.tar.lzma'
+tar -chaf bundle.tar.lzma \
+files-list.md5 packages.info descriptions.txt packages.equiv
+rm files-list.md5
+rm -r "$tempd"

@@ -1,0 +1,4 @@
+filename=gvfsd-fuse
+size=36	tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-fuse 
+checksum.md5=d522ee715762525a486976d17dad4a75  tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-fuse
+checksum.sha256=a863dfff53af26f6a0cbe37e7a5eb3c203d8b38ca18d4faa946be9540fdf3ee2  tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-fuse

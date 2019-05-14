@@ -1,0 +1,14 @@
+attr
+ncursesw
+util-linux-blkid
+lzma
+parted
+bzip2
+util-linux-eject
+util-linux-losetup
+usbutils
+tar
+procps
+grep
+findutils
+coreutils-multicall

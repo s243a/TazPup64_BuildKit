@@ -1,0 +1,13 @@
+105ab8d51eb98c1da71bd1e17ab9e4ac  /usr/lib/libntfs.so.10.0.0
+9fa39e1773cc5445d17fec9055d9bcdf  /usr/sbin/ntfslabel
+277787039090563e1f78be4c1bf2a26b  /usr/sbin/ntfsundelete
+0ea3a41585d0911812b718531df7d970  /usr/sbin/ntfsclone
+78236e366dfdc529a6fe08c91ca58a21  /usr/sbin/mkntfs
+79aa690db29c726828ec429ba9b8ccf0  /usr/sbin/ntfsresize
+144892da73fc55432b45eb85c0e0a33a  /usr/sbin/ntfscp
+514d8ef37bb56c8e2ae7a0018a00bca3  /usr/bin/ntfsinfo
+bdef6679c0c64151d5ba0e14ad1d0568  /usr/bin/ntfsls
+0ff0c3b34a15806987852b59a83e758e  /usr/bin/ntfscat
+819b18dcc786f713749000f83983c862  /usr/bin/ntfscluster
+45d4cfd059eac181d236dd0d24ca6720  /usr/bin/ntfscmp
+9dfc3a427a6b4144543e04cd7ee5e678  /usr/bin/ntfsfix

@@ -1,0 +1,52 @@
+#!/bin/sh
+#autostart lxpanel and pcmanfm desktop when crashed
+#written by mistfire
+
+probe_panel(){
+
+# need to be executed as user, due to different XDG variables
+
+lpanel="$(busybox ps -o user,comm,pid | grep "lxpanel" | grep "^$user1" | grep -v "grep")"
+
+noshow=""
+
+if [ -e $HOME/.config/autostart/lxpanel.desktop ]; then
+ noshow="$(cat $HOME/.config/autostart/lxpanel.desktop | grep "NotShowIn" | grep "LXDE")"
+fi
+
+if [ "$lpanel" == "" ] && [ "$lsession" != "" ] && [ "$noshow" == "" ]; then
+ exec lxpanel -p slitaz &
+fi
+
+}
+
+probe_desktop(){
+
+# need to be executed as user, due to different XDG variables
+
+ldesk="$(busybox ps -o user,comm,pid | grep "pcmanfm --desktop" | grep "^$user1" | grep -v "grep")"
+
+noshow=""
+
+if [ -e $HOME/.config/autostart/pcmanfm.desktop ]; then
+ noshow="$(cat $HOME/.config/autostart/pcmanfm.desktop | grep "NotShowIn" | grep "LXDE")"
+fi
+
+if [ "$ldesk" == "" ] && [ "$lsession" != "" ] && [ "$noshow" == "" ]; then
+ exec pcmanfm --desktop &
+fi
+
+}
+
+user1="$(whoami)"
+
+lsession="$(busybox ps -o user,comm,pid | grep "lxsession" | grep "^$user1" | grep -v "grep")"
+
+if [ "$lsession" == "" ]; then
+ exit
+fi
+
+lsession="$(busybox ps -o user,comm,pid | grep "lxsession" | grep "^$user1" | grep -v "grep")"
+
+probe_desktop
+probe_panel

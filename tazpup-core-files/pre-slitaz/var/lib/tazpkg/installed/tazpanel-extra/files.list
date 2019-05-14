@@ -1,0 +1,6 @@
+/var/www/tazpanel/test.cgi
+/var/www/tazpanel/powersaving.cgi
+/var/www/tazpanel/floppy.cgi
+/usr/bin/bootloader
+/var/www/tazpanel/menu.d/boot/floppy
+/var/www/tazpanel/menu.d/hardware/powersaving

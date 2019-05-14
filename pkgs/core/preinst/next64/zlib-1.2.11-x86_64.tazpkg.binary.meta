@@ -1,0 +1,4 @@
+filename=zlib-1.2.11-x86_64.tazpkg
+size=40	pkgs/core/preinst/next64/zlib-1.2.11-x86_64.tazpkg 
+checksum.md5=8e47bca446a5c7d93649600ab7bf89f6  pkgs/core/preinst/next64/zlib-1.2.11-x86_64.tazpkg
+checksum.sha256=e70fefe859ea631fd4e3ac003814faedea317735c1bed8db4a9e264dc7718d84  pkgs/core/preinst/next64/zlib-1.2.11-x86_64.tazpkg

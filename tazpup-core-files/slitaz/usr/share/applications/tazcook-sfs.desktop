@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Make SFS modules package
+Icon=squashfs-image.png
+Comment=Make SFS modules package from online repo
+Exec=tazcook-sfs
+Terminal=true
+Type=Application
+Categories=System;
+GenericName=SFS file Loader

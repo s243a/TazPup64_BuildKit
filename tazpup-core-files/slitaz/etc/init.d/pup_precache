@@ -1,0 +1,57 @@
+#!/bin/sh
+
+echo "Rebuilding caches..."
+
+if [ ! -f /usr/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache ]; then
+
+ if [ "$(which gtk-query-immodules-2.0)" != "" ]; then
+  echo "Rebuilding gtk im modules..."
+  gtk-query-immodules-2.0 > /usr/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache #120323 shinobar: refresh gtk.immodules
+ fi
+
+ if [ ! -f /etc/gtk-2.0/gtk.immodules ]; then
+  if [ -f /usr/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache ]; then
+   ln -s /usr/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache /etc/gtk-2.0/gtk.immodules
+  else
+   if [ "$(which gtk-query-immodules-2.0)" != "" ]; then
+    gtk-query-immodules-2.0 > /etc/gtk-2.0/gtk.immodules
+   fi 
+  fi
+ fi
+
+fi  
+
+if [ ! -f /etc/gtk-2.0/gdk-pixbuf.loaders ]; then
+ echo "Rebuilding gdk pixbuf..."
+ if [ "$(which gdk-pixbuf-query-loaders)" != "" ]; then
+  gdk-pixbuf-query-loaders > /etc/gtk-2.0/gdk-pixbuf.loaders
+ fi
+fi  
+
+if [ ! -f /etc/pango/pango.modules ]; then
+ if [ "$(which pango-querymodules)" != "" ]; then
+  echo "Rebuilding pango..."
+  pango-querymodules > /etc/pango/pango.modules
+ fi
+fi
+
+if [ ! -f /usr/lib/gconv/gconv-modules.cache ]; then
+ if [ "$(which iconvconfig)" != "" ]; then
+  echo "Rebuilding gconv modules..."
+  iconvconfig
+ fi
+fi
+
+if [ ! -f /usr/lib/gio/modules/giomodule.cache ]; then
+ if [ "$(which gio-querymodules)" != "" ]; then
+  echo "Rebuilding gio modules..."
+  gio-querymodules /usr/lib/gio/modules
+ fi
+fi
+
+if [ ! -f /usr/share/glib-2.0/schemas/gschemas.compiled ]; then
+ if [ "$(which glib-compile-schemas)" != "" ]; then
+  echo "Rebuilding glib schemas..."
+  glib-compile-schemas /usr/share/glib-2.0/schemas
+ fi	
+fi

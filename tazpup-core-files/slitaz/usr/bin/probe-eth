@@ -1,0 +1,51 @@
+#!/bin/sh
+#Probe ethernet
+
+if [ "$(pidof dhcpcd)" != "" ] || [ "$(busybox ps | grep "udhcpc" | grep -E "i [eth|usb|wwan|wan|www|bnep]" | grep -v "grep" )" != "" ] ; then
+ exit
+fi	
+
+if [ -d /dev/shm ] && [ -w /dev/shm ]; then
+ wkdir="/dev/shm"
+else
+ wkdir="/tmp"
+fi
+
+if [ "$(which ethmon)" == "" ]; then
+ exit
+fi
+
+if [ -f $wkdir/network-stop.lock ] || [ -f $wkdir/network.lock ]; then
+ exit
+fi	
+
+NOIP=0
+
+ALL_INTF=`ls -1 /sys/class/net | grep -E '^eth|^usb|^wwan|^wan|^www|^bnep' | tr '\n' ' '`
+
+if [ "$ALL_INTF" == "" ]; then
+ exit
+fi
+
+for eth1 in $ALL_INTF
+do
+  xstate="$(cat /sys/class/net/$eth1/operstate)"
+  cs="$(cat /sys/class/net/$eth1/carrier 2>/dev/null)"
+  if [ "$xstate" != "" ] && [ "$xstate" != "down" ] && [ "$cs" == "1" ]; then
+	xIP="$(busybox ifconfig $eth1 | grep -Po "t addr:\K[\d.]+")"
+	 if [ "$xIP" == "" ]; then
+	   NOIP=$(expr $NOIP + 1) 
+	 fi
+  fi
+done
+
+if [ $NOIP -ne 0 ]; then
+   if [ "$(pidof ethmon)" == "" ]; then
+    exec ethmon &
+   fi
+else
+   if [ "$(pidof ethmon)" != "" ]; then
+    killall ethmon
+   fi
+fi
+	

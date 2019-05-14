@@ -1,0 +1,14 @@
+# Footer of TazPanel html page
+
+export TEXTDOMAIN='tazpanel'
+cat <<EOT
+<!-- End of content-->
+</div>
+<script type="text/javascript">
+window.onbeforeunload = null;
+if (ajaxLoader == 0) statusbar('');
+dupTableHead();
+</script>
+</body>
+</html>
+EOT

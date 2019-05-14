@@ -1,0 +1,4 @@
+filename=libunwind-1.2.1-x86_64.tazpkg
+size=36	pkgs/core/preinst/next64/libunwind-1.2.1-x86_64.tazpkg 
+checksum.md5=c1a5759d40dcb428c07c26ddeb55d0b9  pkgs/core/preinst/next64/libunwind-1.2.1-x86_64.tazpkg
+checksum.sha256=ecc0d2bfed796dbec35f1857d966817dff19ec9279a808d8c27d6957ae01d0ae  pkgs/core/preinst/next64/libunwind-1.2.1-x86_64.tazpkg

@@ -1,0 +1,53 @@
+#!/bin/sh
+users=$1
+if [ -z "$1" ]; then
+    users='tux,root,spot:jwm'
+fi
+for line in ${users//,/ }; do
+  line2=(${line//:/ }) #https://stackoverflow.com/questions/918886/how-do-i-split-a-string-on-a-delimiter-in-bash
+  USER=${line2[0]}
+  wm="${line2[1]}"
+  WINDOW_MANAGER=${wm:-slim}
+
+  if [ "$USER" != root ]; then
+    adduser -D -s /bin/sh -g 'SliTaz User' -G users -h /home/$USER $USER 2>/dev/null
+    passwd -d $USER 2>/dev/null
+    for group in audio cdrom video tty plugdev disk lp scanner dialout camera operator tape
+    do
+      addgroup $USER $group 2>/dev/null
+	done
+  
+    #https://www.pearltrees.com/s243a/startup-script-for-freenet/id14245425
+
+    if [ "$(which hald)" != "" ] && [ -e /etc/init.d/hald ]; then
+      #action 'Configuring %s...' "haldaemon"
+      adduser -D -H haldaemon 2>/dev/null
+      for group in audio cdrom video tty plugdev disk lp scanner dialout camera operator tape
+      do
+        addgroup haldaemon $group 2>/dev/null
+      done
+      addgroup haldaemon haldaemon 2>/dev/null
+    fi
+  fi
+	## Slim default user #TODO make spot have the default window manager jwm instead of slim. 
+    #if [ -f /etc/slim.conf ]; then
+    #   sed -i "s|default_user .*|default_user    $USER|" /etc/slim.conf
+    #fi 
+    #su -c "sh tazx start" $USER # 
+
+#We need to make sure everything needed is in place fore we do this.     
+    #if [ $WINDOW_MANAGER = "jwm" ]; then   
+    #  usr_home=`su -c "echo $HOME" $USER` 
+    #  ( export HOME=$usr_home; fixmenus ) #TODO update fixmenus so that it only updates files for a single user. 
+    #else
+    #  su -c "sh tazbox mkmenu" $USER # 
+    #fi  
+        
+    #if [ 
+    cp --no-clobber -arf "/etc/skel/*" "$HOME" 2>/dev/null
+    #TODO add code to fix the premissions
+    for aFile_prefixed in "`find /etc/skel -name '*'`"; do
+      aFile=${aFile_prefixed#/etc/skel}
+      chown $USER $HOME/$aFile
+    done
+done

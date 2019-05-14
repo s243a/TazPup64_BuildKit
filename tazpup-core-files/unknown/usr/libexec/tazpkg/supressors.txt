@@ -1,0 +1,11 @@
+This modified tazpkg can suppress some tazpkg functions by creating
+the following lock files in tmp. This was used by tazpup builder
+
+tazpkg-local.lock -skips downloading package database
+tazpkg-skipdep.lock -skips downloading dependencies when installing a package
+tazpkg-skipremovedep.lock -skips removing of dependencies when removing a package
+tazpkg-dontbreak.lock -skip removing all lock files when using tazpkg get-install or tazpkg up command
+tazpkg-skipupdate.lock -skip rebuilding any lib caches or databases
+tazpkg-editreceipt.lock -edit receipt before executing actions
+tazpkg-autoconfirm.lock -always answered yes
+

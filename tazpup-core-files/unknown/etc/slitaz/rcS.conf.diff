@@ -1,0 +1,9 @@
+--- /etc/slitaz/rcS.conf.bak
++++ /etc/rcS.conf
+@@ -30,5 +30,5 @@
+ # login manager and from: /etc/init.d/system.sh
+ RUN_DAEMONS="firewall httpd ntpd"
+ 
+-# Pre login bold message.
++# Pre login message
+ MESSAGE="Welcome to your box"

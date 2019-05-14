@@ -1,0 +1,51 @@
+#!/bin/bash
+#written by s243a (John Creighton)
+
+close_fds(){
+	exec 10>&-
+	rm -rf /tmp/move-source
+}
+trap close_fds EXIT
+trap close_fds SIGKILL
+trap close_fds SIGTERM
+curdir=`pwd`
+_(){ #Can use this function to safely quote things. 
+  echo "$*"
+}
+s_root="`realpath "$curdir"`"
+mkdir -p ../tazpup-builder-source
+d_root=`realpath ../tazpup-builder-source`
+mkdir -p /tmp/move-source
+exec 10<> /tmp/move-source/fd_10
+
+for adir in build-scripts pkgs tazpup-core-files; do
+#  for afile in "`find "./$adir" -name '*'`" ; do
+   while IFS=$'\0' read -r -d $'\0' -u10 afile; do
+    afile="${afile#'./'}"
+    if [ -d "$s_root/$afile" ]; then
+      adir2="$afile" 
+    else
+      adir2="$(basename "$afile")"        
+    fi
+    if [ -d "$s_root/$afile" ]; then
+      cd "$s_root"
+      echo ./$adir2 | cpio -pd $d_root     
+    elif [[ `file -i "$s_root/$afile" | cut -d' ' -f2` = text/* ]] &&
+       [[ $afile != *.log ]]; then
+      cd "$s_root"
+      echo ./$afile | cpio -pd $d_root
+    else
+      if [ ! -d $d_root/$dir2 ]; then
+        cd $s_root
+        echo "./$adir2" | cpio -pd $d_root
+      fi
+      echo "\
+filename=$(basename "$afile")
+size=$(du "$afile") 
+checksum.md5=$(md5sum "$afile")
+checksum.sha256=$(sha256sum "$afile")">$d_root/$afile.binary.meta
+    fi
+  done 10< <( find "./$adir" -name '*' -print0 ) 
+done
+exec 10>&-
+

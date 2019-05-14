@@ -1,0 +1,15 @@
+/usr/share/icons/hicolor/48x48/apps/galculator.png
+/usr/share/galculator/ui/prefs_gtk2.ui
+/usr/share/galculator/ui/main_frame_hildon.ui
+/usr/share/galculator/ui/paper_view.ui
+/usr/share/galculator/ui/basic_buttons_gtk2.ui
+/usr/share/galculator/ui/dispctrl_right_vertical_gtk2.ui
+/usr/share/galculator/ui/about.ui
+/usr/share/galculator/ui/dispctrl_bottom_gtk2.ui
+/usr/share/galculator/ui/main_frame.ui
+/usr/share/galculator/ui/dispctrl_right_gtk2.ui
+/usr/share/galculator/ui/classic_view.ui
+/usr/share/galculator/ui/prefs-ume.ui
+/usr/share/galculator/ui/scientific_buttons_gtk2.ui
+/usr/share/applications/galculator.desktop
+/usr/bin/galculator

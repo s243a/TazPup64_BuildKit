@@ -1,0 +1,31 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="44.0K"
+UNPACKED_SIZE="128.0K"
+PACKAGE="dmidecode"
+VERSION="2.11"
+CATEGORY="system-tools"
+SHORT_DESC="SMBIOS/DMI reports."
+MAINTAINER="erjo@slitaz.org"
+LICENSE="GPL2"
+TARBALL="$PACKAGE-$VERSION.tar.gz"
+WEB_SITE="http://www.nongnu.org/dmidecode/"
+WGET_URL="http://download.savannah.gnu.org/releases/dmidecode/$TARBALL"
+
+DEPENDS=""
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	sed -i 's|uname -m|echo i486|' Makefile
+	make
+	make DESTDIR=$DESTDIR install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/sbin
+	cp -a $install/usr/local/sbin/* $fs/usr/sbin
+}
+

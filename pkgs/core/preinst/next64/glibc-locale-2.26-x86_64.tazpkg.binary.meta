@@ -1,0 +1,4 @@
+filename=glibc-locale-2.26-x86_64.tazpkg
+size=3064	pkgs/core/preinst/next64/glibc-locale-2.26-x86_64.tazpkg 
+checksum.md5=fc65638698d39d9429e8613a6947516c  pkgs/core/preinst/next64/glibc-locale-2.26-x86_64.tazpkg
+checksum.sha256=36211d5b7965225c84075533ec9aa1958479f2b0fe346aae9596b6919a0bb49a  pkgs/core/preinst/next64/glibc-locale-2.26-x86_64.tazpkg

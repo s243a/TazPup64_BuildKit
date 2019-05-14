@@ -1,0 +1,4 @@
+filename=libnsl-1.2.0-x86_64.tazpkg
+size=32	pkgs/applications/dependencies/next64/libnsl-1.2.0-x86_64.tazpkg 
+checksum.md5=e91231010e0e5b985cdfcbd8a14000a3  pkgs/applications/dependencies/next64/libnsl-1.2.0-x86_64.tazpkg
+checksum.sha256=8d0e0896ecda4a20397609fb6e4cf858fdaffeff14e5732889acd3a399e1ad63  pkgs/applications/dependencies/next64/libnsl-1.2.0-x86_64.tazpkg

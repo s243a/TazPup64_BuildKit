@@ -1,0 +1,5 @@
+66ea53816f37422a8bb060e1678b7153  /sbin/pcmcia-socket-startup
+f4fad087e4e53cb7ee31cdc935db8105  /sbin/pccardctl
+a39afd89436b0404ed942d5e337fc063  /sbin/pcmcia-check-broken-cis
+c3a71f12e19abdae6babff2331f1df7f  /etc/pcmcia/config.opts
+a79b0ee3ccc6ad08fb2e4c041bd77817  /etc/udev/rules.d/60-pcmcia.rules

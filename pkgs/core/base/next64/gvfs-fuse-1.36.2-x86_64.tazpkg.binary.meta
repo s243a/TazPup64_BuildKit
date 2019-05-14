@@ -1,0 +1,4 @@
+filename=gvfs-fuse-1.36.2-x86_64.tazpkg
+size=12	pkgs/core/base/next64/gvfs-fuse-1.36.2-x86_64.tazpkg 
+checksum.md5=be4440a3bed318ca909b325f152e0481  pkgs/core/base/next64/gvfs-fuse-1.36.2-x86_64.tazpkg
+checksum.sha256=4a0ec26006c88037c193277863b857c96ae2b53ac84f9719056c646a074713f2  pkgs/core/base/next64/gvfs-fuse-1.36.2-x86_64.tazpkg

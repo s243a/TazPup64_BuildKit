@@ -1,0 +1,12 @@
+/bin/extlinux
+/bin/syslinux
+/usr/share/boot/pxelinux.0.lzma
+/usr/share/boot/README.custom
+/usr/share/boot/mbr.bin
+/usr/share/boot/init.custom
+/usr/share/boot/memdisk.lzma
+/usr/share/boot/sdi.c32
+/usr/share/boot/gptmbr.bin
+/usr/bin/isohybrid
+/usr/bin/iso2exe
+/usr/bin/taziso

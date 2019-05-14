@@ -1,0 +1,4 @@
+filename=p11-kit-0.23.12-x86_64.tazpkg
+size=280	pkgs/core/base/next64/p11-kit-0.23.12-x86_64.tazpkg 
+checksum.md5=53e77bb35807eae46c3a6ef4728e70d9  pkgs/core/base/next64/p11-kit-0.23.12-x86_64.tazpkg
+checksum.sha256=c1fccdcc701771859c053741e3afce72199bb02ac8e100cc2ffb3a81a7895204  pkgs/core/base/next64/p11-kit-0.23.12-x86_64.tazpkg

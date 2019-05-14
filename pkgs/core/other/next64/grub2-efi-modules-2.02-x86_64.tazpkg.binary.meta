@@ -1,0 +1,4 @@
+filename=grub2-efi-modules-2.02-x86_64.tazpkg
+size=636	pkgs/core/other/next64/grub2-efi-modules-2.02-x86_64.tazpkg 
+checksum.md5=dbda5cfd755218d854c78c3b74bc0488  pkgs/core/other/next64/grub2-efi-modules-2.02-x86_64.tazpkg
+checksum.sha256=77d5673b3fe4d66d58dd976db2a330260066c6c34c40f142d7c8df58af8a15aa  pkgs/core/other/next64/grub2-efi-modules-2.02-x86_64.tazpkg

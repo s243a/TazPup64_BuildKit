@@ -1,0 +1,4 @@
+filename=libidn-1.33-x86_64.tazpkg
+size=52	pkgs/core/base/next64/libidn-1.33-x86_64.tazpkg 
+checksum.md5=29016b7760e585107aedcac439c4984a  pkgs/core/base/next64/libidn-1.33-x86_64.tazpkg
+checksum.sha256=5d95f60c8647d055e4032853bfb5391d6536fe04be995a3e5acec9a218837f05  pkgs/core/base/next64/libidn-1.33-x86_64.tazpkg

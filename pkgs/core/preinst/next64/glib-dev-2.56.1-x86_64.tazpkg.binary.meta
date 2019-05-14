@@ -1,0 +1,4 @@
+filename=glib-dev-2.56.1-x86_64.tazpkg
+size=312	pkgs/core/preinst/next64/glib-dev-2.56.1-x86_64.tazpkg 
+checksum.md5=11f59577049a2a8f8c6fb9d3da4a0324  pkgs/core/preinst/next64/glib-dev-2.56.1-x86_64.tazpkg
+checksum.sha256=9a3e7f3ebfeee3822b6959112350570b045d6069f5e5a4a05efc872974ccdb8b  pkgs/core/preinst/next64/glib-dev-2.56.1-x86_64.tazpkg

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+NoDisplay=true
+Name=puppy-start
+Exec=puppy-start
+Name[en_US.UTF-8]=puppy-start

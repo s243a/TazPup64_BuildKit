@@ -1,0 +1,4 @@
+161f8ec95326f47d853cb7c1ee76c7b8  /etc/pkcs11/pkcs11.conf.example
+cac6ef20d15c535ffc7c9036ad5d966b  /usr/lib/libp11-kit.so.0.3.0
+abc3111ab844a1304df4ec321471f083  /usr/bin/p11-kit
+279219281092dafdf147aee18abacd41  /usr/bin/trust

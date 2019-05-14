@@ -1,0 +1,8 @@
+b3a5de5e3740ef353ea3ad3d5cd45a2e  /usr/lib/alsa-lib/libasound_module_pcm_vdownmix.so
+9392041ee6f28dfabdcd14abe23a689e  /usr/lib/alsa-lib/libasound_module_rate_speexrate.so
+b45da30a3f3de50fb2592eb26f8f6ef8  /usr/lib/alsa-lib/libasound_module_pcm_upmix.so
+ba2fbae04a83047d515bc58bdc6a84da  /usr/lib/alsa-lib/libasound_module_ctl_arcam_av.so
+f84e97cdf066183ad96054fcbea9b36e  /usr/lib/alsa-lib/libasound_module_pcm_usb_stream.so
+ae8a5761768f4aeeac26b6b835a4b161  /usr/lib/alsa-lib/libasound_module_pcm_oss.so
+eee179431963a07c63cd8ec52dc0e3fd  /usr/lib/alsa-lib/libasound_module_rate_samplerate.so
+a31f752de0cf96d3e012ceb718bdcf55  /usr/lib/alsa-lib/libasound_module_ctl_oss.so

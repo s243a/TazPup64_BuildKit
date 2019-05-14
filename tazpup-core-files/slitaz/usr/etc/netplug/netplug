@@ -1,0 +1,19 @@
+#!/bin/sh
+
+dev="$1"
+action="$2"
+
+case "$action" in
+in)
+ /usr/bin/probe-net "$dev" skipwifi
+;;
+out)
+ /usr/bin/probe-net "$dev" skipwifi
+;;
+probe)
+ echo "$dev probed"
+;;
+*)
+ echo "Invalid action"
+;;
+esac

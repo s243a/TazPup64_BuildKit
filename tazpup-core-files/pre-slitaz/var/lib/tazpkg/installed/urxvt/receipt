@@ -1,0 +1,39 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="132.0K"
+UNPACKED_SIZE="568.0K"
+PACKAGE="urxvt"
+VERSION="9.16"
+CATEGORY="utilities"
+SHORT_DESC="terminal with unicode support"
+MAINTAINER="sygne@ombres.eu"
+LICENSE="GPL2"
+SOURCE="rxvt-unicode"
+TARBALL="$SOURCE-$VERSION.tar.bz2"
+WEB_SITE="http://software.schmorp.de/pkg/rxvt-unicode.html"
+WGET_URL="http://dist.schmorp.de/rxvt-unicode/$TARBALL"
+TAGS="terminal"
+
+DEPENDS="fontconfig xorg-libX11 expat freetype xorg-libXft zlib gcc-lib-base \
+xorg-xmessage"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	busybox patch -p0 -i $stuff/gcc.u
+	./configure \
+		--prefix=/usr \
+		--infodir=/usr/share/info \
+		--disable-perl \
+		--with-codesets='eu' \
+		--mandir=/usr/share/man \
+		$CONFIGURE_ARGS && \
+	make && make DESTDIR=$DESTDIR install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr
+	cp -a $install/usr/bin $fs/usr
+}

@@ -1,0 +1,4 @@
+filename=gettext-base-0.19.8.1-x86_64.tazpkg
+size=20	pkgs/core/preinst/next64/gettext-base-0.19.8.1-x86_64.tazpkg 
+checksum.md5=6e9023a00c3873a032851c8ff8731508  pkgs/core/preinst/next64/gettext-base-0.19.8.1-x86_64.tazpkg
+checksum.sha256=b0bd84d74fd84febf85e05d0efa2fb4e4c105a3883bf397b66baa6dfee1f1ccc  pkgs/core/preinst/next64/gettext-base-0.19.8.1-x86_64.tazpkg

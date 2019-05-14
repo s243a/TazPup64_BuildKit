@@ -1,0 +1,345 @@
+#!/bin/sh
+#
+# Common functions for TazPanel CGI and cmdline interface
+#
+# Copyright (C) 2011-2015 SliTaz GNU/Linux - BSD License
+#
+
+. /lib/libtaz.sh
+_()  { local T="$1"; shift; printf "$(gettext "$T")" "$@"; echo; }
+_n() { local T="$1"; shift; printf "$(gettext "$T")" "$@"; }
+[ $(busybox ps | grep '127.0.0.1.*guiuser=root' |grep -v grep| awk {'print $2'}) == 'root' ] && REMOTE_USER='root'
+GUI_USER=nobody
+[ "${HTTP_HOST/:*/:}" == "127.0.0.1:" ] &&
+for i in "$HTTP_COOKIE" "$QUERY_STRING" ; do
+v="$(echo "$i" | sed '/guiuser=/!d;s/.*guiuser=\([A-Za-z0-9_]*\).*/\1/')"
+[ "$v" ] || continue
+busybox ps | sed '/d;/d;/127\.0\.0\.1:/!d' | grep -q " $v " || continue
+GUI_USER="$v"
+done
+[ "$(id -un)" == "${REMOTE_USER:=$GUI_USER}" ] || exec su -s /bin/sh -c "$(realpath $0) $@" $REMOTE_USER
+. /usr/lib/slitaz/httphelper
+. /etc/locale.conf
+export TEXTDOMAIN='tazpanel' LANG LC_ALL
+get_config() {
+CONFIG='/etc/slitaz/tazpanel.conf'
+if [ -f "$CONFIG" ]; then
+. $CONFIG
+else
+echo "No config file found: $CONFIG"
+exit 1
+fi
+}
+htmlize() {
+sed -e '/<[a-z]*>/{:a;Nba;} s|\&|\&amp;|g; s|<|\&lt;|g; s|>|\&gt;|g'
+}
+syntax_highlighter() {
+case $1 in
+conf)
+htmlize | sed \
+-e 's|^\([ \t]*[A-Za-z0-9_][A-Za-z0-9_]*\)\(="*.*\)|<span class="conf-var">\1</span><span class="conf-val">\2</span>|g' \
+-e 's|^[ \t]*#.*|<span class="conf-comment">\0</span>|g';;
+sh)
+htmlize | sed \
+-e 's|^\([ \t]*[A-Za-z0-9_][A-Za-z0-9_]*\)\(="*.*\)|<span class="sh-var">\1</span><span class="sh-val">\2</span>|g' \
+-e 's|^#.*|<span class="sh-comment">\0</span>|g';;
+diff)
+htmlize | sed \
+-e 's|^-.*|<span class="diff-rm">\0</span>|g' \
+-e 's|^+.*|<span class="diff-add">\0</span>|g' \
+-e 's|^@.*|<span class="diff-at">\0</span>|g';;
+activity)
+sed -e "s|: |c|; s|^\(.*\)c|<span class='activity-log'>\1:</span> |";;
+kernel)
+htmlize | sed \
+-e "s|\([^0-9]\)\(0x[0-9a-f]\+\)|\1<span class='kernel-hex'>\2</span>|g" \
+-e "s|: |c|; s|^\(.*\)c|<span class='kernel-id'>\1:</span> |" \
+-e "s|\(\[[^ ]\+\]\)|<span class='kernel-id2'>\0</span>|g" \
+-e "s|Call Trace:|<span class='kernel-trace'>\0</span>|";;
+lsusb)
+htmlize | sed \
+-e 's|^[^:]*:[ x0-9a-f^:]*$|<span class="lsusb-t">\0</span>|g' \
+-e 's|^Bus.*$|<span class="lsusb-h">\0</span>|g';;
+lspci)
+htmlize | sed \
+-e 's|^[0-9a-f].*$|<span class="lspci-t">\0</span>|g' \
+-e 's|^	\([^:]*:\)|	<span class="lspci-h">\1</span>|g';;
+xlog)
+htmlize | sed \
+-e 's|^[^]]*]|<span class="xlog xlog-timestamp">\0</span>|' \
+-e 's|(--)|<span class="xlog xlog-probed" title="probed">\0</span>|' \
+-e 's|(\*\*)|<span class="xlog xlog-config" title="from config file">\0</span>|' \
+-e 's|(==)|<span class="xlog xlog-default" title="default setting">\0</span>|' \
+-e 's|(++)|<span class="xlog xlog-cmdline" title="from command line">\0</span>|' \
+-e 's|(!!)|<span class="xlog xlog-notice" title="notice">\0</span>|' \
+-e 's|(II)|<span class="xlog xlog-info" title="informational">\0</span>|' \
+-e 's|(WW)|<span class="xlog xlog-warn" title="warning">\0</span>|' \
+-e 's|(EE)|<span class="xlog xlog-error" title="error">\0</span>|' \
+-e 's|(NI)|<span class="xlog xlog-ni" title="not implemented">\0</span>|' \
+-e 's|(??)|<span class="xlog xlog-unknown" title="unknown">\0</span>|' \
+;;
+esac
+}
+filter_taztools_msgs() {
+sed \
+-e 's|\\[0m|</span>|g' \
+-e 's|\\[0;39m|</span>|g' \
+-e 's|\\[0*\([0-7]*\);\([0-7]*\)m|<span class="color\1 color\2">|g' \
+-e ':a;s/^\(.\{0,69\}\)\(\\[[0-9]*G\[\)/\1 \2/;ta' \
+-e ':b;s|^\([^\]*\)\\[\([0-9]*\)G|<span style="display:inline-block;width:\2ex">\1</span>|;tb' \
+-e 's/\[^Gm]*.//g'
+}
+log() {
+date=$(date "+%F %R")
+filter_taztools_msgs | sed "s|[^']*|$date : \0|">> $LOG_FILE
+}
+ok_status() {
+echo '[<span class="diff-add"> OK </span>]'
+}
+interface_status() {
+ip="----"
+status="----"
+scan=""
+if ifconfig | grep -A1 $1 | grep -q inet; then
+ip=$(ifconfig | grep -A1 $1 | grep inet | awk '{ print $2 }' | cut -d: -f2)
+[ "$(cat /sys/class/net/$1/carrier)" == "1" ] &&
+scan='<a data-icon="" href="network.cgi?scan='$ip'&amp;back=network.cgi">'$(_ 'Scan')'</a>'
+fi
+[ "$(cat /sys/class/net/$1/carrier)" == "1" ] &&
+status="$(_ 'connected')" &&
+speed="$(cat /sys/class/net/$1/speed 2> /dev/null)" &&
+[ "$speed" ] && status="$status ${speed}M"
+echo "<td>$status</td><td>$ip</td><td>$scan</td>"
+}
+list_network_interfaces() {
+cat <<EOT
+<table class="wide zebra center">
+<thead>
+<tr>
+<td>$(_ 'Interface')</td>
+<td>$(_ 'Name')</td>
+<td>$(_ 'Status')</td>
+<td>$(_ 'IP Address')</td>
+<td>$(_ 'Scan ports')</td>
+</tr>
+</thead>
+<tbody>
+EOT
+for i in $(ls /sys/class/net); do
+case $i in
+eth*|www*|bnep*)
+echo '<tr><td><a data-icon="" href="network.cgi?eth">'$i'</a></td>
+<td>Ethernet</td> '$(interface_status $i)'</tr>';;
+wlan*|ath*|ra*|wifi*)
+echo '<tr><td><a data-icon="" href="network.cgi?wifi">'$i'</a></td>
+<td>Wireless</td> '$(interface_status $i)'</tr>';;
+ppp*)
+echo '<tr><td><a data-icon="" href="ppp.cgi">'$i'</a></td>
+<td>Point to point</td> '$(interface_status $i)'</tr>';;
+tap[0-9]*|tun[0-9]*)
+echo '<tr><td><span data-icon="" href="network.cgi?eth">'$i'</span></td>
+<td>User space</td> '$(interface_status $i)'</tr>';;
+lo)
+echo '<tr><td><span data-icon="">'$i'</span></td>
+<td>Loopback</td> '$(interface_status $i)'</tr>';;
+usb*)
+
+INTF="$i"
+
+IF_DRIVER="`readlink /sys/class/net/$INTF/device/driver | rev | cut -f1 -d'/' | rev`" #ex: ath5k
+
+[ "$IF_DRIVER" = "ath5k_pci" ] && [ "`lsmod | grep '^ath5k '`" != "" ] && IF_DRIVER='ath5k'
+
+ePATTERN="${INTF}:"
+if [ "`grep "$ePATTERN" /proc/net/wireless`" != "" ]; then
+ IsWireless=1
+elif [ "$IF_DRIVER" = "prism2_usb" ]; then
+ IsWireless=1
+elif [ -d /sys/class/net/${INTF}/wireless ]; then
+ IsWireless=1
+else
+ IsWireless=0
+fi
+
+if [ $IsWireless -ne 0 ] ; then
+ echo '<tr><td><a data-icon="" href="network.cgi?wifi">'$i'</a></td> 
+<td>Wireless</td> '$(interface_status $i)'</tr>'
+else
+echo '<tr><td><a data-icon=""href="network.cgi?eth">'$i'</a></td>
+<td>Ethernet</td> '$(interface_status $i)'</tr>'
+fi
+
+;;
+*)
+continue;;
+esac
+done
+cat <<EOT
+</tbody>
+</table>
+EOT
+}
+list_styles() {
+for style in $PANEL/styles/*; do
+style=$(basename $style)
+echo "<option value='$style'>$style</option>"
+done
+}
+list_locales() {
+for locale in $(find /usr/share/i18n/locales -type f -name "[a-z][a-z]_[A-Z][A-Z]")
+do
+echo "<option value=\"$locale\">$locale</option>"
+done
+}
+list_keymaps() {
+if [ -d /usr/share/kbd ]; then
+find /usr/share/kbd/keymaps/i386 -type f -name '*.map*' ! -path '*include*' | \
+awk -F/ '{gsub(/.map.gz/, ""); printf "<option value=\"%s\">%s (%s)\n", $8, $8, $7}' 
+else
+ls /usr/share/kmap/*.kmap | \
+sed 's|.*kmap/\(.*\).kmap|<option value="\1">\1|'
+fi | sort
+}
+loading_msg() {
+[ -n "$(GET noheader)" ] && return
+local MSG=${1:-$LOADING_MSG}
+[ -z "$MSG" ] && MSG="$(_ 'Please wait')"
+cat <<EOT
+<script type="text/javascript">statusbar("$MSG", 1)</script>
+EOT
+}
+xhtml_header() {
+[ -n "$(GET noheader)" ] && return
+local subtitle="$1" header="/var/cache/tazpanel/header.$(id -un)"
+if [ ! -f "$header" ]; then
+. ${PANEL}$HEADER > "$header"
+cat >> "$header" <<EOT
+<script type="text/javascript">
+document.cookie = "guiuser=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+document.cookie = "guiuser=$GUI_USER";
+</script>
+EOT
+fi
+sed "s|@@TITLE@@|${TITLE//&/\&}|; s|@@SUBTITLE@@|${subtitle//&/\&}|" "$header"
+if [ "$DEBUG" -eq 1 ]; then
+local i j x
+args=''
+for x in GET POST COOKIE; do
+for i in $($x); do
+if [ $($x $i count) -gt 1 ]; then
+for j in $(seq 1 $($x $i count)); do
+args="$args $x($i,$j)='$($x $i $j)'"
+done
+else
+args="$args $x($i)='$($x $i)'"
+fi
+done
+done
+for i in $(FILE); do
+for j in name size type tmpname; do
+args="$args FILE($i,$j)=$(FILE $i $j)"
+done
+done
+cat <<EOT
+<pre class="debug">
+QUERY_STRING="$QUERY_STRING"$args
+</pre>
+EOT
+fi
+}
+xhtml_footer() {
+[ -n "$(GET noheader)" ] && return
+export TEXTDOMAIN='tazpkg'
+. ${PANEL}$FOOTER
+}
+table_start() { echo '<table>';  }
+table_end()   { echo '</table>'; }
+df_thead() {
+cat <<EOT
+<thead>
+<tr>
+<td>$(_ 'Disk')</td>
+<td>$(_ 'Label')</td>
+<td>$(_ 'Type')</td>
+<td>$(_ 'Size')</td>
+<td>$(_ 'Available')</td>
+<td>$(_ 'Used')</td>
+<td>$(_ 'Mount point')</td>
+<td>UUID</td>
+</tr>
+</thead>
+EOT
+}
+msg() {
+msgtype="$1"; shift
+case "$msgtype" in
+tip)			I='';;
+warn|warning)	I='';;
+err|error)		I='';;
+up)				I='';;
+*)				I='';;
+esac
+echo "<section class=\"box\"><span data-icon=\"$I\"></span>$@</section>"
+}
+is_installed() {
+[ -d "$INSTALLED/$1" ]
+}
+blk2h() {
+if [ "$1" ]; then
+echo $1
+else
+cat
+fi | awk '{
+n = $0/2
+for (i = 1; n > 1024; i++)
+n /= 1024
+f = "%1.0f%c"
+if (n < 100)
+f = "%1.1f%c"
+printf f,n,substr("KMGT", i, 1)
+}'
+}
+back_button() {
+printf '<form action="%s" method="post"><button data-icon="%s">%s</button></form>' \
+"${1:-javascript:history.go(-1)}" "${3:-}" "${2:-$(_ 'Back')}"
+}
+edit_button() {
+[ -w "$1" ] && cat <<EOT
+<form action="index.cgi">
+<input type="hidden" name="file" value="$1"/>
+<button name="action" value="edit" data-icon="">${2:-$(_ 'Edit')}</button>
+</form>
+EOT
+}
+selected() {
+[ "$1" == "$2" ] && echo -n 'selected'
+}
+check_root_tazpanel() {
+if [ $(id -u) -ne 0 ]; then
+msg err "$(_ 'You must be root to show this page.')"
+xhtml_footer; exit 0
+fi
+}
+getdb() {
+if [ -n "$(which getent)" ]; then
+getent "$1"
+else
+cat "/etc/$1" | sed '/^#/d'
+fi
+}
+file_chooser() {
+id="input$RANDOM"
+cat <<EOT
+<span id="$id"><input type="text" name="$1" ${2:+value="$2" }/></span>\
+<button data-icon="${3:-}" onclick="ajax('index.cgi?do=file-selection&amp;name=$1&amp;type=$4', '1', '$id'); return false">\
+$(_n 'Browse')</button>
+EOT
+}
+dir_chooser() {
+id="input$RANDOM"
+cat <<EOT
+<span id="$id"><input type="text" name="$1" ${2:+value="$2" }/></span>\
+<button data-icon="${3:-}" onclick="ajax('index.cgi?do=dir-selection&amp;name=$1', '1', '$id'); return false">\
+$(_n 'Browse')</button>
+EOT
+}

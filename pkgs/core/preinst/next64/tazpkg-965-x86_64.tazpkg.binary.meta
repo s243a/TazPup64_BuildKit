@@ -1,0 +1,4 @@
+filename=tazpkg-965-x86_64.tazpkg
+size=160	pkgs/core/preinst/next64/tazpkg-965-x86_64.tazpkg 
+checksum.md5=581bc647cee2c8be010f909a1e6f5f89  pkgs/core/preinst/next64/tazpkg-965-x86_64.tazpkg
+checksum.sha256=04b05d2560c5fcd5e12d716bc59c3cdf04f075037ade795a794286a2cb211715  pkgs/core/preinst/next64/tazpkg-965-x86_64.tazpkg

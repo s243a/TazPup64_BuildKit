@@ -1,0 +1,4 @@
+filename=pup_event_ipc
+size=20	tazpup-core-files/build/i386/usr/local/pup_event/pup_event_ipc 
+checksum.md5=9b213f81a2cdc67b8dc80a2de372a014  tazpup-core-files/build/i386/usr/local/pup_event/pup_event_ipc
+checksum.sha256=e7304f5cc4ed218009441dc3deef766746d79f7780afc6b446176036fdf7fda9  tazpup-core-files/build/i386/usr/local/pup_event/pup_event_ipc

@@ -1,0 +1,15 @@
+b679ac5d1611aa9ca815224b457b2341  /etc/sudoers.dist
+b679ac5d1611aa9ca815224b457b2341  /etc/sudoers
+b978497e01a8994f3d653a2c99ceea88  /usr/bin/sudo
+e7764fe84fcd92cd2e98c8dd26950fca  /usr/bin/sudoreplay
+3812558ed1447caac7bb1fd3bd8c3e6e  /usr/sbin/visudo
+2af47782f9e2b9bacd0a22c417bd7946  /usr/lib/sudo/sudo_noexec.la
+b5446813f860bb77b118088c70e839a6  /usr/lib/sudo/system_group.so
+c4ba58b932c955bb84b45adc7a627955  /usr/lib/sudo/sudoers.la
+8fe6bc813a43b266d2a9406659f1da0e  /usr/lib/sudo/libsudo_util.la
+62294a1ee1d9a1871110500042d2e75d  /usr/lib/sudo/sudoers.so
+f516822e45a36f007de79dd0dfdebdc8  /usr/lib/sudo/system_group.la
+30c7a4cef291842e24cbfa3ac70c66f9  /usr/lib/sudo/group_file.so
+4877619ab122bd93e88c9968c994a084  /usr/lib/sudo/libsudo_util.so.0.0.0
+e3d573415499a8b64f15bafb85afce9d  /usr/lib/sudo/group_file.la
+1e6658bbc39f31645c29df14919848b4  /usr/lib/sudo/sudo_noexec.so

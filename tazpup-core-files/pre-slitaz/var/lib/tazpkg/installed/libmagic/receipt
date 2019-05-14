@@ -1,0 +1,22 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="64.0K"
+UNPACKED_SIZE="144.0K"
+PACKAGE="libmagic"
+VERSION="5.30"
+CATEGORY="system-tools"
+SHORT_DESC="File type determination library using 'magic' numbers"
+MAINTAINER="erjo@slitaz.org"
+LICENSE="BSD"
+WEB_SITE="http://www.darwinsys.com/file/"
+WANTED="file"
+HOST_ARCH="i486 arm"
+
+DEPENDS="zlib"
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/lib
+	cp -a $install/usr/lib/*.so* $fs/usr/lib
+}

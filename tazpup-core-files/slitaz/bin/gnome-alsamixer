@@ -1,0 +1,36 @@
+#!/bin/sh
+#mixer wrapper for lxde
+#written by mistfire
+
+look_mixer(){
+
+	for d in /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin
+	do
+		if [ -f $d/$1 ]; then
+		 exec $d/$1
+		 exit
+		fi
+	done
+	
+}
+
+if [ "$(pidof X)" != "" ] || [ "$(pidof Xorg)" != "" ]; then
+
+ #Look for GUI mixer
+  for d in kmix pavucontrol gnome-sound-applet mate-sound-applet xfce4-mixer gnome-alsamixer alsamixergui qasmixer sgmixer zmixer pimixer
+  do
+    if [ "$d" == "gnome-alsamixer" ]; then
+	 look_mixer "$d"
+	elif [ "$(which $d)" != "" ]; then
+	 exec $d
+	 break
+	fi
+  done
+
+ exit
+
+else
+ 
+look_mixer alsamixer
+
+fi

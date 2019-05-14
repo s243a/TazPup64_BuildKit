@@ -1,0 +1,2 @@
+Stage #1 Copy files into workspace
+pkg_dirs_to_copy=( "pkgs/slitaz-base pkgs/slitaz-dependencies" "pkgs/slitaz-packages" "pkgs/slitaz-preinst-pkg" )

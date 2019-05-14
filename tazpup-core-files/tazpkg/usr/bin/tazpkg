@@ -1,0 +1,360 @@
+#!/bin/sh
+#
+# TazPkg - Tiny autonomous zone packages manager.
+#
+# This is a lightweight packages manager for *.tazpkg files written in SHell
+# script. It works well with Busybox ash shell and bash. TazPkg lets you
+# list, install, remove, download or get information about a package. You
+# can use 'tazpkg usage' to get a list of commands with short descriptions.
+# TazPkg also resolves dependencies and can upgrade packages from a mirror.
+#
+# (C) 2007-2015 SliTaz - GNU General Public License v3.
+#
+# Authors: See the AUTHORS files
+# Modified by mistfire for TazPuppy
+
+. /etc/slitaz/slitaz.conf
+. /etc/slitaz/tazpkg.conf
+. /lib/libtaz.sh
+. /usr/lib/slitaz/libpkg.sh
+. /usr/libexec/tazpkg/find-depends
+
+export TEXTDOMAIN='tazpkg'
+_()  { local T="$1"; shift; printf "$(gettext "$T")" "$@"; echo; }
+_n() { local T="$1"; shift; printf "$(gettext "$T")" "$@"; }
+_p() {
+local S="$1" P="$2" N="$3"; shift 3;
+printf "$(ngettext "$S" "$P" "$N")" "$@"; }
+
+IFS=$'\n'
+set -- $(echo "$*" | sed '/^--/d')
+unset IFS
+COMMAND="$1"
+PACKAGE="${2%/}"
+PACKAGE_DIR="$(cd $(dirname "$PACKAGE" 2>/dev/null) 2>/dev/null; pwd)"
+
+[ -n "$PACKAGE" ] && PACKAGE_FILE="$PACKAGE_DIR/${PACKAGE##*/}"
+
+if [ -f "$PACKAGE" ]; then
+PACKAGE="$(basename "$PACKAGE" .tazpkg 2>/dev/null)"
+else
+PACKAGE="${PACKAGE%.tazpkg}"
+fi
+
+TARGET_DIR="$3"
+export TOP_DIR="$(pwd)"
+
+TMP_DIR="/tmp/$RANDOM"
+INSTALL_LIST=''
+SAVE_CACHE_DIR="$CACHE_DIR"
+MIRROR="$PKGS_DB/mirror"
+BLOCKED="$PKGS_DB/blocked-packages.list"
+UP_LIST="$PKGS_DB/packages.up"
+DEFAULT_MIRROR="$ONLINE_PKGS"
+
+export VERSION=$(awk -F$'\t' '$1=="tazpkg"{print $2}' "$PKGS_DB/installed.info")
+export UA="TazPkg-$VERSION"
+
+im() { tty -s; }
+
+debug() {
+if [ -n "$debug" ]; then
+colorize 036 "$@">&2
+echo -e "$(date +%f) $@">> "${LOG/.log/.debug}"
+fi
+}
+
+check_dir() {
+if [ ! -d "$1" ]; then
+action 'Creating folder "%s"...' "$1"
+mkdir -p "$1"
+status
+return 1
+fi
+}
+
+check_base_dir() {
+if [ "$(id -u)" == '0' ]; then
+check_dir $1$CACHE_DIR
+check_dir $1$INSTALLED
+check_dir $1$SLITAZ_LOGS
+if [ ! -f "$1$PKGS_DB/mirror" ]; then
+echo "${DEFAULT_MIRROR%/}/"> $1$PKGS_DB/mirror
+[ -n "$1" ] && cp $PKGS_DB/packages.* $1$PKGS_DB/
+fi
+fi
+}
+
+check_cmd() {
+for i in $@; do
+case $i in
+su)
+check_root "$COMMAND"; continue;;
+pkg)
+[ -n "$PACKAGE" -o -n "$list" ] && continue
+newline; _ 'Please specify a package name on the command line.';;
+list)
+[ -n "$PACKAGE" ] && continue
+newline; _ 'Please specify a list name on the command line.';;
+flavor)
+[ -n "$PACKAGE" ] && continue
+newline; _ 'Please specify a flavor name on the command line.';;
+release)
+[ -n "$PACKAGE" ] && continue
+newline; _ 'Please specify a release name on the command line.';;
+file)
+[ -f "$PACKAGE_FILE" ] && continue
+newline; _ 'Unable to find file "%s"' "$PACKAGE_FILE";;
+dir)
+[ -d "$TARGET_DIR" ] && continue
+newline; _ 'Please specify an existing folder name on the command line.';;
+pattern)
+[ -n "$PACKAGE" ] && continue
+newline; _ 'Please specify a pattern to search for.';;
+receipt)
+[ -f "$INSTALLED/$PACKAGE/receipt" ] && continue
+newline; _ 'Unable to find the receipt "%s"' "$INSTALLED/$PACKAGE/receipt";;
+esac
+tazpkg -h "$COMMAND"
+exit 1
+done
+}
+
+process_list() {
+debug "\nprocess_list()\n  list='$list'"
+local tmp_list pkg
+[ -z "$list" ] && return
+tmp_list="$(mktemp)"
+cp "$list" "$tmp_list"
+debug "  tmp_list='$tmp_list'"
+debug '  process important packages...'
+for pkg in busybox-pam busybox gcc-lib-base glibc-base slitaz-base-files tazpkg; do
+debug "  pkg='$pkg'"
+pkg=$(grep "^$pkg" "$tmp_list")
+[ -z "$pkg" ] && continue
+debug "  tazpkg $COMMAND '$pkg' --list=''"
+tazpkg $COMMAND "$pkg" --list=''
+sed -i "/^$pkg$/d" "$tmp_list"
+done
+debug '  process the rest...'
+for pkg in $(cat "$tmp_list"); do
+debug "tazpkg $COMMAND '$pkg' --list=''"
+tazpkg $COMMAND "$pkg" --list=''
+done
+rm "$tmp_list"
+debug '  END: process_list()'
+}
+
+log_pkg() {
+local extra
+[ "$1" == 'Installed' ] && \
+extra=" - $(fgrep " $PACKAGE-$VERSION" $PKGS_DB/installed.$SUM | awk '{ print $1 }')"
+[ -e "$LOG" ] || touch $LOG
+[ -w "$LOG" ] &&
+echo "$(date +'%F %T') - $1 - $PACKAGE ($VERSION$EXTRAVERSION)$extra">> $LOG
+}
+
+extract_package() {
+action 'Extracting package...'
+cpio -idm --quiet < "${PACKAGE_FILE##*/}" && rm -f "${PACKAGE_FILE##*/}"
+if [ -f fs.cpio.lzma ]; then
+unlzma < fs.cpio.lzma | cpio -idm --quiet && rm fs.cpio.lzma
+elif [ -f fs.cpio.gz ]; then
+zcat fs.cpio.gz | cpio -idm --quiet && rm fs.cpio.gz
+fi
+status
+}
+
+translate_category() {
+sed "s|base-system$|$(_ base-system)|g; s|x-window$|$(_ x-window)|g;
+s|utilities$|$(_ utilities)|g; s|network$|$(_ network)|g;
+s|graphics$|$(_ graphics)|g; s|multimedia$|$(_ multimedia)|g;
+s|office$|$(_ office)|g; s|development$|$(_ development)|g;
+s|system-tools$|$(_ system-tools)|g; s|security$|$(_ security)|g;
+s|games$|$(_ games)|g; s|misc$|$(_ misc)|g; s|meta$|$(_ meta)|g;
+s|non-free$|$(_ non-free)|g"
+}
+
+reverse_translate_category() {
+echo "$cat_i18n" | awk "BEGIN{FS=\"	\"}{if (/^$@	/) a=\$2}END{if (a==\"\") a=\"$@\"; print a}"
+}
+
+check_base_dir
+
+case "$COMMAND" in
+call)
+shift
+fgrep -q "$1()" "$0" && $@
+;;
+list|-l)
+shift
+case $1 in
+b|blocked)			/usr/libexec/tazpkg/list blocked;;
+c|cat|categories)	/usr/libexec/tazpkg/list categories;;
+l|linked)			/usr/libexec/tazpkg/list linked;;
+'')					/usr/libexec/tazpkg/list installed;;
+*)					/usr/libexec/tazpkg/list installed_of_category "$@";;
+esac
+;;
+-lb)	/usr/libexec/tazpkg/list blocked;;
+-lc)	/usr/libexec/tazpkg/list categories;;
+-ll)	/usr/libexec/tazpkg/list linked;;
+-lm|list-mirror)	/usr/libexec/tazpkg/list mirrored;;
+-lf|list-files)		check_cmd pkg; /usr/libexec/tazpkg/list installed_files "$PACKAGE";;
+-a|activity|log)	/usr/libexec/tazpkg/list activity;;
+list-config)		/usr/libexec/tazpkg/list config_files "$2";;
+list-suggested)		/usr/libexec/tazpkg/list suggested;;
+info)
+check_cmd pkg; /usr/libexec/tazpkg/info "$2";;
+desc|-d)
+check_cmd pkg; /usr/libexec/tazpkg/description "$2";;
+search|-s|-si|-sl)
+check_cmd pattern
+for i in $@; do
+case "$i" in
+-i|-si) export installed='yes';;
+-l|-sl) export list='yes';;
+-m)     export mirror='yes';;
+esac
+done
+/usr/libexec/tazpkg/search pkg "$2"
+;;
+search-file|-sf)
+check_cmd pattern; /usr/libexec/tazpkg/search file "$2";;
+search-pkgname|-sp)
+check_cmd pattern; /usr/libexec/tazpkg/search file2 "$2";;
+add-flavor)
+check_cmd su flavor; shift; /usr/libexec/tazpkg/flavor $@;;
+install-flavor)
+check_cmd su flavor; shift; purge='yes' /usr/libexec/tazpkg/flavor $@;;
+set-release)
+check_cmd su release
+/usr/libexec/tazpkg/set-release "$2";;
+remove|-r)
+check_cmd su pkg; shift; /usr/libexec/tazpkg/remove $@;;
+extract|-e)
+check_cmd pkg file; shift; /usr/libexec/tazpkg/extract $@;;
+recompress)
+check_cmd su pkg file; /usr/libexec/tazpkg/recompress "$PACKAGE_FILE";;
+repack-config)
+check_cmd su; /usr/libexec/tazpkg/repack-config;;
+repack)
+check_cmd pkg receipt; shift; /usr/libexec/tazpkg/repack $@;;
+pack)
+check_cmd pkg; shift; /usr/libexec/tazpkg/pack $@;;
+recharge)
+check_cmd su; shift; /usr/libexec/tazpkg/recharge $@;;
+up|upgrade)
+check_cmd su
+if [ ! -f /tmp/tazpkg-dontbreak.lock ]; then
+ rm -f /tmp/tazpkg-*.lock 2>/dev/null
+fi
+for opt in $@; do
+case "$opt" in
+-i) export install='yes';;
+-c) export check='yes';;
+esac
+done
+/usr/libexec/tazpkg/upgrade
+;;
+bugs)
+shift; /usr/libexec/tazpkg/bugs $@;;
+check)
+shift; /usr/libexec/tazpkg/check $@;;
+block|-b|unblock|-u|chblock)
+check_cmd su pkg; /usr/libexec/tazpkg/block $@;;
+get|-g)
+check_cmd pkg; shift
+export nocache='yes'
+for i in $@; do
+pkg="$(/usr/libexec/tazpkg/get $i)" && _ 'Done: %s' "${pkg##*/}"
+done
+process_list
+;;
+install|-i)
+check_cmd su pkg file; shift
+for i in $@; do
+/usr/libexec/tazpkg/install $i
+done
+process_list
+;;
+get-install|-gi)
+check_cmd su pkg; shift
+if [ ! -f /tmp/tazpkg-dontbreak.lock ]; then
+ rm -f /tmp/tazpkg-*.lock 2>/dev/null
+fi
+export tazpkg_command='get-install'
+for i in $@; do
+pkg="$(/usr/libexec/tazpkg/get $i)" && /usr/libexec/tazpkg/install "$pkg"
+done
+process_list
+;;
+get-list|install-list|get-install-list)
+check_cmd su list file
+COMMAND=${COMMAND%-list}
+export list="$2"
+process_list
+;;
+clean-cache|-cc)
+check_cmd su; /usr/libexec/tazpkg/cache clean;;
+list-cache)
+/usr/libexec/tazpkg/cache list;;
+list-undigest)
+/usr/libexec/tazpkg/mirror list;;
+remove-undigest)
+check_cmd su; shift; /usr/libexec/tazpkg/mirror remove $@;;
+add-undigest|setup-undigest)
+check_cmd su; shift; /usr/libexec/tazpkg/mirror add $@;;
+setup-mirror|-sm)
+check_cmd su; shift; /usr/libexec/tazpkg/mirror setup $@;;
+reconfigure)
+check_cmd su pkg receipt; /usr/libexec/tazpkg/reconfigure "$2";;
+shell)
+if [ "$(id -u)" -eq 0 ]; then
+PROMPT="\\033[1;33mtazpkg\\033[0;39m# "
+else
+PROMPT="\\033[1;33mtazpkg\\033[0;39m> "
+fi
+if [ -z "$noheader" ]; then
+clear
+title 'TazPkg SHell.'
+_ "Type 'usage' to list all available commands or 'quit' or 'q' to exit."
+newline
+fi
+while true; do
+echo -en "$PROMPT"; read cmd
+case $cmd in
+q|quit)
+break;;
+shell)
+_ 'You are already running a TazPkg SHell.';;
+su)
+su -c 'exec tazpkg shell --noheader' && break;;
+"")
+continue;;
+*)
+tazpkg $cmd;;
+esac
+done;;
+depends)
+check_cmd pkg; shift; /usr/libexec/tazpkg/depends depends $@;;
+rdepends)
+check_cmd pkg; shift; /usr/libexec/tazpkg/depends rdepends $@;;
+convert|-c)
+check_cmd file; shift; /usr/libexec/tazpkg/convert $@;;
+link)
+check_cmd su pkg dir; shift; /usr/libexec/tazpkg/link $@;;
+help|-h)
+shift; /usr/libexec/tazpkg/help $@
+;;
+mkdb)
+shift; /usr/libexec/tazpkg/mkdb $@
+;;
+'')
+/usr/libexec/tazpkg/summary
+;;
+usage|*)
+/usr/libexec/tazpkg/help
+;;
+esac
+exit 0

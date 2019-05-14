@@ -1,0 +1,72 @@
+#!/bin/sh
+#written by mistfire
+#free memory tray applet using bash and yad
+#some functions is based from pup_event by Barry Kauler and the Puppy Community
+#listens memory info from /usr/local/user_cron/task-scripts/freemem-read-memory
+
+mypid=$$
+
+if [ -d /dev/shm ] && [ -w /dev/shm ]; then
+ fifo="/dev/shm/pupfreemem.fifo"
+ echo "$fifo" > /dev/shm/fifopath
+elif [ -w /tmp ]; then
+ fifo="/tmp/pupfreemem.fifo"
+ echo "$fifo" > /tmp/fifopath
+else
+ fifo="$HOME/.cache/pupfreemem.fifo"
+ echo "$fifo" > $HOME/.cache/fifopath
+fi
+
+listen() {
+
+	mkfifo $fifo
+	exec 3<> $fifo
+	
+	#if [ "$1" != "" ]; then
+	# trayicon="$1"
+	#fi
+	
+	user_crond /usr/local/user_cron/task-mem 10 &
+	
+	echo "menu:Exit!$0 stop!gtk-cancel" > $fifo
+	/usr/local/user_cron/task-mem
+	
+	yad --notification --listen --command="partview" --image=gtk-execute --text="Reading Free Space..." <&3
+	
+	#rm -f $fifo
+}
+
+stop_tray(){
+
+if [ -e $fifo ]; then	
+ echo "quit" > $fifo	
+fi
+
+kuser="$(whoami)"
+xpid="$(busybox ps | grep "$kuser" | grep "user_crond /usr/local/user_cron/task-mem" | grep -v grep | awk '{print $1}')"
+
+if [ "$xpid" != "" ]; then
+ kill $xpid 2>/dev/null
+fi
+
+rm -f $fifo 2>/dev/null
+}
+
+if [ "$1" == "stop" ]; then
+stop_tray
+exit
+fi
+
+kuser="$(whoami)"
+xpid="$(busybox ps | grep "$kuser" | grep "yad --notification --listen --command=\"partview\" --image=gtk-execute --text=\"Reading Free Space...\"" | grep -v grep | awk '{print $1}')"
+
+if [ "$xpid" != "" ]; then
+ echo "Tray applet already running"
+ exit
+fi
+
+listen
+
+stop_tray
+
+exit

@@ -1,0 +1,4 @@
+filename=libtasn1-4.13-x86_64.tazpkg
+size=40	pkgs/core/base/next64/libtasn1-4.13-x86_64.tazpkg 
+checksum.md5=6a5b4d8f53cf4fd3caadbd0c269381fa  pkgs/core/base/next64/libtasn1-4.13-x86_64.tazpkg
+checksum.sha256=2dd5b6fa546d629a4ab3ce9fbdd7fb23e238494b49585db74817a4ec95fb20b0  pkgs/core/base/next64/libtasn1-4.13-x86_64.tazpkg

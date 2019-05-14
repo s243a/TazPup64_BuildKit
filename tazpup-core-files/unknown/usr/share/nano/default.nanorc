@@ -1,0 +1,4 @@
+syntax "default"
+comment "#"
+color ,red " +	+"
+color brightred "(GNU )?nano [1-9]\.[0-9]\.[^[:space:][:punct:]]+"

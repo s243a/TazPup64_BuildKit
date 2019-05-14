@@ -1,0 +1,15 @@
+b67b5c231faeea9d0e75a330a3830194  /usr/lib/libgstdataprotocol-0.10.so.0.30.0
+f11ff9c83ff78f94d87ec1abb0dd38ab  /usr/lib/libgstcheck-0.10.so.0.30.0
+f44517694b6dd40306d63d466e5645f9  /usr/lib/libgstbase-0.10.so.0.30.0
+110c41179b910da2805d484220acaf9c  /usr/lib/libgstcontroller-0.10.so.0.30.0
+63e22cfc1ab953757aa6bd2ddf01fba8  /usr/lib/libgstreamer-0.10.so.0.30.0
+9497f87171c4583be6c4a17694cf81e7  /usr/lib/gstreamer-0.10/gst-plugin-scanner
+43d56666d7a830c365b3a436d9a8829e  /usr/lib/gstreamer-0.10/libgstcoreindexers.so
+e5e1fa5fc32c8be7c63a38aafca24b39  /usr/lib/gstreamer-0.10/libgstcoreelements.so
+f9357e47d02e6445aefd7297315267c0  /usr/lib/libgstnet-0.10.so.0.30.0
+2e28f90cccd91310eb27f94cde128bb3  /usr/bin/gst-launch-0.10
+5ccdf13383ac11025316c07367abd134  /usr/bin/gst-typefind-0.10
+d195d5a53e07c2c333b31920b6493a62  /usr/bin/gst-xmlinspect-0.10
+71fe1489b2e1c5ab668bbfda50bb36c8  /usr/bin/gst-inspect-0.10
+1b8142958c2efa64c2cba89bacf898b0  /usr/bin/gst-feedback-0.10
+2e28f90cccd91310eb27f94cde128bb3  /usr/bin/gst-xmllaunch-0.10

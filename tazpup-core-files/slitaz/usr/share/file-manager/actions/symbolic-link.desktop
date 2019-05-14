@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Action
+Name=Create symbolic link
+Icon=emblem-symbolic-link
+Profiles=create_sym;
+
+[X-Action-Profile create_sym]
+ShowIfTrue=test ! -L %f
+MimeTypes=*;
+Exec=create-sym '%f'

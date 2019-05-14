@@ -1,0 +1,4 @@
+filename=util-linux-getopt-2.32.1-x86_64.tazpkg
+size=8	pkgs/core/base/next64/util-linux-getopt-2.32.1-x86_64.tazpkg 
+checksum.md5=8e77230ffe248e664c1921fe3c8f5f51  pkgs/core/base/next64/util-linux-getopt-2.32.1-x86_64.tazpkg
+checksum.sha256=7838ae50e04d20fbd85c29b106493db0c8ff9d591e49756aeb5fc5fb23c3c288  pkgs/core/base/next64/util-linux-getopt-2.32.1-x86_64.tazpkg

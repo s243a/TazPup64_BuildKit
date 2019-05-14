@@ -1,0 +1,4 @@
+filename=pcsc-lite-1.8.6-x86_64.tazpkg
+size=60	pkgs/core/base/next64/pcsc-lite-1.8.6-x86_64.tazpkg 
+checksum.md5=07d5616c9b315765a1b49dd11f02edd1  pkgs/core/base/next64/pcsc-lite-1.8.6-x86_64.tazpkg
+checksum.sha256=1deb15e4a8e5bb4eb1219f2351e61bd1e9e1b2c3446714b2260097ea16e3eee6  pkgs/core/base/next64/pcsc-lite-1.8.6-x86_64.tazpkg

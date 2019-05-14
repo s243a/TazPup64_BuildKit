@@ -1,0 +1,4 @@
+filename=floppy
+size=0	tazpup-core-files/pre-slitaz/var/www/tazpanel/menu.d/boot/floppy 
+checksum.md5=9927a164460e44b21bdb46175d5a2cca  tazpup-core-files/pre-slitaz/var/www/tazpanel/menu.d/boot/floppy
+checksum.sha256=952b9305985bd2d30c3d2649f56ca7f946871c80a68ec64352890d98ce81e425  tazpup-core-files/pre-slitaz/var/www/tazpanel/menu.d/boot/floppy

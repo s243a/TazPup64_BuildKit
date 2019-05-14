@@ -1,0 +1,4 @@
+filename=gparted-0.32.0-x86_64.tazpkg
+size=240	pkgs/core/base/next64/gparted-0.32.0-x86_64.tazpkg 
+checksum.md5=6cbc348435f8c6367519cab7bc3b37f2  pkgs/core/base/next64/gparted-0.32.0-x86_64.tazpkg
+checksum.sha256=4f01e8475317ebf00110868b31be3394b1f43fe11cfc4a83b556d83e81fbb85e  pkgs/core/base/next64/gparted-0.32.0-x86_64.tazpkg

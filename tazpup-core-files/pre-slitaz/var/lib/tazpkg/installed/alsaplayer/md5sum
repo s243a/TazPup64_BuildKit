@@ -1,0 +1,17 @@
+56825d2fb9fce1c0b388f04b937ebdc8  /usr/lib/libalsaplayer.so.0.0.2
+fc958195e57eef92a31e976759ab9f2e  /usr/lib/alsaplayer/interface/libtext_interface.so
+be81bc99cf2b8f26521a21d8abf7e640  /usr/lib/alsaplayer/interface/libdaemon_interface.so
+ca37a4ff6ae67f32ecb22373d4848d72  /usr/lib/alsaplayer/interface/libgtk2_interface.so
+2961f895c8ea24e0cbbbeda78744a81e  /usr/lib/alsaplayer/input/libcdda.so
+16df958c1d969a84f86b304bb2ad01c7  /usr/lib/alsaplayer/input/libflac_in.so
+c3566883b1fa0bf08de80bf76fc75c4d  /usr/lib/alsaplayer/input/libwav.so
+f74d01c865063d1d1e0927d62efe4bd5  /usr/lib/alsaplayer/input/libmad_in.so
+31635564ad5a157f24639b89facb4ae8  /usr/lib/alsaplayer/input/libvorbis_in.so
+3b8778c9efb616b0fda64088f04e5f20  /usr/lib/alsaplayer/reader/libfile.so
+d11ff3996885d4751bfd4c1fd5321689  /usr/lib/alsaplayer/reader/libhttp.so
+7930496551030183c8a9a2d3c44edeec  /usr/lib/alsaplayer/output/libnull_out.so
+9655f0321165ff5bbc7634811b73cbc7  /usr/lib/alsaplayer/output/libalsa_out.so
+53b8576aca624284c405dee59784aac0  /usr/lib/alsaplayer/output/liboss_out.so
+c59d4f03ec2085d3c30c6a60942d49fe  /usr/share/pixmaps/alsaplayer.png
+ea296a32eaf7737765d1f42261387d1e  /usr/share/applications/alsaplayer.desktop
+6b67fa621165b1a5e4c01542ee2f2d81  /usr/bin/alsaplayer

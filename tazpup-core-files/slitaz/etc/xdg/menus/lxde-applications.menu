@@ -1,0 +1,420 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+
+<Menu>
+
+  <Name>Applications</Name>
+  <Directory>Applications.directory</Directory>
+
+  <!-- Scan legacy dirs first, as later items take priority -->
+  <KDELegacyDirs/>
+  <LegacyDir>/etc/X11/applnk</LegacyDir>
+  <LegacyDir>/usr/share/gnome/apps</LegacyDir>
+
+  <!-- Read standard .directory and .desktop file locations -->
+  <DefaultAppDirs/>
+  <DefaultDirectoryDirs/>
+
+  <!-- Read in overrides and child menus from applications-merged/ -->
+  <DefaultMergeDirs/>
+
+  <!-- Development Tools -->
+  <Menu>
+    <Name>Development</Name>
+    <Directory>Development.directory</Directory>
+    <Include>
+      <Category>Development</Category>
+      <Category>Programming</Category>
+      <Category>X-Utility-development</Category>
+      <Category>Building</Category>
+      <Category>Debugger</Category>
+      <Category>IDE</Category>
+      <Category>Profiling</Category>
+      <Category>ProjectManagement</Category>
+      <Category>RevisionControl</Category>
+      <Category>Translation</Category>
+      <Category>GUIDesigner</Category>
+      <Category>Compile</Category>
+      <Category>Compiler</Category>
+      <Category>Compiling</Category>
+      <Category>Toolkit</Category>
+    </Include>
+  </Menu> <!-- End Development Tools -->
+
+  <!-- Education -->
+  <Menu>
+    <Name>Education</Name>
+    <Directory>lxde-education.directory</Directory>
+    <Include>
+      <Category>Education</Category>
+      <Category>X-Personal-education</Category>
+      <Category>Languages</Category>
+      <Category>Science</Category>
+      <Category>ArtificialIntelligence</Category>
+      <Category>Astronomy</Category>
+      <Category>Biology</Category>
+      <Category>Chemistry</Category>
+      <Category>ComputerScience</Category>
+      <Category>DataVisualization</Category>
+      <Category>Economy</Category>
+      <Category>Electricity</Category>
+      <Category>Geography</Category>
+      <Category>Geology</Category>
+      <Category>Geoscience</Category>
+      <Category>History</Category>
+      <Category>Literature</Category>
+      <Category>Math</Category>
+      <Category>NumericalAnalysis</Category>
+      <Category>MedicalSoftware</Category>
+      <Category>Physics</Category>
+      <Category>Robotics</Category>
+      <Category>Sports</Category>
+      <Category>ParallelComputing</Category>
+    </Include>
+  </Menu> <!-- End Education -->
+
+  <!-- Games -->
+  <Menu>
+    <Name>Games</Name>
+    <Directory>Games.directory</Directory>
+    <Include>
+      <Category>ActionGame</Category>
+      <Category>AdventureGame</Category>
+      <Category>Amusement</Category>
+      <Category>Arcade</Category>
+      <Category>ArcadeGame</Category>     
+      <Category>BlocksGame</Category>
+      <Category>BoardGame</Category>
+      <Category>CardGame</Category>
+      <Category>Fun</Category>
+      <Category>Game</Category>
+      <Category>Games</Category>
+      <Category>KidsGame</Category>
+      <Category>LogicGame</Category>
+      <Category>RolePlaying</Category>        
+      <Category>Simulation</Category>
+      <Category>SportsGame</Category>     
+      <Category>StrategyGame</Category>
+      <Category>X-Fun</Category>
+      <Category>X-Fun-adventure</Category>
+      <Category>X-Fun-arcade</Category>
+      <Category>X-Fun-boardgame</Category>
+      <Category>X-Fun-cardgame</Category>
+      <Category>X-Fun-puzzle</Category>
+      <Category>X-Fun-shooter</Category>
+     </Include>
+  </Menu> <!-- End Games -->
+
+  <!-- Graphics -->
+  <Menu>
+    <Name>Graphics</Name>
+    <Directory>Graphics.directory</Directory>
+    <Include>
+        <Category>Graphics</Category>
+        <Category>ImageProcessing</Category>
+        <Category>X-Graphic</Category>
+        <Category>2DGraphics</Category>
+        <Category>3DGraphics</Category>
+        <Category>X-Graphic-paint</Category>
+        <Category>RasterGraphics</Category>
+        <Category>X-Graphic-draw</Category>
+        <Category>VectorGraphics</Category>
+        <Category>X-Graphic-flow</Category>
+        <Category>X-Graphic-viewer</Category>
+        <Category>Viewer</Category>
+        <Category>X-Graphic-camera</Category>
+        <Category>Photography</Category>
+        <Category>X-Graphic-scanner</Category>
+        <Category>Scanning</Category>
+        <Category>OCR</Category>
+        <Category>X-Graphic-print</Category>
+        <Category>X-Graphic-utility</Category>
+        <Category>X-GraphicUtility</Category>
+     </Include>
+  </Menu> <!-- End Graphics -->
+
+  <!-- Multimedia -->
+  <Menu>
+    <Name>Multimedia</Name>
+    <Directory>Multimedia.directory</Directory>
+    <Include>
+      <Category>Audio</Category>
+      <Category>AudioVideo</Category>    
+      <Category>AudioVideoEditing</Category>
+      <Category>DiskBurning</Category>
+      <Category>DiskRipping</Category>
+      <Category>Midi</Category>
+      <Category>Mixer</Category>
+      <Category>Music</Category>
+      <Category>Player</Category>
+      <Category>Recorder</Category>
+      <Category>Sequencer</Category>
+      <Category>Tuner</Category>
+      <Category>TV</Category>
+      <Category>Video</Category>
+      <Category>X-Multimedia-audiovideo</Category>
+      <Category>X-Multimedia</Category>
+      <Category>X-Multimedia-mediaplayer</Category>
+      <Category>X-Multimedia-optical</Category>
+      <Category>X-Multimedia-sound</Category>
+      <Category>X-Multimedia-utility</Category>
+      <Category>X-Multimedia-video</Category>
+    </Include>
+  </Menu>   <!-- End Multimedia -->
+
+  <!-- Office -->
+  <Menu>
+    <Name>Office</Name>
+    <Directory>Office.directory</Directory>
+    <Include>
+      <Category>Calculator</Category>     
+      <Category>Calendar</Category>
+      <Category>ContactManagement</Category>
+      <Category>Dictionary</Category>
+      <Category>Document</Category>
+      <Category>Finance</Category>
+      <Category>PDA</Category>
+      <Category>Personal</Category>
+      <Category>Presentation</Category>
+      <Category>ProjectManagement</Category>      
+      <Category>Publishing</Category>
+      <Category>Spreadsheet</Category>
+      <Category>TextEditor</Category>      
+      <Category>WebDevelopment</Category>
+      <Category>WordProcessor</Category>
+      <Category>X-Business-calc</Category>
+      <Category>X-Business</Category>
+      <Category>X-Business-finance</Category>
+      <Category>X-Business-planner</Category>
+      <Category>X-Business-spreadsheet</Category>
+      <Category>X-Calculate</Category>
+      <Category>X-Spreadsheet</Category>
+      <Category>X-CalculateUtility</Category>
+      <Category>X-Document-catalog</Category>
+      <Category>X-Document</Category>
+      <Category>X-Document-edit</Category>
+      <Category>X-Document-layout</Category>
+      <Category>X-Document-utility</Category>
+      <Category>X-DocumentUtility</Category>
+      <Category>X-Document-viewer</Category>
+      <Category>X-Personal</Category>
+      <Category>X-Personal-database</Category>
+      <Category>X-Personal-date</Category>
+      <Category>X-Personal-organizer</Category>
+      <Category>X-Personal-security</Category>
+      <Category>X-Personal-timing</Category>
+      <Category>X-PersonalUtility</Category>
+	</Include>
+  </Menu> <!-- End Office -->
+
+  <Menu>
+    <Name>System</Name>
+    <Directory>System-Tools.directory</Directory>
+    <Include>
+      <Category>X-System</Category>
+      <Category>System</Category>
+      <Category>HardwareSettings</Category>
+      <Category>Core</Category>
+      <Category>X-System-process</Category>
+      <Category>Monitor</Category>
+      <Category>X-SystemSchedule</Category>
+      <Category>X-System-memory</Category>
+      <Category>X-SystemMemory</Category>  
+      <Category>X-System-print</Category>
+      <Category>X-System-storage</Category>
+      <Category>X-System-security</Category>
+      <Category>Security</Category>
+      <Category>Printer</Category>
+      <Category>Printing</Category>
+    </Include>
+  </Menu>
+    
+<Menu>
+  <Name>Personal</Name>
+  <Directory>Puppy-Personal.directory</Directory>
+    <Include>
+      <Category>X-Personal</Category>
+      <Category>X-Personal-database</Category>
+      <Category>ContactManagement</Category>
+      <Category>X-Personal-date</Category>
+      <Category>Calendar</Category>
+      <Category>X-Personal-organizer</Category>
+      <Category>PDA</Category>
+      <Category>X-Personal-security</Category>
+      <Category>X-Personal-timing</Category>
+      <Category>X-PersonalUtility</Category>
+    </Include>
+</Menu>
+
+<Menu>
+  <Name>Filesystem</Name>
+  <Directory>Puppy-Filesystem.directory</Directory>
+    <Include>
+      <Category>FileSystem</Category>
+      <Category>X-Filesystem</Category>
+      <Category>FileTools</Category>
+      <Category>X-Filesystem-filemanager</Category>
+      <Category>FileManager</Category>
+      <Category>X-Filesystem-mount</Category>
+      <Category>X-FilesystemMount</Category>
+      <Category>X-Filesystem-find</Category>
+      <Category>X-FilesystemFind</Category>
+      <Category>X-Filesystem-storage</Category>
+      <Category>X-FilesystemUtility</Category>
+    </Include>
+</Menu>
+      
+<Menu>
+  <Name>Setup</Name>
+  <Directory>Puppy-Setup.directory</Directory>
+    <Include>
+      <Category>Settings</Category>
+      <Category>Setup</Category>
+      <Category>Config</Category>
+      <Category>X-Setup</Category>
+      <Category>X-Setup-puppy</Category>
+      <Category>X-SetupEntry</Category> 
+      <Category>X-Setup-wizard</Category>
+      <Category>X-SetupWizard</Category>
+      <Category>X-Setup-installation</Category>
+      <Category>X-SetupUtility</Category>
+      <Category>X-System-print</Category>
+      <Category>PackageManager</Category>
+      <Category>Preferences</Category>
+      <Category>Printer</Category>
+      <Category>Printing</Category>
+      <Category>Configuration</Category>
+      <Category>Administration</Category>
+      <Category>Admin</Category>
+      <Category>Tools</Category>
+      <Category>Accessibility</Category>
+      <Category>Wizard</Category>
+      <Category>Wizards</Category>
+   </Include>
+ </Menu>
+      
+<Menu>
+  <Name>Desktop</Name>
+  <Directory>Puppy-Desktop.directory</Directory>
+    <Include>
+      <Category>DesktopSettings</Category>
+      <Category>X-Desktop-appearance</Category>  
+      <Category>X-Desktop</Category>
+      <Category>X-Desktop-settings</Category>
+      <Category>X-DesktopCountry</Category>
+      <Category>Accessibility</Category>
+      <Category>X-Desktop-windows</Category>
+      <Category>X-Desktop-sleep</Category>
+      <Category>Screensaver</Category>
+      <Category>X-Desktop-applet</Category>
+      <Category>X-DesktopApplets</Category>
+      <Category>Clock</Category>
+      <Category>Accessibility</Category>
+      <Category>Appearance</Category>
+      <Category>Themes</Category>
+      <Category>Widgets</Category>
+    </Include>
+ </Menu>
+
+  <Menu>
+    <Name>Internet</Name>
+    <Directory>Puppy-Internet.directory</Directory>
+    <Include>
+      <Category>Chat</Category>
+      <Category>Email</Category>
+      <Category>FileTransfer</Category>
+      <Category>InstantMessaging</Category>
+      <Category>Internet</Category>
+      <Category>IRCClient</Category>
+      <Category>News</Category>
+      <Category>P2P</Category>
+      <Category>Telephony</Category>
+      <Category>VideoConference</Category>
+      <Category>WebBrowser</Category>
+      <Category>X-Internet</Category>
+      <Category>X-Internet-block</Category>
+      <Category>X-Internet-browser</Category>    
+      <Category>X-Internet-chat</Category>
+      <Category>X-Internet-login</Category>
+      <Category>X-Internet-mailnews</Category>
+      <Category>X-Internet-transfer</Category>
+      <Category>X-Internet-utility</Category>
+    </Include>
+  </Menu> 
+
+<Menu>
+  <Name>Network</Name>
+  <Directory>Puppy-Network.directory</Directory>
+    <Include>
+      <Category>Dialup</Category>
+      <Category>HamRadio</Category>      
+      <Category>VPN</Category>
+      <Category>RemoteAccess</Category>
+      <Category>Network</Category>
+      <Category>X-Network</Category>
+      <Category>X-Network-firewall</Category>
+      <Category>X-Network-phone</Category>
+      <Category>X-Network-connect</Category>
+      <Category>X-Network-transfer</Category>
+      <Category>X-Network-utility</Category>
+    </Include>  
+</Menu>
+
+<Menu>
+  <Name>Utility</Name>
+  <Directory>Puppy-Utility.directory</Directory> 
+    <Include>
+      <Category>Archiving</Category>
+      <Category>Compression</Category>
+      <Category>Electronics</Category>
+      <Category>Emulator</Category>
+      <Category>Engineering</Category>
+      <Category>Shell</Category>
+      <Category>TerminalEmulator</Category>
+      <Category>Translation</Category>
+      <Category>Utility</Category>     
+      <Category>X-Utility</Category>
+      <Category>X-Utility-package</Category>
+      <Category>X-Utility-shell</Category>
+      <Category>Tools</Category>
+      <Category>Accessories</Category>
+    </Include>
+</Menu>
+
+  <!-- Other -->
+<Menu>
+    <Name>Other</Name>
+    <Directory>Other.directory</Directory>
+    <OnlyUnallocated/>
+    <Include>
+      <And>
+        <Category>Application</Category>
+        <Not><Category>Core</Category></Not>
+        <Not><Category>Settings</Category></Not>
+      </And>
+    </Include>
+  </Menu> <!-- End Other -->
+      
+<Menu>
+  <Name>Favorites</Name>
+  <Directory>Puppy-Favorites.directory</Directory>
+  <Include>
+    <Category>Favorite</Category>
+    <Category>Favorites</Category>
+  </Include>
+</Menu>
+
+<Menu>
+    <Name>Utility-help</Name>
+    <Directory>Puppy-Utility-help.directory</Directory>
+    <Include>
+     <Category>X-Utility-help</Category>
+     <Category>Documentation</Category>
+     <Category>Help</Category>
+     <Category>Support</Category>
+     <Category>Manual</Category>
+     <Category>Guide</Category>
+    </Include>
+</Menu> 
+
+</Menu> <!-- End Applications -->

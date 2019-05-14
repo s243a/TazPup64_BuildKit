@@ -1,0 +1,4 @@
+filename=iptables-1.6.1_4.17.7-x86_64.tazpkg
+size=192	pkgs/core/other/next64/iptables-1.6.1_4.17.7-x86_64.tazpkg 
+checksum.md5=d0cbcb45d5566db19bafee8a03a4bca5  pkgs/core/other/next64/iptables-1.6.1_4.17.7-x86_64.tazpkg
+checksum.sha256=e506bdf2ef282369c2d2a4629844a042049661cde5b291d93d33b6ba51937d94  pkgs/core/other/next64/iptables-1.6.1_4.17.7-x86_64.tazpkg

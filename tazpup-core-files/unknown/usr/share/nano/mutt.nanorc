@@ -1,0 +1,3 @@
+syntax "mutt"
+color green "^>.*"
+color yellow start="^>* ?-- $" end="^>* ?$"

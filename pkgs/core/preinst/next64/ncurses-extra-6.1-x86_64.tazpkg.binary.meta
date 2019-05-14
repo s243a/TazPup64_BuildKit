@@ -1,0 +1,4 @@
+filename=ncurses-extra-6.1-x86_64.tazpkg
+size=500	pkgs/core/preinst/next64/ncurses-extra-6.1-x86_64.tazpkg 
+checksum.md5=dfc9f548e185f001b8a456482c94c8c3  pkgs/core/preinst/next64/ncurses-extra-6.1-x86_64.tazpkg
+checksum.sha256=eedd799206b038cfd87aa372523d3d3b1844feec299bd193a42b5a132c4b8160  pkgs/core/preinst/next64/ncurses-extra-6.1-x86_64.tazpkg

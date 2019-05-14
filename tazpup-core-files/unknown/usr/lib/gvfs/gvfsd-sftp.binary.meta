@@ -1,0 +1,4 @@
+filename=gvfsd-sftp
+size=100	tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-sftp 
+checksum.md5=ac4aa24bb72a2d4e105c6fb42dd7a4cf  tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-sftp
+checksum.sha256=fe8eec5d8ff833c49a557cc91460cf36f15dc08cfaec86b8c336663a4480dd03  tazpup-core-files/unknown/usr/lib/gvfs/gvfsd-sftp

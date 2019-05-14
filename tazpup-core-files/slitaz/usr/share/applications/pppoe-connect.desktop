@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=PPP over Ethernet
+Icon=gtk-network.png
+Comment=Connect via PPPoE
+Exec=tazpppoe
+Terminal=false
+Type=Application
+Categories=Network
+GenericName=Connect via PPPoE
+NoDisplay=false

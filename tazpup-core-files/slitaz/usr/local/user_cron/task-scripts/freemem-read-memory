@@ -1,0 +1,211 @@
+#!/bin/sh
+
+. /etc/rc.d/PUPSTATE
+
+PREVSIZEFREEM=0
+SIZETMPM=0
+TOTALMEM=0
+PREVFREEM=0
+UDMEM=0
+PREVSTRMEM=0
+
+if [ -d /dev/shm ] && [ -w /dev/shm ] && [ -e /dev/shm/fifopath ]; then
+ fifo=$(cat /dev/shm/fifopath)
+elif [ -w /tmp ] && [ -e /tmp/fifopath ]; then
+ fifo=$(cat /tmp/fifopath)
+else
+ fifo=$(cat $HOME/.cache/fifopath)
+fi
+
+render_icon(){
+  
+  if [ "$fifo" == "" ] || [ ! -e $fifo ]; then
+   continue
+  fi
+  
+  if [ $TOTALMEM -ge 1048576 ]; then
+   strmsgtotal="Capacity: $(printf "%.1f" $(echo "$TOTALMEM / 1048576" | bc -l))Tb"
+  elif [ $TOTALMEM -ge 1024 ]; then
+   strmsgtotal="Capacity: $(printf "%.1f" $(echo "$TOTALMEM / 1024" | bc -l))Gb"
+  else
+   strmsgtotal="Capacity: ${TOTALMEM}Mb"
+  fi
+   
+  if [ $SIZEFREEM -ge 1048576 ]; then
+   strmsgfree="Free Space: $(printf "%.1f" $(echo "$SIZEFREEM/ 1048576" | bc -l))Tb"
+  elif [ $SIZEFREEM -ge 1024 ]; then
+   strmsgfree="Free Space: $(printf "%.1f" $(echo "$SIZEFREEM / 1024" | bc -l))Gb" 
+  else
+   strmsgfree="Free Space: ${SIZEFREEM}Mb" 
+  fi
+  
+  UDMEM="$(echo "$TOTALMEM - $SIZEFREEM" | bc -l)"
+  
+  if [ $UDMEM -ge 1048576 ]; then
+   strmem1="$(printf "%.1f" $(echo "$UDMEM/ 1048576" | bc -l))Tb"
+  elif [ $UDMEM -ge 1024 ]; then
+   strmem1="$(printf "%.1f" $(echo "$UDMEM / 1024" | bc -l))Gb"
+  else
+   strmem1="${UDMEM}Mb"
+  fi
+   
+  strmsgused="Used Space: ${strmem1}" 
+    
+  if [ $FREEM -ge 100 ]; then
+   icon="container_4"
+  elif [ $FREEM -ge 75 ]; then
+   icon="container_4"
+  elif [ $FREEM -ge 50 ]; then
+   icon="container_3"
+  elif [ $FREEM -ge 40 ]; then
+   icon="container_2"
+  elif [ $FREEM -ge 25 ]; then
+   icon="container_2"
+  elif [ $FREEM -ge 15 ]; then
+   icon="container_1"
+  else 
+   icon="container_0"
+  fi
+  
+  ext="png"
+  folder="storage-level"
+  
+  if [ "$PREVFREEM" != "$FREEM" ]; then  
+   PREVFREEM=$FREEM
+   echo "icon:/usr/share/pixmaps/$folder/$icon.$ext" > $fifo
+  fi
+  
+  if [ "$PREVSTRMEM" != "$strmem1" ]; then
+   PREVSTRMEM="$strmem1"
+   echo "tooltip:$strmsgfree\n$strmsgused\n$strmsgtotal" > $fifo	
+  fi
+  
+  #echo "menu:Exit!$0 stop!gtk-cancel" > $fifo
+
+}
+
+free_initrd_func() {
+ #save to a file, freememapplet cany in initramfs.
+ #110405 fix for later versions busybox...
+ 
+ if [ $TOTALMEM -eq 0 ]; then
+  TotalPhyK=`free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 2 -d ' '`
+  TotalSwapK=`free | grep -o 'Swap: .*' | tr -s ' ' | cut -f 2 -d ' '`
+  TotalMemK=$(expr $TotalPhyK + $TotalSwapK)
+  TOTALMEM=$(expr TotalMemK \/ 1024)
+ fi
+ 
+ memFREEK=`free | grep -o 'Mem: .*' | tr -s ' ' | cut -f 4 -d ' '`
+ swapFREEK=`free | grep -o 'Swap: .*' | tr -s ' ' | cut -f 4 -d ' '`
+ SIZEFREEK=`expr $memFREEK + $swapFREEK`
+ SIZEFREEM=`expr $SIZEFREEK \/ 1024`
+  
+ #UDMEM=`expr $TOTALMEM - $SIZEFREEM`
+ 
+ if [ "$SIZEFREEM" == "" ]; then
+  SIZEFREEM=0
+ fi
+ 
+ if [ "$TOTALMEM" == "" ]; then
+  TOTALMEM=0
+ fi 
+  
+ if [ "$PREVSIZEFREEM" != "$SIZEFREEM" ]; then
+  PREVSIZEFREEM=$SIZEFREEM
+  FREEM=$(echo "($SIZEFREEM / $TOTALMEM) * 100" | bc -l | cut -f 1 -d '.')
+  render_icon
+ fi
+
+
+ 
+}
+
+free_func() {
+ case $PUPMODE in
+  5|6|12)
+   if [ -L /initrd/pup_rw ]; then
+    #UDMEM=`df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 3 -d ' '`
+    SIZEFREEM=`df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 4 -d ' '`
+    TOTALMEM=`expr $(df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 2 -d ' ')`
+    USEM=`df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 5 -d ' ' | sed -e "s#%##g"`
+   else
+    #UDMEM=`df -m | grep ' /initrd/pup_rw$' | tr -s ' ' | cut -f 3 -d ' '`
+    SIZEFREEM=`df -m | grep ' /initrd/pup_rw$' | tr -s ' ' | cut -f 4 -d ' '`
+    TOTALMEM=`expr $(df -m | grep ' /initrd/pup_rw$' | tr -s ' ' | cut -f 2 -d ' ')`
+    USEM=`df -m | grep ' /initrd/pup_rw$' | tr -s ' ' | cut -f 5 -d ' ' | sed -e "s#%##g"`
+   fi
+  ;;
+  *)
+   #UDMEM=`df -m | grep ' /$' | head -n 1 | tr -s ' ' | cut -f 3 -d ' '` #110509 rerwin: insert head -n 1
+   SIZEFREEM=`df -m | grep ' /$' | head -n 1 | tr -s ' ' | cut -f 4 -d ' '` #110509 rerwin: insert head -n 1
+   TOTALMEM=`expr $(df -m | grep ' /$' | head -n 1 | tr -s ' ' | cut -f 2 -d ' ')` #110509 rerwin: insert head -n 1
+   USEM=`df -m | grep ' /$' | tr -s ' ' | cut -f 5 -d ' ' | sed -e "s#%##g"`
+  ;;
+ esac
+ 
+ if [ "$SIZEFREEM" == "" ]; then
+  SIZEFREEM=0
+ fi
+ 
+ if [ "$TOTALMEM" == "" ]; then
+  TOTALMEM=0
+ fi
+ 
+ if [ "$USEM" == "" ]; then
+  USEM=0
+ fi
+  
+ if [ "$PREVSIZEFREEM" != "$SIZEFREEM" ]; then
+  PREVSIZEFREEM=$SIZEFREEM
+  FREEM=$(expr 100 - $USEM)
+  render_icon 
+ fi
+ 
+}
+
+free_flash_func(){
+ 
+ if [ -L /initrd/pup_ro1 ]; then
+  #UDMEM=`df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 3 -d ' '`
+  SIZEFREEM=`df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 4 -d ' '`
+  TOTALMEM=`expr $(df -m | grep ' /initrd/mnt/dev_save$' | tr -s ' ' | cut -f 2 -d ' ')`
+ else
+  #UDMEM=`df -m | grep ' /initrd/pup_ro1$' | tr -s ' ' | cut -f 3 -d ' '`
+  SIZEFREEM=`df -m | grep ' /initrd/pup_ro1$' | tr -s ' ' | cut -f 4 -d ' '`
+  TOTALMEM=`expr $(df -m | grep ' /initrd/pup_ro1$' | tr -s ' ' | cut -f 2 -d ' ')`  
+ fi
+ 
+ if [ "$SIZEFREEM" == "" ]; then
+  SIZEFREEM=0
+ fi
+ 
+ if [ "$TOTALMEM" == "" ]; then
+  TOTALMEM=0
+ fi
+ 
+ SIZETMPM=`df -m | grep ' /initrd/pup_rw$' | tr -s ' ' | cut -f 4 -d ' '`
+ 
+ if [ "$PREVSIZEFREEM" != "$SIZEFREEM" ]; then
+  PREVSIZEFREEM=$SIZEFREEM
+  FREEM=$(echo "($SIZEFREEM / $TOTALMEM) * 100" | bc -l | cut -f 1 -d '.')
+  render_icon
+ fi
+}
+
+readmem(){
+
+case $PUPMODE in
+  3|7|13)
+   free_flash_func
+  ;;
+  16|24|17|25) #unipup.
+   free_initrd_func
+  ;;
+  *)   
+   free_func
+  ;;
+esac
+
+}
+
+readmem

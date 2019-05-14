@@ -1,0 +1,4 @@
+filename=sysfsutils-2.1.0-x86_64.tazpkg
+size=24	pkgs/core/other/next64/sysfsutils-2.1.0-x86_64.tazpkg 
+checksum.md5=895f262e15fccfc95a6fa90d81e4a5fb  pkgs/core/other/next64/sysfsutils-2.1.0-x86_64.tazpkg
+checksum.sha256=39efea6bf2cb33f1a06009b53c6481ce0158d370f83ed33c26168c34fe84dd13  pkgs/core/other/next64/sysfsutils-2.1.0-x86_64.tazpkg

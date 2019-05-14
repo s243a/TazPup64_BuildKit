@@ -1,0 +1,4 @@
+filename=util-linux-blockdev-2.32.1-x86_64.tazpkg
+size=16	pkgs/core/other/next64/util-linux-blockdev-2.32.1-x86_64.tazpkg 
+checksum.md5=4c0b14f136df7de16670eae615d9b6ad  pkgs/core/other/next64/util-linux-blockdev-2.32.1-x86_64.tazpkg
+checksum.sha256=86535c78f73b66beb3e7edf81506601f0003b1a8eb86a5671d7493766d196036  pkgs/core/other/next64/util-linux-blockdev-2.32.1-x86_64.tazpkg

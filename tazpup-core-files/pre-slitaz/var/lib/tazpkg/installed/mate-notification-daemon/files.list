@@ -1,0 +1,16 @@
+/usr/lib/mate-notification-daemon/engines/libstandard.so
+/usr/lib/mate-notification-daemon/engines/libcoco.so
+/usr/lib/mate-notification-daemon/engines/libslider.so
+/usr/lib/mate-notification-daemon/engines/libnodoka.so
+/usr/share/mate-notification-daemon/mate-notification-properties.ui
+/usr/share/glib-2.0/schemas/org.mate.NotificationDaemon.gschema.xml
+/usr/share/icons/hicolor/32x32/apps/mate-notification-properties.png
+/usr/share/icons/hicolor/scalable/apps/mate-notification-properties.svg
+/usr/share/icons/hicolor/48x48/apps/mate-notification-properties.png
+/usr/share/icons/hicolor/22x22/apps/mate-notification-properties.png
+/usr/share/icons/hicolor/16x16/apps/mate-notification-properties.png
+/usr/share/icons/hicolor/24x24/apps/mate-notification-properties.png
+/usr/share/dbus-1/services/org.freedesktop.mate.Notifications.service
+/usr/share/applications/mate-notification-properties.desktop
+/usr/libexec/mate-notification-daemon
+/usr/bin/mate-notification-properties

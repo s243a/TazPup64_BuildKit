@@ -1,0 +1,13 @@
+#!/bin/sh
+#Common header
+
+if [ ! -f /tmp/tazpkg-local.lock ]; then
+ touch /tmp/tazpkg-local.lock
+fi
+
+. /lib/libtaz.sh
+. /usr/libexec/tazpkg/getenv
+
+if [ ! -f /tmp/tazpkg-dontbreak.lock ]; then
+ rm -f /tmp/tazpkg-local.lock
+fi

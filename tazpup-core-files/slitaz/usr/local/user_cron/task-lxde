@@ -1,0 +1,6 @@
+#!/bin/sh
+#Write commands here to perform every 5 seconds
+
+if [ "$(pidof probe-lxde)" == "" ]; then
+ exec /usr/local/user_cron/task-scripts/probe-lxde &
+fi

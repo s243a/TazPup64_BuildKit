@@ -1,0 +1,4 @@
+filename=pxelinux.0.lzma
+size=24	tazpup-core-files/unknown/usr/share/boot/pxelinux.0.lzma 
+checksum.md5=76dd6c4ffd3df889382661a583eea0b7  tazpup-core-files/unknown/usr/share/boot/pxelinux.0.lzma
+checksum.sha256=a1217cc035d0ad09595afbd04e627f793b46ed40bc4a3f723e2346845a144efb  tazpup-core-files/unknown/usr/share/boot/pxelinux.0.lzma

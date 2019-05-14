@@ -1,0 +1,55 @@
+#!/bin/sh
+# Written by mistfire for TazPuppy
+
+[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@} #110505
+
+if [ "$1" == "" ]; then
+exit
+fi
+
+bname=`basename "$1"`
+
+pkg=0
+
+case "$bname" in
+*.deb|*.udeb) pkg=1;;
+*.rpm) pkg=1;;
+*.sb) pkg=1;;
+*.sfs) pkg=1;;
+*.pet) pkg=1;;
+*.txz|*.tgz) pkg=1;;
+*.cards.tar.xz)	pkg=1;;
+*.apk|*.pkg.tar.gz|*.pkg.tar.xz) pkg=1;;
+*.ipk|*.opk) pkg=1;;
+*.spack) pkg=1;;
+*.tar.bz2) pkg=1;;
+*.xbps)	pkg=1;;
+*.tce|*.tcel|*.tcem) pkg=1;;
+*.tcz) pkg=1;;
+*) pkg=0;;
+esac
+
+
+if [ $pkg -eq 0 ]; then
+/usr/lib/gtkdialog/box_ok "Tazpkg" error "Unsupported package format"
+exit
+fi
+
+  . /usr/lib/gtkdialog/box_yesno "Tazpkg" "Do you want to convert this package?" "$bname"
+  
+  if [ "$EXIT" == "no" ]; then
+  exit
+  fi
+
+yaf-splash -text "Converting Package..." -placement center -close never &
+PID=$!
+tazpkg convert "$1"
+RES=$?
+kill $PID
+
+if [ $RES -eq 0 ]; then
+/usr/lib/gtkdialog/box_ok "Tazpkg" info "Package conversion complete"
+else
+/usr/lib/gtkdialog/box_ok "Tazpkg" error "Package conversion failed"
+fi
+

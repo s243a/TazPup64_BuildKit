@@ -1,0 +1,117 @@
+#!/bin/sh
+#part of rc.country
+#configure clock
+#(c) Copyright 2012 Barry Kauler
+#2012 GPL licence v3 (refer: /usr/share/doc/legal)
+#modularize by mistfire
+
+. /etc/clock
+
+link_localtime(){
+    if [ ! -e /etc/localtime ]; then
+	 ln -snf /usr/share/zoneinfo/Europe/London /etc/localtime
+    fi	
+}
+
+save_tz(){
+  TZx=$(readlink /etc/localtime | sed -e 's,/usr/share/zoneinfo/,,' -e 's,Etc/,,') #shinobar
+  echo "$TZx" > /etc/TZ	
+}
+
+
+if [ -d /dev/misc ]; then
+ cd /dev
+ mkdir /dev/misc
+ cd /
+fi
+
+if [ -b /dev/misc/rtc ]; then
+ ln -s /dev/rtc0 /dev/misc/rtc 
+fi
+
+#120629 raspberry pi does not have a hw clock, set date to reasonable value...
+HWDATE="`hwclock --show 2>/dev/null`" #ex: "Fri 29 Jun 2012 07:45:28 AM WST  -0.725833 seconds"
+
+if [ "$HWDATE" = "" ];then
+
+ if [ -f /var/local/shutdown_date_saved ];then #see /etc/rc.d/rc.shutdown
+  date -s "`cat /var/local/shutdown_date_saved`"
+ else
+  #either of these formats can set the date: "29 JUN 2012 10:00:00" "2012-06-28 16:20:08"
+  HWDATE="`stat --format=%z /etc/DISTRO_SPECS | cut -f 1 -d '.' | cut -f 1,2 -d ' '`" #creation date of build. ex: "2012-06-28 16:20:08"
+  date -s "$HWDATE"
+  [ ! -e /etc/localtime ] && ln -s /usr/share/zoneinfo/Europe/London /etc/localtime
+ fi
+
+else
+
+ 
+ #Ref: http://www.gnu.org/s/libc/manual/html_node/TZ-Variable.html
+ 
+ if [ ! -f /etc/TZ ]; then
+	link_localtime
+	save_tz
+	HWCLOCKTIME="localtime"   
+ fi
+ 
+  TZx=$(cat /etc/TZ)
+  
+  if [ "$TZx" == "" ]; then
+    link_localtime
+	save_tz
+	HWCLOCKTIME="localtime"    
+  elif [ "$TZx" == "UTC" ] || [ "$TZx" == "utc" ]; then
+    xTZ="UTC"
+    HWCLOCKTIME="utc"
+  elif [ "$TZx" == "localtime" ] || [ "$TZx" == "local" ]; then
+    link_localtime
+    xTZ=$(readlink /etc/localtime | sed -e 's,/usr/share/zoneinfo/,,' -e 's,Etc/,,') #shinobar
+    HWCLOCKTIME="localtime"
+  else
+    xTZ="$TZx"
+    HWCLOCKTIME="localtime"
+  fi
+  
+  if [ "$xTZ" == "Greenwich" ]; then
+	  if [ ! -f /usr/share/zoneinfo/$xTZ ] && [ ! -f /usr/share/zoneinfo/Etc/$xTZ ]; then
+	   xTZ="Europe/London"
+	  elif [ -f /usr/share/zoneinfo/$xTZ ]; then
+	   xTZ="$xTZ"
+	  elif [ -f /usr/share/zoneinfo/Etc/$xTZ ]; then
+	   xTZ="Etc/$xTZ" 
+	  fi
+  fi
+ 
+  [ "$xTZ" = "UCT" ] && xTZ="UTC"
+  [ "$xTZ" = "Universal" ] && xTZ="UTC"
+  [ "$xTZ" = "UTC" ] && xTZ="UTC"
+  [ "$xTZ" = "Zulu" ] && xTZ="UTC"
+  
+  if [ -f /usr/share/zoneinfo/$xTZ ]; then
+	  if [ -e /etc/localtime ]; then
+	   rm -f /etc/localtime
+	  fi
+	  ln -snf /usr/share/zoneinfo/$xTZ /etc/localtime
+  fi
+ 
+ #[ -s /etc/clock ] && grep -qw '^[^#]*utc' /etc/clock && HWCLOCKTIME="utc" #shinobar
+ 
+ export TZ="$xTZ"
+ 
+ #which xset &>/dev/null && xset s noblank s noexpose -dpms  #shinobar 30jan11: avoid the screen go to blank
+ 
+ if [ "$HWCLOCKTIME" == "" ]; then
+   HWCLOCKTIME="localtime"
+ fi
+ 
+ #need to set Linux system time/date, from hardware clock...
+ #hwclock --hctosys --localtime
+ hwclock --hctosys --${HWCLOCKTIME}
+ #...--hctosys reads cmos clock to system.
+ #...--localtime means that cmos clock is set to local-time.
+ 
+ if [ $? -ne 0 ]; then
+  hwclock --hctosys --${HWCLOCKTIME} --directisa
+ fi
+ 
+fi

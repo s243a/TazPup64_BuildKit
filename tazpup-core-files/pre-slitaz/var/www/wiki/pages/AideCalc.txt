@@ -1,0 +1,34 @@
+!Aide sur la feuille de calcul CSV
+!!Création
+Les feuilles de calcul sont crées à partir de données CSV avec au moins 2 colonnes et 2 lignes :
+* Les lignes CSV doivent se terminer par un ''';'''
+* Les lignes CSV ont 2 ''';''' ou plus
+* Toutes les lignes CSV ont le même nombre de ''';'''
+* Chaque case est repérée par une lettre et un nombre, elle peut contenir
+** Du texte
+** Un nombre
+** Un formule ''javascript'' commençant par '''='''
+!!Usage
+* passer la souris sur une case pour voir le contenu
+* cliquer et modifier les cases blanches
+** cliquer hors de la case pour tout recalculer
+* cliquer une case grise pour voir le CSV à jour
+!!Exemples
+{{Pommes;12;=round((100*B1)/B3)+'%'; 
+Poires;7;=round((100*B2)/B3)+"%"; 
+Total :;=sum("B1","B2");=parseInt(C1)+parseInt(C2)+'%';}}
+Pommes;12;=round((100*B1)/B3)+'%';
+Poires;7;=round((100*B2)/B3)+"%";
+Total :;=sum("B1","B2");=parseInt(C1)+parseInt(C2)+'%';
+{{Un nombre;sa racine carré; 
+2;=(A2&lt;0)?alert('A2 &lt; 0 !'):sqrt(A2);}}
+Un nombre;sa racine carré;
+2;=(A2&lt;0)?alert('A2 &lt; 0 !'):sqrt(A2);
+{{SliTaz 1.0 est sortie;Mar 22, 2008; 
+=round(((new Date()).getTime() - Date.parse(B1))/1000/3600/24);jours plus tôt !;}}
+SliTaz 1.0 est sortie;Mar 22, 2008;
+=round(((new Date()).getTime() - Date.parse(B1))/1000/3600/24);jours plus tôt !;
+!!Quelques véritables tableurs
+* [sc|http://127.0.0.1:82/user/pkgs.cgi?info=sc] pour console
+* [sc-im|http://127.0.0.1:82/user/pkgs.cgi?info=sc-im] pour console avec couleurs
+* [gnumeric|http://127.0.0.1:82/user/pkgs.cgi?info=gnumeric]

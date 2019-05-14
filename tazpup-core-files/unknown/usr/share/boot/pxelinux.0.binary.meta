@@ -1,0 +1,4 @@
+filename=pxelinux.0
+size=28	tazpup-core-files/unknown/usr/share/boot/pxelinux.0 
+checksum.md5=a40ddfc66c2a0dd3e263dca40162c7f4  tazpup-core-files/unknown/usr/share/boot/pxelinux.0
+checksum.sha256=d18a5b49e829cd1e785d3692feaa1e8292c7a0f0260da92303d5aa3b4e971bad  tazpup-core-files/unknown/usr/share/boot/pxelinux.0

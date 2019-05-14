@@ -1,0 +1,383 @@
+#!/bin/sh
+
+. /etc/rc.d/PUPSTATE
+. /etc/DISTRO_SPECS
+. /etc/slitaz/applications.conf
+
+show_floppy_root(){
+
+if [ -d /root/Desktop ]; then
+
+    echo "Show floppy drive icon..."
+
+	for flp in `ls /dev | grep -E "fd[0-9]" | grep -v "u"`
+	do
+
+	echo $flp
+
+	echo "
+	[Desktop Entry]
+	Version=1.0
+	Type=Application
+	Name=$flp
+	Comment=
+	Exec=mntfloppy $flp
+	Icon=/usr/local/lib/X11/pixmaps/floppy48.png
+	Path=
+	Terminal=false
+	StartupNotify=false
+	" > /root/Desktop/$flp.desktop
+
+	chmod 777 /root/Desktop/$flp.desktop
+
+	done
+fi
+	
+	
+}
+
+show_floppy_user(){
+
+if [ -d /home/$USER1/Desktop ]; then
+
+    echo "Show floppy drive icon for $USER1..."
+
+	for flp in `ls /dev | grep -E "fd[0-9]" | grep -v "u"`
+	do
+
+	echo $flp
+
+	echo "
+	[Desktop Entry]
+	Version=1.0
+	Type=Application
+	Name=$flp
+	Comment=
+	Exec=mntfloppy $flp
+	Icon=/usr/local/lib/X11/pixmaps/floppy48.png
+	Path=
+	Terminal=false
+	StartupNotify=false
+	" > /home/$USER1/Desktop/$flp.desktop
+
+	chmod 777 /home/$USER1/Desktop/$flp.desktop
+
+	done
+fi
+	
+}
+
+process_root(){
+
+echo "Processing files for desktop environment for root..."
+
+if [ "$PUPMODE" = "77" ];then #77=multisession cd/dvd.
+
+echo "Puppy is in multisession mode. Show save to CD/DVD icon..."
+
+if [ -f /root/Choices/ROX-Filer/PuppyPin ]; then
+ if [ "`cat /root/Choices/ROX-Filer/PuppyPin | grep "savesession"`" = "" ];then
+  echo '<icon x="768" y="128" label="save">/usr/sbin/savesession-dvd</icon>' >> /root/Choices/ROX-Filer/PuppyPin
+  grep -v '/pinboard' /root/Choices/ROX-Filer/PuppyPin  > /tmp/PuppyPin-CPY
+  sync
+  cp -f /tmp/PuppyPin-CPY /root/Choices/ROX-Filer/PuppyPin
+  echo '</pinboard>' >> /root/Choices/ROX-Filer/PuppyPin
+ fi
+fi
+
+	if [ -d /root/Desktop ]; then   
+		if [ ! -f /root/Desktop/Save.desktop ]; then
+		echo "[Desktop Entry]
+		Version=1.0
+		Type=Application
+		Name=Save Session
+		Comment=
+		Exec=savesession-dvd
+		Icon=save48
+		Path=
+		Terminal=false
+		StartupNotify=false" > /root/Desktop/Save.desktop
+		chmod +x /root/Desktop/Save.desktop
+		fi
+	fi
+ 
+fi
+
+#save button on desktop when booted from flash drive...
+if [ $PUPMODE -eq 3 -o $PUPMODE -eq 7 -o $PUPMODE -eq 13 ];then #pup_rw is tmpfs.
+
+echo "Pupsave is loaded in flash disk. Show save to flash icon..."
+
+if [ -f /root/Choices/ROX-Filer/PuppyPin ]; then
+ if [ "`cat /root/Choices/ROX-Filer/PuppyPin | grep "save2flash"`" = "" ];then
+  echo '<icon x="768" y="128" label="save">/usr/sbin/save2flash</icon>' >> /root/Choices/ROX-Filer/PuppyPin
+  grep -v '/pinboard' /root/Choices/ROX-Filer/PuppyPin  > /tmp/PuppyPin-CPY
+  sync
+  cp -f /tmp/PuppyPin-CPY /root/Choices/ROX-Filer/PuppyPin
+  echo '</pinboard>' >> /root/Choices/ROX-Filer/PuppyPin
+ fi
+fi
+
+	if [ -d /root/Desktop ]; then  
+		if [ ! -f /root/Desktop/Save.desktop ]; then 
+		echo "[Desktop Entry]
+		Version=1.0
+		Type=Application
+		Name=Save Session
+		Comment=
+		Exec=save2flash
+		Icon=save48
+		Path=
+		Terminal=false
+		StartupNotify=false" > /root/Desktop/Save.desktop
+		chmod +x /root/Desktop/Save.desktop
+		fi 
+	fi
+	
+fi
+
+if [ $PUPMODE -eq 6 -o $PUPMODE -eq 12 ] ; then
+  echo "Pupsave is loaded in hard disk. Hide save icon..."
+  [ -f /root/Desktop/Save.desktop ] && rm -f /root/Desktop/Save.desktop
+fi
+
+if [ $PUPMODE -eq 5 ];then #pup_rw is tmpfs.
+
+    echo "No pupsave is loaded. Show install icon..."
+
+	if [ -f /root/Choices/ROX-Filer/PuppyPin ]; then
+	 if [ "`cat /root/Choices/ROX-Filer/PuppyPin | grep "/usr/sbin/dotpup1"`" = "" ];then
+	  echo '<icon x="168" y="310" label="install-puppy">/usr/sbin/dotpup1</icon>' >> /root/Choices/ROX-Filer/PuppyPin
+	  grep -v '/pinboard' /root/Choices/ROX-Filer/PuppyPin  > /tmp/PuppyPin-CPY
+	  sync
+	  cp -f /tmp/PuppyPin-CPY /root/Choices/ROX-Filer/PuppyPin
+	  echo '</pinboard>' >> /root/Choices/ROX-Filer/PuppyPin
+	 fi
+	fi
+	
+	if [ -d /root/Desktop ]; then  
+		if [ ! -f /root/Desktop/pup-install.desktop ]; then 
+			echo "[Desktop Entry]
+			Version=1.0
+			Type=Application
+			Name=Install $DISTRO_NAME
+			Comment=
+			Exec=/usr/sbin/dotpup1
+			Icon=/usr/share/pixmaps/puppy/puppy_install.svg
+			Terminal=false
+			StartupNotify=false" > /root/Desktop/pup-install.desktop
+			chmod +x /root/Desktop/pup-install.desktop
+		fi
+		
+		if [ ! -f /root/Desktop/taz-ondemand.desktop ]; then 
+		 echo "[Desktop Entry]
+		 Version=1.0
+		 Type=Application
+		 Name=On-Demand Features
+		 Comment=Download and install features
+		 Exec=/usr/bin/tazpup-ondemand
+		 Icon=/usr/share/pixmaps/puppy/install_options.svg
+		 Terminal=false
+		 StartupNotify=false" > /root/Desktop/taz-ondemand.desktop
+		 chmod +x /root/Desktop/taz-ondemand.desktop
+	    fi
+		
+	fi
+		
+else
+	if [ $PUPMODE -eq 2 -o $PUPMODE -eq 6 -o $PUPMODE -eq 12 ]; then
+	 echo "Pupsave is loaded or the puppy is full install. Hide install icon..."
+	 rm -f /root/Desktop/pup-install.desktop > /dev/null	
+	fi
+fi
+
+
+
+if [ -d /root/Desktop ]; then  
+	if [ ! -f /root/Desktop/home.desktop ] && [ "$(echo "$WINDOW_MANAGER" | grep "lxde")" != "" ] ; then 
+		echo "[Desktop Entry]
+		Version=1.0
+		Type=Application
+		Name=Home
+		Comment=Show home folder
+		Exec=pcmanfm /root
+		Icon=/usr/share/pixmaps/puppy/home.svg
+		Terminal=false
+		StartupNotify=false" > /root/Desktop/home.desktop
+		chmod +x /root/Desktop/home.desktop
+	fi	
+fi
+
+if [ -d /mnt/home ]; then
+    if [ "$(cat /root/.config/gtk-3.0/bookmarks | grep "file:///mnt/home dev_save")" == "" ]; then
+	 echo "file:///mnt/home dev_save" >> /root/.config/gtk-3.0/bookmarks
+	fi
+else
+	if [ "$(cat /root/.config/gtk-3.0/bookmarks | grep "file:///mnt/home dev_save")" != "" ]; then
+	 sed -i -e "s%^file:\/\/\/mnt\/home dev_save%%" /root/config/gtk-3.0/bookmarks
+	fi
+fi
+
+##Check floppy
+
+#show_floppy	
+	
+}
+
+process_user(){
+	
+USER1="$1"	
+	
+echo "Processing files for desktop environment for $USER1..."
+
+if [ "$PUPMODE" = "77" ];then #77=multisession cd/dvd.
+
+echo "Puppy is in multisession mode. Show save to CD/DVD icon..."
+
+if [ -f /home/$USER1/Choices/ROX-Filer/PuppyPin ]; then
+ if [ "`cat /home/$USER1/Choices/ROX-Filer/PuppyPin | grep "savesession"`" = "" ];then
+  echo '<icon x="768" y="128" label="save">/usr/sbin/savesession-dvd</icon>' >> /home/$USER1/Choices/ROX-Filer/PuppyPin
+  grep -v '/pinboard' /home/$USER1/Choices/ROX-Filer/PuppyPin  > /tmp/PuppyPin-CPY
+  sync
+  cp -f /tmp/PuppyPin-CPY /home/$USER1/Choices/ROX-Filer/PuppyPin
+  echo '</pinboard>' >> /home/$USER1/Choices/ROX-Filer/PuppyPin
+ fi
+fi
+ 
+if [ ! -f /home/$USER1/Desktop/Save.desktop ]; then
+echo "[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Save Session
+Comment=
+Exec=savesession-dvd
+Icon=save48
+Path=
+Terminal=false
+StartupNotify=false" > /home/$USER1/Desktop/Save.desktop
+chmod +x /home/$USER1/Desktop/Save.desktop
+fi
+ 
+fi
+
+#save button on desktop when booted from flash drive...
+if [ $PUPMODE -eq 3 -o $PUPMODE -eq 7 -o $PUPMODE -eq 13 ];then #pup_rw is tmpfs.
+
+echo "Pupsave is loaded in flash disk. Show save to flash icon..."
+
+	if [ -f /home/$USER1/Choices/ROX-Filer/PuppyPin ]; then
+	 if [ "`cat /home/$USER1/Choices/ROX-Filer/PuppyPin | grep "save2flash"`" = "" ];then
+	  echo '<icon x="768" y="128" label="save">/usr/sbin/save2flash</icon>' >> /home/$USER1/Choices/ROX-Filer/PuppyPin
+	  grep -v '/pinboard' /home/$USER1/Choices/ROX-Filer/PuppyPin  > /tmp/PuppyPin-CPY
+	  sync
+	  cp -f /tmp/PuppyPin-CPY /home/$USER1/Choices/ROX-Filer/PuppyPin
+	  echo '</pinboard>' >> /home/$USER1/Choices/ROX-Filer/PuppyPin
+	 fi
+	fi
+
+	if [ ! -f /home/$USER1/Desktop/Save.desktop ]; then 
+	echo "[Desktop Entry]
+	Version=1.0
+	Type=Application
+	Name=Save Session
+	Comment=
+	Exec=save2flash
+	Icon=save48
+	Path=
+	Terminal=false
+	StartupNotify=false" > /home/$USER1/Desktop/Save.desktop
+	chmod +x /home/$USER1/Desktop/Save.desktop
+	fi 
+
+fi
+
+if [ $PUPMODE -eq 6 -o $PUPMODE -eq 12 ] ; then
+  echo "Pupsave is loaded in hard disk. Hide save icon..."
+  [ -f /home/$USER1/Desktop/Save.desktop ] && rm -f /home/$USER1/Desktop/Save.desktop
+fi
+
+if [ $PUPMODE -eq 5 ];then #pup_rw is tmpfs.
+
+    echo "No pupsave is loaded. Show install icon..."
+
+	if [ -f /home/$USER1/Choices/ROX-Filer/PuppyPin ]; then
+	 if [ "`cat /home/$USER1/Choices/ROX-Filer/PuppyPin | grep "/usr/sbin/dotpup1"`" = "" ];then
+	  echo '<icon x="168" y="310" label="install-puppy">/usr/sbin/dotpup1</icon>' >> /home/$USER1/Choices/ROX-Filer/PuppyPin
+	  grep -v '/pinboard' /home/$USER1/Choices/ROX-Filer/PuppyPin  > /tmp/PuppyPin-CPY
+	  sync
+	  cp -f /tmp/PuppyPin-CPY /home/$USER1/Choices/ROX-Filer/PuppyPin
+	  echo '</pinboard>' >> /home/$USER1/Choices/ROX-Filer/PuppyPin
+	 fi
+	fi
+
+	if [ ! -f /home/$USER1/Desktop/pup-install.desktop ]; then 
+	echo "[Desktop Entry]
+	Version=1.0
+	Type=Application
+	Name=Install $DISTRO_NAME
+	Comment=
+	Exec=/usr/sbin/dotpup1
+	Icon=/usr/share/pixmaps/puppy/puppy_install.svg
+	Path=
+	Terminal=false
+	StartupNotify=false" > /home/$USER1/Desktop/pup-install.desktop
+	chmod +x /home/$USER1/Desktop/pup-install.desktop
+	fi
+	
+	if [ ! -f /home/$USER1/Desktop/taz-ondemand.desktop ]; then 
+		echo "[Desktop Entry]
+		Version=1.0
+		Type=Application
+		Name=On-Demand Features
+		Comment=Download and install features
+		Exec=/usr/bin/tazpup-ondemand
+		Icon=/usr/share/pixmaps/puppy/install_options.svg
+		Terminal=false
+		StartupNotify=false" > /home/$USER1/Desktop/taz-ondemand.desktop
+		chmod +x /home/$USER1/Desktop/taz-ondemand.desktop
+	fi
+	
+else
+	if [ $PUPMODE -eq 2 -o $PUPMODE -eq 6 -o $PUPMODE -eq 12 ]; then
+	 echo "Pupsave is loaded or the puppy is full install. Hide install icon..."
+	 rm -f /home/$USER1/Desktop/pup-install.desktop > /dev/null
+	fi
+fi
+
+if [ -d /mnt/home ]; then
+    if [ "$(cat /home/$USER1/.config/gtk-3.0/bookmarks | grep "file:///mnt/home dev_save")" == "" ]; then
+	 echo "file:///mnt/home dev_save" >> /home/$USER1/.config/gtk-3.0/bookmarks
+	fi
+else
+	if [ "$(cat /home/$USER1/.config/gtk-3.0/bookmarks | grep "file:///mnt/home dev_save")" != "" ]; then
+	 sed -i -e "s%^file:\/\/\/mnt\/home dev_save%%" /home/$USER1/.config/gtk-3.0/bookmarks
+	fi
+fi
+
+##Check floppy
+
+#show_floppy_user
+	
+}
+
+
+if [ $PUPMODE -eq 3 -o $PUPMODE -eq 7 -o $PUPMODE -eq 13 ]; then
+sed -i 's/NoDisplay=true/NoDisplay=false/' /usr/share/applications/Save-Manager.desktop 
+fi
+
+if [ $PUPMODE -eq 6 -o $PUPMODE -eq 12 ] ; then
+sed -i 's/NoDisplay=false/NoDisplay=true/' /usr/share/applications/Save-Manager.desktop
+fi
+
+process_root
+
+if [ -d /home ]; then
+USERLIST=`find /home -maxdepth 1 -mindepth 1 -type d | rev | cut -f 1 -d '/' | rev`
+
+	if [ "$USERLIST" != "" ]; then
+		for USERNAME in $USERLIST
+		do
+		 process_user $USERNAME
+		done
+	fi
+fi

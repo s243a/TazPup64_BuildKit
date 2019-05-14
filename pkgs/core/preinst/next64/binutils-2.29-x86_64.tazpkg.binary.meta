@@ -1,0 +1,4 @@
+filename=binutils-2.29-x86_64.tazpkg
+size=2148	pkgs/core/preinst/next64/binutils-2.29-x86_64.tazpkg 
+checksum.md5=046a9b0d0e6cbfd8c03a896173a548fa  pkgs/core/preinst/next64/binutils-2.29-x86_64.tazpkg
+checksum.sha256=9202e7ac36b70def73dab6dfbd02c83abb936dc2a877625fff28ad0d7d8f5533  pkgs/core/preinst/next64/binutils-2.29-x86_64.tazpkg

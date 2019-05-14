@@ -1,0 +1,4 @@
+filename=strace-4.20-x86_64.tazpkg
+size=164	pkgs/core/preinst/next64/strace-4.20-x86_64.tazpkg 
+checksum.md5=534a205e29a6cc5b5a53907085a83499  pkgs/core/preinst/next64/strace-4.20-x86_64.tazpkg
+checksum.sha256=7d9c5cdf3b2d1046df9c01f1ef9d885f6c7152473eed878962728fe6da37c4f4  pkgs/core/preinst/next64/strace-4.20-x86_64.tazpkg

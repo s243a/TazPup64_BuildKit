@@ -1,0 +1,4 @@
+filename=dev.tar.gz
+size=8	tazpup-core-files/puppy/var/lib/dev.tar.gz 
+checksum.md5=80a88e8390d65980be89ac4243fad3ca  tazpup-core-files/puppy/var/lib/dev.tar.gz
+checksum.sha256=04d6737e7253538679dff418a055e7bc05c4a6efdc1040d09bdc6fea32cbb826  tazpup-core-files/puppy/var/lib/dev.tar.gz

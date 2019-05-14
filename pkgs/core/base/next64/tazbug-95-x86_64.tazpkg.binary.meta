@@ -1,0 +1,4 @@
+filename=tazbug-95-x86_64.tazpkg
+size=8	pkgs/core/base/next64/tazbug-95-x86_64.tazpkg 
+checksum.md5=0c9e6bfc85bc47e71bc1131f6473737f  pkgs/core/base/next64/tazbug-95-x86_64.tazpkg
+checksum.sha256=2683a2039010746cf75b9bf6378ad341e4046156dfa856814e742089ef91abb7  pkgs/core/base/next64/tazbug-95-x86_64.tazpkg

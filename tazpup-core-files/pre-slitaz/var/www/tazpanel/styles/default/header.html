@@ -1,0 +1,135 @@
+# Header of TazPanel html page
+
+rootclass='user'; [ $(id -u) -eq 0 ] && rootclass='root'
+TEXTDOMAIN_original="${TEXTDOMAIN:-tazpanel}"
+export TEXTDOMAIN='tazpanel'
+extra_menu() {
+local x
+case "$1" in
+*/*) filter="s/data-icon=\\\"[^\\\"]*\\\"/data-icon=\\\"\\\"/";;
+*)   filter='';;
+esac
+for x in menu.d/$1/*; do
+[ -f $x ] && sh $x menu $x | sed "$filter"
+[ -d $x ] || continue
+icon="$(sed '/data-icon/!d;s/.*data-icon="\([^"]*\).*/\1/;q' $x/*)"
+echo -e "<li><a data-icon=\"${icon:-}\">$(_ "$(basename $x)")</a>\n<menu>"
+extra_menu ${x#menu.d/}
+echo -e "</menu>\n</li>"
+done
+}
+cat <<EOT
+<!DOCTYPE html>
+<html lang="${LANG%%_*}">
+<head>
+<title>TazPanel</title>
+<link rel="shortcut icon" href="/styles/$STYLE/favicon.ico"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+$(printf '\t<link rel="stylesheet" type="text/css" href="/%s"/>\n' $(cd /var/www/tazpanel; ls styles/$STYLE/*.css* | sed 's|.gz||'))
+$(printf '\t<script type="text/javascript" src="/%s"></script>\n' $(cd /var/www/tazpanel; ls lib/*.js* | sed 's|.gz||'))
+</head>
+<body class="$rootclass">
+<script type="text/javascript">setColorTheme(); setBaseFont();</script>
+<div id="confirmBreak" style="display:none">$(_ 'Confirm break')</div>
+<header>
+<h1 data-icon="tazpanel">@@TITLE@@ </h1>
+<div>@@SUBTITLE@@</div>
+</header>
+<nav id="toolbar">
+<menu type="toolbar" id="toolbarMenu">
+<li tabindex="1">
+<span>$(_ 'Panel')</span>
+<menu>
+<li><a data-icon=""     href="index.cgi">$(_ 'Summary')</a></li>
+<li><a data-icon=""     href="index.cgi?top">$(_ 'Processes')</a></li>
+<li><a data-icon=""   href="index.cgi?report" data-root>$(_ 'Create Report')</a></li>
+$(extra_menu panel)
+</menu>
+</li>
+<li tabindex="2">
+<span>$(_ 'Network')</span>
+<menu>
+<li><a data-icon="" href="network.cgi">$(_ 'Summary')</a></li>
+<li><a data-icon="" href="index.cgi?file=/etc/network.conf&amp;action=edit">$(_ 'Config file')</a></li>
+<li><a data-icon="" href="network.cgi?proxy" data-root>$(_ 'Proxy')</a></li>
+<li><a data-icon="" href="hosts.cgi" data-root>$(_ 'Hosts file')</a></li>
+<li><a data-icon=""  href="network.cgi?eth">$(_ 'Ethernet')</a></li>
+<li><a data-icon="" href="network.cgi?wifi">$(_ 'Wireless')</a></li>
+</menu>
+</li>
+<li tabindex="3">
+<span>$(_ 'Boot')</span>
+<menu>
+<li><a data-icon="" href="boot.cgi">$(_ 'Summary')</a></li>
+EOT
+[ -w /boot/grub/menu.lst ] && cat <<EOT
+<li><a data-icon="" href="boot.cgi?grub">$(_ 'Boot loader')</a></li>
+EOT
+cat <<EOT
+<li><a data-icon="" href="boot.cgi?log">$(_ 'Boot logs')</a>
+<menu>
+<li><a data-icon="" href="boot.cgi?log=kernel">$(_ 'Kernel messages')</a></li>
+<li><a data-icon="" href="boot.cgi?log=boot">$(_ 'Boot scripts')</a></li>
+<li><a data-icon="" href="boot.cgi?log=xlog">$(_ 'X server')</a></li>
+<li><a data-icon="" href="boot.cgi?log=slim">$(_ 'X session')</a></li>
+</menu>
+</li>
+<li><a data-icon="" href="boot.cgi?syslog">$(_ 'System logs')</a>
+<li><a data-icon="" href="boot.cgi?daemons" data-root>$(_ 'Manage daemons')</a></li>
+$(extra_menu boot)
+</menu>
+</li>
+<li tabindex="4">
+<span>$(_ 'Hardware')</span>
+<menu>
+<li><a data-icon=""    href="hardware.cgi">$(_ 'Summary')</a></li>
+<li><a data-icon="" href="hardware.cgi?modules">$(_ 'Kernel modules')</a></li>
+<li><a data-icon=""  href="hardware.cgi?detect" data-root>$(_ 'Detect PCI/USB')</a></li>
+<li><a data-icon=""     href="hardware.cgi#disk">$(_ 'Disks')</a></li>
+$(extra_menu hardware)
+</menu>
+</li>
+<li tabindex="5">
+<span>$(_ 'Settings')</span>
+<menu>
+<li><a data-icon=""     href="settings.cgi" data-root>$(_ 'Summary')</a></li>
+<li><a data-icon=""     href="settings.cgi?users" data-root>$(_ 'Users')</a></li>
+<li><a data-icon=""    href="settings.cgi?groups" data-root>$(_ 'Groups')</a></li>
+<li><a data-icon="" href="settings.cgi?tweaks">$(_ 'Tweaks')</a></li>
+$(extra_menu settings)
+</menu>
+</li>
+EOT
+cat <<EOT
+$(for i in menu.d/* ; do [ -f $i ] && sh $i menu $i ; done)
+</menu>
+<span id="icons">
+EOT
+username="${REMOTE_USER:-root}"
+case "$username" in
+root) icon='data-img=""'; warn=''
+toggle_url="http://$HTTP_HOST/";;
+*)    icon='data-img=""';   warn="$(_ 'Some features are disabled.')"$'\n'
+toggle_url="http://$RANDOM:*@$HTTP_HOST/user/";;
+esac
+cat <<EOT
+<a $icon title="$(_ 'You are logged in to the TazPanel as user %s.' $username)
+$warn$(_ 'Click to re-login.')" href="$toggle_url$(basename $REQUEST_URI)"></a>
+<a data-img="" href="help.cgi"></a>
+</span>
+</nav>
+<div id="noMenu"></div>
+<script type="text/javascript">addMenuHandlers();</script>
+<footer>
+<span id="defaultStatus">
+$(gettext 'Copyright') &copy; $(date +%Y)
+<a href="http://www.slitaz.org/" target="_blank" rel="noopener">SliTaz GNU/Linux</a>
+- <a href="index.cgi?file=/usr/share/licenses/bsd.txt">$(gettext 'BSD License')</a>
+</span>
+<span id="statusBar"></span>
+<span id="ajaxStatus"></span>
+</footer>
+<!-- Page content -->
+<div id="content">
+EOT
+export TEXTDOMAIN="$TEXTDOMAIN_original"

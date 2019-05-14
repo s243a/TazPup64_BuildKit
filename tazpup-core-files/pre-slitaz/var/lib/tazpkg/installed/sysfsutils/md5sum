@@ -1,0 +1,6 @@
+46436b82de66e7f60e31f0e8709c889c  /usr/lib/libsysfs.so.2.0.1
+f761ab634dfcdbb699178bb150822c20  /usr/bin/get_module
+af47047b09ca5f6197740296d6a8a197  /usr/bin/get_device
+d010fbd659ebe207cd55e2991bc520b7  /usr/bin/systool
+0ef8c0b0d17b4d87c4d96596e2d7cf18  /usr/bin/get_driver
+35a103d903477895aa8670aa6a79bee2  /usr/bin/dlist_test

@@ -1,0 +1,4 @@
+filename=sudoku-2.3-x86_64.tazpkg
+size=8	pkgs/core/base/next64/sudoku-2.3-x86_64.tazpkg 
+checksum.md5=e969e989981a4de16277766ab0bd5a06  pkgs/core/base/next64/sudoku-2.3-x86_64.tazpkg
+checksum.sha256=4b0fb6719e2637a291c8cfe5824db02eaea3f530ce879d3b8bc3068f5c4aa516  pkgs/core/base/next64/sudoku-2.3-x86_64.tazpkg

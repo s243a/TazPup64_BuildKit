@@ -1,0 +1,4 @@
+filename=xrdp-0.9.3.1-x86_64.tazpkg
+size=284	pkgs/core/base/next64/xrdp-0.9.3.1-x86_64.tazpkg 
+checksum.md5=f41ff900da3fbab610de58965909f62b  pkgs/core/base/next64/xrdp-0.9.3.1-x86_64.tazpkg
+checksum.sha256=f33c43398ffaacaed983f257cfa6d0a75fb1c66f4152029ee6eddbd22127debb  pkgs/core/base/next64/xrdp-0.9.3.1-x86_64.tazpkg

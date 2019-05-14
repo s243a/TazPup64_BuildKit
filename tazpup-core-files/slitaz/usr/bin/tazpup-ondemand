@@ -1,0 +1,201 @@
+#!/bin/sh
+# Written by mistfire for TazPuppy
+
+. /etc/rc.d/PUPSTATE
+. /etc/slitaz/applications.conf
+
+if [ "$(whoami)" != "root" ]; then
+ exec sudo -A ${0} ${@} #110505
+ exit
+fi
+
+if [ "$(pidof X)" == "" ] && [ "$(pidof Xorg)" == "" ]; then
+xRUN=0
+else
+xRUN=1
+fi
+
+if [ $PUPMODE -eq 5 ]; then
+msg="You are running in livecd mode only."
+warn=1
+elif [ $PUPMODE -eq 77 ]; then
+msg="You are running in multisession"
+warn=1
+else
+warn=0
+fi
+
+if [ $warn -eq 1 ]; then
+	if [ $xRUN -eq 1 ]; then
+	/usr/lib/gtkdialog/box_ok "Notice" error "$msg" "The free ramdisk space might be limited and might cause troubles" "Install these features on your own risk"
+	else
+    dialog --title "On-Demand Features" --msgbox "$msg\nThe free ramdisk space might be limited and might cause troubles\nInstall these features on your own risk" 0 0
+	fi
+fi
+
+if [ $xRUN -eq 0 ]; then
+result=`dialog --title "On-Demand Features" --stdout --checklist "Select additional features to download and install\nTo remove the installed features use Tazpkg on TazPanel" 0 0 0 "1" "Printer Support" "0" "2" "File and Printer Sharing" "0" "3" "Scanner Support" "0" "4" "Bluetooth Support" "0" "5" "Windows Program Support" "0" "6" "Full Multimedia Player" "0" "7" "Remote Desktop Protocol Support" "0" "8" "Full Browser" "0" "9" "Email Client" "0" "10" "IM Client" "0" "11" "IRC Client" "0" "12" "Lynx Browser" "0" "13" "Full Disc Burning" "0" "14" "Audio CD Ripper" "0" "15" "DVD Ripper" "0" "16" "Audio Stream Ripper" "0" "17" "Desktop Recorder" "0" "18" "Full 3D Graphics" "0" "19" "PHP for Web Server" "0" "20" "Full Xorg Support" "0" "21" "Expanded Device Support" "0" "22" "Accessibility" "0"`
+else
+result=`Xdialog --title "On-Demand Features" --stdout --checklist "Select additional features to download and install\nTo remove the installed features use Tazpkg on TazPanel" 20 57 0 "1" "Printer Support" "0" "2" "File and Printer Sharing" "0" "3" "Scanner Support" "0" "4" "Bluetooth Support" "0" "5" "Windows Program Support" "0" "6" "Full Multimedia Player" "0" "7" "Remote Desktop Protocol Support" "0" "8" "Full Browser" "0" "9" "Email Client" "0" "10" "IM Client" "0" "11" "IRC Client" "0" "12" "Lynx Browser" "0" "13" "Full Disc Burning" "0" "14" "Audio CD Ripper" "0" "15" "DVD Ripper" "0" "16" "Audio Stream Ripper" "0" "17" "Desktop Recorder" "0" "18" "Full 3D Graphics" "0" "19" "PHP for Web Server" "0" "20" "Full Xorg Support" "0" "21" "Expanded Device Support" "0" "22" "Accessibility" "0"`
+result=$(echo $result | sed -e "s%\/% %g")
+fi
+
+retval=$?
+
+clear
+
+[ $? -ne 0 ] && exit
+
+target_apps=""
+
+for xresult in $result
+do
+	case $xresult in
+	 1)
+	 line="cups cups-pdf cups-filters hplip gutenprint splix pnm2ppa foomatic-filters foomatic-db foomatic-db-nonfree foomatic-engine cndrvcups-common ufr2 hal-cups-utils ghostscript hal-info usbutils"
+	 ;;
+	 2)
+	 line="samba smbclient smbfs gvfs-smb"
+	 ;;
+	 3)
+	 line="sane sane-backends xsane brscan hal-info usbutils"
+	 ;;
+	 4)
+	 line="bluez blueman hal-info pygobject dbus-python usbutils"
+	 ;;
+	 5)
+	 line="wine"
+	 ;;
+	 6)
+	 line="vlc"
+	 ;;
+	 7)
+	 line="remmina"
+	 ;;
+	 8)
+	 line="firefox"
+	 ;;
+	 9)
+	 line="thunderbird"
+	 ;;
+	 10)
+	 line="pidgin"
+	 ;; 
+	 11)
+	 line="xchat"
+	 ;; 
+	 12)
+	 line="lynx"
+	 ;;
+	 13)
+	 line="brasero"
+	 ;;
+	 14)
+	 line="asunder"
+	 ;;
+	 15)
+	 line="ogmrip"
+	 ;;
+	 16)
+	 line="streamripper"
+	 ;;
+	 17)
+	 line="recordmydesktop gtk-recordmydesktop"
+	 ;;
+	 18)
+	 line="mesa libgl-mesa libglu-mesa libglw-mesa mesa-dri mesa-dri-ati mesa-intel mesa-dri-mach64 mesa-dri-mga mesa-dri-nouveau mesa-dri-r128 mesa-dri-savage mesa-dri-sis mesa-dri-tdfx mesa-dri-unichrome mesa-dri-vmwgfx"
+	 ;;
+	 19)
+	 line="php php-mysqli php-mysql php-pdo-mysql php-cli php-soap php-sqlite phpmyadmin"
+	 ;;
+	 20)
+	 line="xorg-xf86-video-ast xorg-xf86-video-neomagic xorg-xf86-video-s3 xorg-xf86-video-s3virge xorg-xf86-video-savage xorg-xf86-video-sis xorg-xf86-video-trident xorg-xf86-video-tseng xorg-xf86-video-v4l xorg-xf86-video-vmware xorg-xf86-input-elographics xorg-xf86-input-vmmouse libv4l"
+	 ;;
+	 21)
+	 line="afpfs-ng ccid foo2xqx ndiswrapper ndiswrapper-driver ndiswrapper-utils openct speedtouch uhd"
+	 ;; 
+	 22)
+	 line="magnifier espeak xvkbd yasr accessx"
+	 ;;
+	 *) 
+	 line=""
+	 ;; 
+	esac
+	
+	if [ "$line" != "" ]; then
+		if [ "$target_apps" == "" ]; then
+		 target_apps="$line"
+		else
+		 target_apps="$target_apps $line"
+		fi
+	fi
+	
+done
+
+ptarget=""
+
+for xapp in $target_apps
+do
+    if [ "$xapp" != "" ]; then
+	  if [ ! -d /var/lib/tazpkg/installed/$xapp ]; then
+		if [ "$ptarget" == "" ]; then
+		 ptarget="$xapp"
+		else
+		 ptarget="$ptarget $xapp"
+		fi
+	  fi
+	fi
+done
+
+if [ "$ptarget" != "" ]; then
+
+echo "#!/bin/sh" > /tmp/install-feat.sh
+echo "tazpkg recharge" >> /tmp/install-feat.sh
+echo "for pkg1 in $ptarget" >> /tmp/install-feat.sh
+echo "do" >> /tmp/install-feat.sh
+echo " if [ ! -d /var/lib/tazpkg/installed/\$pkg1 ]; then" >> /tmp/install-feat.sh
+echo "  tazpkg get-install \$pkg1 --forced" >> /tmp/install-feat.sh
+echo " fi" >> /tmp/install-feat.sh
+echo "done" >> /tmp/install-feat.sh
+chmod 777 /tmp/install-feat.sh
+sakura --title "Installing Features (DO NOT CLOSE)..." -e /tmp/install-feat.sh
+rm -f /tmp/install-feat.sh
+
+pkgcount=0
+
+for pkg1 in $ptarget
+do
+  if [ "$pkg1" != "" ]; then
+	if [ -d /var/lib/tazpkg/installed/$pkg1 ]; then
+      pkgcount=$(expr $pkgcount + 1)
+	fi
+  fi
+done
+
+	if [ $pkgcount -ne 0 ]; then
+	 if [ $xRUN -eq 1 ]; then
+	  if [ "$(echo "$WINDOW_MANAGER" | grep -E "^lxde")" != "" ]; then
+	   if [ "$(pidof lxpanel)" != "" ]; then
+	    lxpanelctl restart
+	   else
+	    lxpanel &
+	   fi
+	  fi
+	 fi
+	 msg2="Installation complete!"
+	 msg5="Pagkages installed: $pkgcount"
+	 tp1="info"
+	else
+	 msg2="No packages installed. Try again later"
+	 tp1="error"
+	fi
+
+	if [ $xRUN -eq 1 ]; then
+	 /usr/lib/gtkdialog/box_ok "On-Demand Features" $tp1 "$msg2" "$msg5"
+	else
+	 dialog --title "On-Demand Features" --msgbox "$msg2" 0 0
+	fi
+	
+fi
+
+

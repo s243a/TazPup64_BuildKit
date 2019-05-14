@@ -1,0 +1,20 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="20.0K"
+UNPACKED_SIZE="68.0K"
+PACKAGE="web-applications"
+VERSION="1.6"
+CATEGORY="network"
+SHORT_DESC="Set of desktop files for Web applications."
+MAINTAINER="pankso@slitaz.org"
+LICENSE="BSD"
+WEB_SITE="http://www.slitaz.org/"
+HOST_ARCH="any"
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/share
+	cp -a stuff/* $fs/usr/share
+	find $fs/usr/share/pixmaps -size +4k -delete
+}

@@ -1,0 +1,4 @@
+filename=libgcrypt-1.8.3-x86_64.tazpkg
+size=340	pkgs/core/base/next64/libgcrypt-1.8.3-x86_64.tazpkg 
+checksum.md5=1998fc144c830ffe2fa783751ab59dc4  pkgs/core/base/next64/libgcrypt-1.8.3-x86_64.tazpkg
+checksum.sha256=830a4550115ac1c8ebbf318c8bc4591565d274bee2bb7c8e3d84b6d4799ea589  pkgs/core/base/next64/libgcrypt-1.8.3-x86_64.tazpkg

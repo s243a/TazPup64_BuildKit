@@ -1,0 +1,37 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="52.0K"
+UNPACKED_SIZE="140.0K"
+PACKAGE="menu-cache"
+VERSION="1.0.2"
+CATEGORY="x-window"
+SHORT_DESC="LXDE implementation of the freedesktop Menu's cache"
+MAINTAINER="pankso@slitaz.org"
+LICENSE="GPL2"
+WEB_SITE="https://github.com/lxde/menu-cache"
+TARBALL="$PACKAGE-$VERSION.tar.xz"
+WGET_URL="$SF_MIRROR/lxde/$TARBALL"
+TAGS="LXDE"
+HOST_ARCH="i486 arm"
+
+DEPENDS="glib glibc-base libffi libfm libgio pcre zlib" # slitaz-menus ?
+BUILD_DEPENDS="gtk-doc libtool libfm-dev"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	./configure \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--libexecdir=/usr/lib \
+		$CONFIGURE_ARGS &&
+	make && make install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/lib
+	cp -a $install/usr/lib/*.so* $fs/usr/lib
+	cp -a $install/usr/lib/menu-cache $fs/usr/lib
+}

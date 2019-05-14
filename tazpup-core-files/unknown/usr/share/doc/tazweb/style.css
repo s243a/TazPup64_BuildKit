@@ -1,0 +1,46 @@
+/* CSS style for TazWeb */
+
+body { font: 88% sans-serif; margin: 0; }
+h1 { margin: 0; padding: 8px; color: #666; font-size: 20px; text-align: center; }
+h2 { color: #666; }
+h3 { color: #666; font-size: 140%; }
+a:hover { text-decoration: none; }
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #ddd;
+	padding: 10px;
+	border-radius: 4px;
+}
+p { hyphens: auto; }
+li { padding: 3px 0; }
+
+header {
+	background: #ebebeb;
+	height: 40px;
+	border-bottom: 1px solid #ddd;
+}
+
+main {
+	margin: 40px 80px;
+	text-align: justify;
+}
+
+footer {
+	text-align: center;
+	padding: 20px;
+	border-top: 1px solid #ddd;
+	color: #888;
+}
+
+header, main, footer { display: block; }
+
+.year:after {
+	content: "2019";
+}
+
+#bookmarks li { 
+	border-top: 1px solid #ddd; 
+	list-style-type: none; 
+}
+
+#bookmarks a { text-decoration: none; }

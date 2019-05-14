@@ -1,0 +1,34 @@
+!Help on the CSV spreadsheet
+!!Creation
+Spreadsheets are created from inlined CSV data with at least 2 rows and 2 lines :
+* The CSV lines must end with a ''';'''
+* The CSV lines have 2 or more ''';'''
+* Each CSV line have the same count of ''';'''
+* Each cell is addressed by a letter and a number, and may hold
+** Some text
+** A number
+** A ''javascript'' formula starting with '''='''
+!!Usage
+* Move the mouse over the cells to see the contents
+* click and modify the white cells
+** click anywhere outside the cell to recompute everything
+* click to a gray cell to see the CSV update
+!!Examples
+{{Apples;12;=round((100*B1)/B3)+'%'; 
+Pears;7;=round((100*B2)/B3)+"%"; 
+Total :;=sum("B1","B2");=parseInt(C1)+parseInt(C2)+'%';}}
+Apples;12;=round((100*B1)/B3)+'%';
+Pears;7;=round((100*B2)/B3)+"%";
+Total :;=sum("B1","B2");=parseInt(C1)+parseInt(C2)+'%';
+{{A number;its square root; 
+2;=(A2&lt;0)?alert('A2 &lt; 0 !'):sqrt(A2);}}
+A number;its square root;
+2;=(A2&lt;0)?alert('A2 &lt; 0 !'):sqrt(A2);
+{{SliTaz 1.0 was released;Saturday 22 march 2008; 
+=round(((new Date()).getTime() - Date.parse(B1))/1000/3600/24);days ago !;}}
+SliTaz 1.0 was released;Saturday 22 march 2008;
+=round(((new Date()).getTime() - Date.parse(B1))/1000/3600/24);days ago !;
+!!Some true spreadsheets
+* [sc|http://127.0.0.1:82/user/pkgs.cgi?info=sc] for console
+* [sc-im|http://127.0.0.1:82/user/pkgs.cgi?info=sc-im] for console with colors
+* [gnumeric|http://127.0.0.1:82/user/pkgs.cgi?info=gnumeric]

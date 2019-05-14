@@ -1,0 +1,4 @@
+filename=pcmanfm.conf
+size=4	tazpup-core-files/slitaz/etc/skel/.config/pcmanfm/default/pcmanfm.conf 
+checksum.md5=e53105861d2e1fdb946566e5d2bf5de1  tazpup-core-files/slitaz/etc/skel/.config/pcmanfm/default/pcmanfm.conf
+checksum.sha256=6cac8884614f7e24a5cb812a817a7ecd9b82b6ac9743cc017cc3ba1de702412b  tazpup-core-files/slitaz/etc/skel/.config/pcmanfm/default/pcmanfm.conf

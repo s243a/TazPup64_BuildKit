@@ -1,0 +1,4 @@
+filename=gzip-1.9-x86_64.tazpkg
+size=36	pkgs/core/preinst/next64/gzip-1.9-x86_64.tazpkg 
+checksum.md5=ea97ea6b5da4a37fa9f591d9a43731e1  pkgs/core/preinst/next64/gzip-1.9-x86_64.tazpkg
+checksum.sha256=5edff4b4c197b7ea23971d03691554bb3fb86b0eaba8e8fb04c13469f9fb2692  pkgs/core/preinst/next64/gzip-1.9-x86_64.tazpkg

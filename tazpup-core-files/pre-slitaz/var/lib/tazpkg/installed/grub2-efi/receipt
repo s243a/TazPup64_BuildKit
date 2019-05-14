@@ -1,0 +1,44 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="236.0K"
+UNPACKED_SIZE="676.0K"
+PACKAGE="grub2-efi"
+SOURCE="grub"
+VERSION="2.02"
+CATEGORY="base-system"
+SHORT_DESC="GRUB2 boot loader."
+MAINTAINER="pascal.bellard@slitaz.org"
+LICENSE="GPL3"
+TARBALL="$SOURCE-$VERSION.tar.xz"
+WEB_SITE="http://www.gnu.org/software/grub/"
+WGET_URL="ftp://ftp.gnu.org/gnu/grub/$TARBALL"
+
+DEPENDS="zlib freetype ncurses libusb-compat grep libusb libdevmapper"
+BUILD_DEPENDS="flex bison zlib-dev xz-dev freetype-dev ncurses-dev \
+libusb-compat-dev libusb-dev libdevmapper-dev"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	export EFI_ARCH=i386
+	./configure --prefix=/usr --sysconfdir=/etc \
+		--with-platform=efi --target=${EFI_ARCH} --program-prefix="" \
+		--mandir=/usr/share/man $CONFIGURE_ARGS &&
+	make $MAKEFLAGS
+	cd grub-core
+	../grub-mkimage -d . -o ../bootia32.efi -O i386-efi -p /boot/grub \
+		lsefisystab lssal lsefimmap lsacpi ls \
+		ntfs hfs appleldr boot cat efi_gop efi_uga elf fat hfsplus \
+		iso9660 linux keylayouts memdisk minicmd part_apple ext2 extcmd \
+		xfs xnu part_bsd part_gpt search search_fs_file chain btrfs \
+		loadbios loadenv lvm minix minix2 reiserfs memrw mmap msdospart \
+		scsi loopback normal configfile gzio all_video \
+		gfxterm gettext echo
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/boot/efi/boot
+	cp $src/bootia32.efi $fs/boot/efi/boot
+}

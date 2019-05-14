@@ -1,0 +1,8 @@
+1be2d8d1939dc5aef0453445d23ac493  /usr/lib/libiw.so.29
+a4acfcb9ffbb33414be6ad03194f1535  /usr/sbin/iwlist
+b740fc881a8ac6ccd03a2fd79fc46345  /usr/sbin/iwconfig
+95edfb11ee29978cd713e9fd6ca11679  /usr/sbin/iwpriv
+63eff7cd08a4e96ae77dc2d2d95ed29a  /usr/sbin/iwgetid
+8e38bd5c72190d6f14834541988451fc  /usr/sbin/iwspy
+86712645553f421de83298e7fd854965  /usr/sbin/ifrename
+1070906dd747f10714db29dd95f4ee24  /usr/sbin/iwevent

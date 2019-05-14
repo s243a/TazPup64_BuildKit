@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=GPRS/3G Modem
+Icon=/usr/share/pixmaps/pgprs.svg
+Comment=Connect via GPRS/3G modem
+Exec=tazmodem
+Terminal=false
+Type=Application
+Categories=Network
+GenericName=Connect via GPRS/3G modem
+NoDisplay=false

@@ -1,0 +1,117 @@
+#!/bin/sh
+#
+# Tiny GTK interface to SliTaz Live USB tool aka TazUSB.
+#
+# Copyright (C) 2012 SliTaz GNU/Linux - GNU gpl v2
+#
+# Authors : Christophe Lincoln <pankso@slitaz.org>
+#
+# Modified by mistfire for TazPuppy
+
+. /lib/libtaz.sh
+
+
+# TazUSBbox is only for root.
+
+if [ $(id -u) -ne 0 ]; then
+	exec tazbox su tazusb-box
+	exit 0
+fi
+
+
+# We can specify an ISO on cmdline: tazusb-box --iso=/path/to/image.iso
+
+[ "$iso" ] || iso=" "
+
+title='TazUSB Box'
+icon='/usr/share/pixmaps/slitaz-icon.png'
+opts="--window-icon=$icon --height=220 --width=520 --center --on-top"
+
+
+# i18n
+
+export TEXTDOMAIN='tazusb-box'
+
+
+# Main text information
+
+info="<b>$(_ 'Generate TazPuppy LiveUSB media and boot in RAM!')</b>\n\n \
+$(_ "Insert a LiveCD into the CD-ROM drive or use a local ISO image, select \
+the correct device and press OK.")
+"
+
+
+#
+# Functions
+#
+
+# Nice GTK output for commands.
+
+output() {
+	yad --fixed --text-info $opts --title="$title" --tail --margins=4 \
+		--button="$(_n 'Reboot'):reboot" --button="gtk-close:0"
+}
+
+
+list_devices() {
+	if [ -d /proc/scsi/usb-storage ]; then
+		dev="$(blkid | cut -d: -f1)"
+		echo $dev | sed s'/ /!/'g
+	else
+		_ 'No USB media found'
+	fi
+}
+
+
+# Main GUI box function with pure Yad spec
+
+usbbox_main() {
+	yad --fixed --form $opts --title="$title" --text="$info" \
+		--field="$(_n 'ISO Image:')":FL \
+		--field="$(_n 'USB Media:')":CB \
+		"$iso" "$(list_devices)" --button="gtk-ok:0" --button="gtk-cancel:1"
+}
+
+
+# Handler
+
+usbbox() {
+	# Store box results
+	main=$(usbbox_main)
+
+	# Deal with --button values
+	case $? in
+		1|255) exit 0 ;;
+		*) continue ;;
+	esac
+
+	# Deal with $main values. Exit if any device.
+	dev=$(echo $main | cut -d"|" -f2)
+	if ! echo $dev | grep -q /dev; then
+		_ 'No device: exit'
+		exit 0
+	fi
+	if echo "$main" | grep -q ".iso|"; then
+		iso=$(echo $main | cut -d "|" -f1)
+		yes '' | tazusb gen-iso2usb $iso $dev --output=raw | output
+	else
+		yes '' | tazusb gen-liveusb $dev --output=raw | output
+	fi
+}
+
+
+#
+# Script commands
+#
+
+case "$1" in
+	usage|--help|-h)
+		echo "$(_ 'Usage:') $(basename $0) [list]" ;;
+	list)
+		list_devices ;;
+	*)
+		usbbox ;;
+esac
+
+exit 0
+

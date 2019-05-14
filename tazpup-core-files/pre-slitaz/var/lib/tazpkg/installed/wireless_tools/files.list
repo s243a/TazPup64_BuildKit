@@ -1,0 +1,9 @@
+/usr/lib/libiw.so.29
+/usr/sbin/iwlist
+/usr/sbin/iwconfig
+/usr/sbin/iwpriv
+/usr/sbin/iwgetid
+/usr/sbin/iwspy
+/usr/sbin/ifrename
+/usr/sbin/iwevent
+/usr/lib/libiw.so

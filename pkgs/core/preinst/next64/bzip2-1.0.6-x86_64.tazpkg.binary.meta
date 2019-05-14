@@ -1,0 +1,4 @@
+filename=bzip2-1.0.6-x86_64.tazpkg
+size=16	pkgs/core/preinst/next64/bzip2-1.0.6-x86_64.tazpkg 
+checksum.md5=925cb22e7318d9c20489eebab13fa3a3  pkgs/core/preinst/next64/bzip2-1.0.6-x86_64.tazpkg
+checksum.sha256=adf32b5db1ab3d5862f4276dd64a90ad5949a63ae2031fd5eaf3bf4deef2b67e  pkgs/core/preinst/next64/bzip2-1.0.6-x86_64.tazpkg

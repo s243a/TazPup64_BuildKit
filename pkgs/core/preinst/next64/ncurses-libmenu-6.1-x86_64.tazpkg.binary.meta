@@ -1,0 +1,4 @@
+filename=ncurses-libmenu-6.1-x86_64.tazpkg
+size=12	pkgs/core/preinst/next64/ncurses-libmenu-6.1-x86_64.tazpkg 
+checksum.md5=a2c90ff487487ff4fd4c0e924988f0ea  pkgs/core/preinst/next64/ncurses-libmenu-6.1-x86_64.tazpkg
+checksum.sha256=d0f07910cee50783815de31b9bd03388be65894cb4082c06697f090d6c628e1b  pkgs/core/preinst/next64/ncurses-libmenu-6.1-x86_64.tazpkg

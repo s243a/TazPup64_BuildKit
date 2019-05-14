@@ -1,0 +1,4 @@
+filename=bootia32.efi
+size=648	tazpup-core-files/slitaz/boot/efi/boot/bootia32.efi 
+checksum.md5=cdf44fc107961aa76bf4c63bf5ebe41f  tazpup-core-files/slitaz/boot/efi/boot/bootia32.efi
+checksum.sha256=dc909ad9fd5b25067389edf427a283d16516d633645824c2eda0b1e615241031  tazpup-core-files/slitaz/boot/efi/boot/bootia32.efi

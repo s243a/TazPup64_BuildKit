@@ -1,0 +1,12 @@
+/lib/libntfs-3g.so.88.0.0
+/etc/filesystems
+/bin/ntfs-3g
+/bin/lowntfs-3g
+/usr/lib/libntfs-3g.la
+/usr/bin/ntfs-3g.probe
+/lib/libntfs-3g.so
+/lib/libntfs-3g.so.88
+/sbin/mount.ntfs-3g
+/sbin/mount.ntfs
+/sbin/mount.lowntfs-3g
+/usr/lib/libntfs-3g.so

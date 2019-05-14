@@ -1,0 +1,4 @@
+filename=jwm-xdgmenu
+size=8	tazpup-core-files/build/amd64/usr/local/bin/jwm-xdgmenu 
+checksum.md5=3ddf0ba8c32db1c8bffe4938136d0772  tazpup-core-files/build/amd64/usr/local/bin/jwm-xdgmenu
+checksum.sha256=83c23b17b961cbaf564fa2e432cb10562c4c27b3f83221a24ca265c177dddc67  tazpup-core-files/build/amd64/usr/local/bin/jwm-xdgmenu

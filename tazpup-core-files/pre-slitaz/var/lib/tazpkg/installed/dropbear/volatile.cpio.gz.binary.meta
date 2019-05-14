@@ -1,0 +1,4 @@
+filename=volatile.cpio.gz
+size=4	tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/dropbear/volatile.cpio.gz 
+checksum.md5=2ea27ba06c87d86572b6578e3e7f0126  tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/dropbear/volatile.cpio.gz
+checksum.sha256=35320ff416a0c43195a4e6af3732e08c4311badabc080510d0e939380db0cd41  tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/dropbear/volatile.cpio.gz

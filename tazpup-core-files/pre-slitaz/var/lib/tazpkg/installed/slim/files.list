@@ -1,0 +1,8 @@
+/etc/slim.conf
+/etc/init.d/slim
+/usr/share/slim/strings
+/usr/share/slim/themes/base/panel.png
+/usr/share/slim/themes/base/background.png
+/usr/share/slim/themes/base/slim.theme
+/usr/bin/slim
+/usr/bin/slim-theme

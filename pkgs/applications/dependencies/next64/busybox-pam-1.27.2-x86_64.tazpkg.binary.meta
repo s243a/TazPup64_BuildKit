@@ -1,0 +1,4 @@
+filename=busybox-pam-1.27.2-x86_64.tazpkg
+size=404	pkgs/applications/dependencies/next64/busybox-pam-1.27.2-x86_64.tazpkg 
+checksum.md5=aa5575154e4303703d6385595611eb67  pkgs/applications/dependencies/next64/busybox-pam-1.27.2-x86_64.tazpkg
+checksum.sha256=adf891807c1c24d81535e388c5af819e23bf5816d7966a3beffe9b8fbae2c4a7  pkgs/applications/dependencies/next64/busybox-pam-1.27.2-x86_64.tazpkg

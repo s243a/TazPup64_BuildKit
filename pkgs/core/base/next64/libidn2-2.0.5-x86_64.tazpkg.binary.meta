@@ -1,0 +1,4 @@
+filename=libidn2-2.0.5-x86_64.tazpkg
+size=52	pkgs/core/base/next64/libidn2-2.0.5-x86_64.tazpkg 
+checksum.md5=33c1b4a4f8ffef31a868a7f6e2255857  pkgs/core/base/next64/libidn2-2.0.5-x86_64.tazpkg
+checksum.sha256=7512ca53365b3e9b9aaba33c8d44ae77b7a395d094d75a5d7765c69216056817  pkgs/core/base/next64/libidn2-2.0.5-x86_64.tazpkg

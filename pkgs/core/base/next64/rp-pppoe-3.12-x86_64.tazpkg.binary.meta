@@ -1,0 +1,4 @@
+filename=rp-pppoe-3.12-x86_64.tazpkg
+size=48	pkgs/core/base/next64/rp-pppoe-3.12-x86_64.tazpkg 
+checksum.md5=d66f905d6a360c08b0fa9ad18336086b  pkgs/core/base/next64/rp-pppoe-3.12-x86_64.tazpkg
+checksum.sha256=25b2bf191a0a98b041f9d125c8805117f683170795f3b91b2989c0126b61122e  pkgs/core/base/next64/rp-pppoe-3.12-x86_64.tazpkg

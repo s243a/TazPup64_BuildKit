@@ -1,0 +1,2 @@
+971e206a7de7841d638b05fba8fad588  /etc/X11/xorg.conf.d/40-evdev.conf
+7da469fa87f2fde772695677db390185  /usr/lib/X11/modules/input/evdev_drv.so

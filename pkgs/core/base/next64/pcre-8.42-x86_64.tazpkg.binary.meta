@@ -1,0 +1,4 @@
+filename=pcre-8.42-x86_64.tazpkg
+size=4	pkgs/core/base/next64/pcre-8.42-x86_64.tazpkg 
+checksum.md5=4d7c35b7a82c9da025fd08143a2efdf5  pkgs/core/base/next64/pcre-8.42-x86_64.tazpkg
+checksum.sha256=23be9bf0314741ffa2c2f78a4abba7bc805a91e884f41867aebba35124b36a06  pkgs/core/base/next64/pcre-8.42-x86_64.tazpkg

@@ -1,0 +1,4 @@
+filename=wpa_supplicant-2.6-x86_64.tazpkg
+size=436	pkgs/core/base/next64/wpa_supplicant-2.6-x86_64.tazpkg 
+checksum.md5=ec0b85a15d2571850001e4c74eb62149  pkgs/core/base/next64/wpa_supplicant-2.6-x86_64.tazpkg
+checksum.sha256=7e0eefffa9867cc4e2c7c4820d1bde25a56d8851d2a8779adaa04a11bc9f16b3  pkgs/core/base/next64/wpa_supplicant-2.6-x86_64.tazpkg

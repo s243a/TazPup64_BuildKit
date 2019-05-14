@@ -1,0 +1,4 @@
+filename=libdrm-radeon-2.4.92-x86_64.tazpkg
+size=16	pkgs/applications/dependencies/next64/libdrm-radeon-2.4.92-x86_64.tazpkg 
+checksum.md5=0d7113bbf5865cd2490a5833ccce1463  pkgs/applications/dependencies/next64/libdrm-radeon-2.4.92-x86_64.tazpkg
+checksum.sha256=0c8ce9d69c810794266e83e618416cddda948872a943b95be387029f9480057e  pkgs/applications/dependencies/next64/libdrm-radeon-2.4.92-x86_64.tazpkg

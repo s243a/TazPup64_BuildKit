@@ -1,0 +1,4 @@
+filename=util-linux-mkfs-2.32.1-x86_64.tazpkg
+size=52	pkgs/core/other/next64/util-linux-mkfs-2.32.1-x86_64.tazpkg 
+checksum.md5=d49cc4489d6f58f9d027405841be93f0  pkgs/core/other/next64/util-linux-mkfs-2.32.1-x86_64.tazpkg
+checksum.sha256=dd25fe059de8dcb781a09c3bb9329edde546f82f09e62305b8879bd87d1276e6  pkgs/core/other/next64/util-linux-mkfs-2.32.1-x86_64.tazpkg

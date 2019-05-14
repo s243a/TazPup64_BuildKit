@@ -1,0 +1,4 @@
+filename=acl-2.2.53-x86_64.tazpkg
+size=28	pkgs/core/preinst/next64/acl-2.2.53-x86_64.tazpkg 
+checksum.md5=b4207d2e66da17bdcb8c58032c5727ff  pkgs/core/preinst/next64/acl-2.2.53-x86_64.tazpkg
+checksum.sha256=21767a2b0047beb56ddc1944fd8693121312a007706a0ea0deb17006581bdcd2  pkgs/core/preinst/next64/acl-2.2.53-x86_64.tazpkg

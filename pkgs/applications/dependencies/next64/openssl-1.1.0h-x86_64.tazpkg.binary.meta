@@ -1,0 +1,4 @@
+filename=openssl-1.1.0h-x86_64.tazpkg
+size=1136	pkgs/applications/dependencies/next64/openssl-1.1.0h-x86_64.tazpkg 
+checksum.md5=4f815d345fc7733b701e7b410a52e52f  pkgs/applications/dependencies/next64/openssl-1.1.0h-x86_64.tazpkg
+checksum.sha256=4a005960fc720f294e1565348883025500df67fe2037aa08166ba5cee7b63426  pkgs/applications/dependencies/next64/openssl-1.1.0h-x86_64.tazpkg

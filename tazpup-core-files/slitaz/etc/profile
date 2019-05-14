@@ -1,0 +1,269 @@
+# profile
+
+WINEPREFIX="$HOME/.wine/"
+WINEHOME="$HOME/.wine/"
+
+PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:/usr/libexec:/usr/local/libexec:/snap/bin:/usr/games:$HOME/my-applications/bin"
+
+for arch1 in i786 i686 i586 i486 i386
+do
+ PATH="$PATH:/usr/$arch1-slackware-linux/bin:/usr/$arch1-slackware-linux/sbin:/usr/$arch1-slackware-linux/libexec:/usr/$arch1-slackware-linux/local/bin:/usr/$arch1-slackware-linux/local/sbin:/usr/$arch1-slackware-linux/local/libexec"
+ PATH="$PATH:/usr/local/$arch1-slackware-linux/bin:/usr/local/$arch1-slackware-linux/sbin:/usr/local/$arch1-slackware-linux/libexec:/usr/local/$arch1-slackware-linux/local/bin:/usr/local/$arch1-slackware-linux/local/sbin:/usr/local/$arch1-slackware-linux/local/libexec"
+done
+
+LD_LIBRARY_PATH="/lib:/usr/lib:/usr/local/lib:/usr/libexec:/usr/local/libexec:$HOME/my-applications/lib:$HOME/.local/lib"
+
+plm="$(uname -m)"
+
+case $plm in
+*64)
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/local/lib/x86_64-linux-gnu:$HOME/my-applications/lib/x86_64-linux-gnu:$HOME/.local/lib/x86_64-linux-gnu"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/lib64:/usr/lib64:/usr/local/lib64:/usr/libexec64:/usr/local/libexec64:$HOME/my-applications/lib64:$HOME/.local/lib64"
+
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/lib/x86_64-slackware-linux:/usr/lib/x86_64-slackware-linux:/usr/local/lib/x86_64-slackware-linux:$HOME/my-applications/lib/x86_64-slackware-linux:$HOME/.local/lib/x86_64-slackware-linux"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/x86_64-slackware-linux/lib:/usr/local/x86_64-slackware-linux/lib:$HOME/my-applications/x86_64-slackware-linux/lib:$HOME/.local/x86_64-slackware-linux/lib"
+;;
+esac
+
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/lib/i386-linux-gnu:/usr/lib/i386-linux-gnu:/usr/local/lib/i386-linux-gnu:$HOME/my-applications/lib/i386-linux-gnu:$HOME/.local/lib/i386-linux-gnu"
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/lib32:/usr/lib32:/usr/local/lib32:/usr/libexec32:/usr/local/libexec32:$HOME/my-applications/lib32:$HOME/.local/lib32"
+
+for arch1 in i786 i686 i586 i486 i386
+do
+ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/lib/$arch1-slackware-linux:/usr/lib/$arch1-slackware-linux:/usr/local/lib/$arch1-slackware-linux:$HOME/my-applications/lib/$arch1-slackware-linux:$HOME/.local/lib/$arch1-slackware-linux"
+ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/$arch1-slackware-linux/lib:/usr/local/$arch1-slackware-linux/lib:$HOME/my-applications/$arch1-slackware-linux/lib:$HOME/.local/$arch1-slackware-linux/lib"
+ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/$arch1-slackware-linux/local/lib:/usr/local/$arch1-slackware-linux/local/lib:$HOME/my-applications/$arch1-slackware-linux/local/lib:$HOME/.local/$arch1-slackware-linux/local/lib"
+done
+
+if [ -d /opt/bin ]; then
+PATH="$PATH:/opt/bin"
+fi
+
+if [ -d /opt/sbin ]; then
+PATH="$PATH:/opt/sbin"
+fi
+
+if [ -d /opt/libexec ]; then
+PATH="$PATH:/opt/libexec"
+fi
+
+if [ -d $HOME/.wine ]; then
+PATH="$PATH:$HOME/.wine"
+
+	if [ -d $HOME/.wine/drive_c ]; then
+	PATH="$PATH:$HOME/.wine/drive_c"
+	fi
+
+	if [ -d $HOME/.wine/drive_c/windows ]; then
+	PATH="$PATH:$HOME/.wine/drive_c/windows"
+	fi
+
+	if [ -d $HOME/.wine/drive_c/windows/system32 ]; then
+	PATH="$PATH:$HOME/.wine/drive_c/windows/system32"
+	fi
+
+	if [ -d $HOME/.wine/drive_c/windows/system ]; then
+	PATH="$PATH:$HOME/.wine/drive_c/windows/system"
+	fi
+
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/.wine/drive_c/windows/system32:$HOME/.wine/drive_c/windows/system"
+
+	if [ -d $HOME/.wine/drive_c/windows/syswow64 ]; then
+	PATH="$PATH:$HOME/.wine/drive_c/windows/syswow64"
+	LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/.wine/drive_c/windows/syswow64"
+	fi
+		
+fi
+
+if [ -d /opt/lib ]; then
+ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/lib"
+fi
+
+if [ -d /opt/lib32 ]; then
+ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/lib32"
+fi
+
+if [ -d /opt/lib64 ]; then
+ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/lib64"
+fi
+
+if [ -d /opt/libexec ]; then
+ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/libexec"
+fi
+
+if [ -d "/opt/qt4" ];then
+	LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/qt4/lib:/opt/qt4/lib64"
+	[ -d /opt/qt4/bin ] && PATH="$PATH:/opt/qt4/bin" #if devx sfs.
+	export QT4DIR="/opt/qt4"
+	[ -d /opt/qt4/include ] && export CPLUS_INCLUDE_PATH="/opt/qt4/include" #devx
+fi
+
+if [ -e /usr/lib/qt ];then
+	export QTDIR=/usr/lib/qt
+	[ -d /usr/lib/qt/bin ] && PATH=/usr/lib/qt/bin:${PATH}
+	LD_LIBRARY_PATH=/usr/lib/qt/lib:/usr/lib/qt/lib32:/usr/lib/qt/lib64:$LD_LIBRARY_PATH
+fi
+
+export QT_XFT=true
+
+MOZ_PLUGIN_PATH="/usr/lib/mozilla/plugins"
+
+export PATH LD_LIBRARY_PATH MOZ_PLUGIN_PATH
+
+if [ -d /opt/samba ];then
+	LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/opt/samba/lib:/opt/samba/lib64"
+	PATH="$PATH:/opt/samba/bin"
+fi
+
+#for gtk...
+export GDK_USE_XFT=1
+#v4.00 for Open Office, force ue of GTK...
+export OOO_FORCE_DESKTOP="gnome"
+
+USER=$(id -un)
+PS1="# "
+LOGNAME=$USER
+HISTSIZE=1000
+HISTFILE="$HOME/.history"
+INPUTRC=/etc/inputrc
+TERM="xterm"
+
+EDITOR=nano
+
+export PS1 USER LOGNAME HISTSIZE INPUTRC EDITOR TERM
+XFINANSDIR="/root/.xfinans"
+export XFINANSDIR
+
+#v2.10 MU: rox crashes with DRI modules. solution:
+#export XLIB_SKIP_ARGB_VISUALS=1
+
+#this line gets edited by chooselocale script...
+#LANG=en_US.UTF-8
+#LANG=en_US.UTF-8
+export LANG
+
+HOSTNAME="$(cat /etc/hostname | tr -d "\n")"
+export HOSTNAME
+
+#SHELL="/bin/bash"
+#export SHELL
+
+export G_FILENAME_ENCODING=@locale
+
+#sylpheed uses metamail which requires this...
+export MM_RUNASROOT=1
+
+#freedesktop base directory spec: standards.freedesktop.org/basedir-spec/latest/
+#xlog "Setting up freedesktop base directories..."
+export XDG_DATA_HOME=$HOME/.local/share
+export XDG_CONFIG_HOME=$HOME/.config
+export XDG_DATA_DIRS=/usr/share:/usr/local/share:$HOME/.local/share
+export XDG_CONFIG_DIRS=/etc/xdg
+export XDG_CACHE_HOME=$HOME/.cache
+
+#v2.13...
+export HISTFILESIZE=2000
+export HISTCONTROL=ignoredups
+
+export PREFIX='/usr'
+
+for profile_script in $(ls -1 /etc/profile.d) ; do
+    #xlog  "Sourcing $profile_script ..."
+	[ "$(echo -n "$profile_script" | grep 'txt$')" != "" ] && continue
+	. /etc/profile.d/$profile_script
+done
+
+unset profile_script
+
+#xlog "Setting up console colors..."
+alias ls='ls --color=auto'
+
+export LS_COLORS='bd=33:cd=33'
+
+if [ -r /etc/profile.local ]; then
+#xlog  "Sourcing /etc/profile.local ..."
+ . /etc/profile.local
+fi
+
+# Prompt format for Ash (Bash use /etc/bashrc).
+if [ $(id -u) -eq 0 ]; then
+	# Red and blue for root
+	PS1="\[\e[1;31m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\\$ "
+	#PS1='\u@\h:\w\$ '
+else
+	# Green and blue for users
+	PS1="\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\\$ "
+	#PS1='\u@\h:\w\$ '
+fi
+
+# Max 64M for programs (prevent memory leak crashes)
+#
+# ulimit -d 65536	# commented out because lzma requires at least 94 MB of RAM to compress files.
+ulimit -m 65536
+
+# Screen display for X and encoding for GTK+ apps
+#
+[ -n "$DISPLAY" ] || DISPLAY=:0.0
+
+G_FILENAME_ENCODING=UTF-8
+
+# Make OpenOffice look better
+#
+
+# Export all variables defined above and set mask
+#
+export DISPLAY G_FILENAME_ENCODING
+#export ignoreeof
+umask 022
+
+# Locale and timezone settings
+#
+if [ -s "/etc/locale.conf" ]; then
+	. /etc/locale.conf
+fi
+
+# Update X Terminal window title
+#
+#ip=$(ifconfig $(route -n 2>/dev/null | sed '$!d;s/.* //') 2>/dev/null | sed '/t a/!d;s/.*:\(.*\) B.*/\1/')
+#case "$TERM" in
+#	xterm*|rxvt*) echo -ne "\033]0;$(hostname) $(cat /etc/slitaz-release) $ip \007";;
+#esac
+
+
+# User preferred applications
+
+if [ -s "$XDG_CONFIG_HOME/slitaz/applications.conf" ]; then
+	. "$XDG_CONFIG_HOME/slitaz/applications.conf"
+elif [ -s '/etc/slitaz/applications.conf' ]; then
+	. '/etc/slitaz/applications.conf'
+fi
+
+export FILE_MANAGER BROWSER EDITOR TERMINAL WINDOW_MANAGER
+export SUDO_ASKPASS=$(which gksu)
+
+if [ "$(whoami)" != "root" ]; then
+alias shutdown="sudo -A shutdown"
+# alias reboot="sudo reboot"
+# alias poweroff="sudo poweroff"
+# alias mount="sudo mount"
+# alias mount-FULL="sudo mount-FULL"
+# alias umount="sudo umount"
+# alias umount-FULL="sudo umount-FULL"
+fi
+
+# Bash compatibility
+
+dirs() {
+	echo $_dirs
+}
+
+pushd() {
+	cd $1 && _dirs="$1 $_dirs" && dirs
+}
+
+popd() {
+	[ -n "$_dirs" ] && _dirs="${_dirs#* }" && cd ${_dirs%% *} && dirs
+}
+
+
+###END###

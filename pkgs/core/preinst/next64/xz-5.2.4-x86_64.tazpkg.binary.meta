@@ -1,0 +1,4 @@
+filename=xz-5.2.4-x86_64.tazpkg
+size=28	pkgs/core/preinst/next64/xz-5.2.4-x86_64.tazpkg 
+checksum.md5=af18d18502d37a5b68cba4d35035a9a2  pkgs/core/preinst/next64/xz-5.2.4-x86_64.tazpkg
+checksum.sha256=7e92eed5d10da8f8ac1bbabf5e731b3c0a5cb1142ecd2a04e9d4d234a1845670  pkgs/core/preinst/next64/xz-5.2.4-x86_64.tazpkg

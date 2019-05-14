@@ -1,0 +1,4 @@
+filename=libdrm-2.4.92-x86_64.tazpkg
+size=28	pkgs/core/base/next64/libdrm-2.4.92-x86_64.tazpkg 
+checksum.md5=2be2418a29ae7f84af11f23051d3537e  pkgs/core/base/next64/libdrm-2.4.92-x86_64.tazpkg
+checksum.sha256=401f68fe783522264d09529aa1870d26e0612cc1caeb05e7f5c541ebd0341b6d  pkgs/core/base/next64/libdrm-2.4.92-x86_64.tazpkg

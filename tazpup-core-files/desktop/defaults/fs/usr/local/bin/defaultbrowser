@@ -1,0 +1,60 @@
+#!/bin/sh
+#set -x 
+if [ "$TEXTDOMAIN" = 'tazpanel' ]; then
+  BROWSER_CHOICES=( tazweb midori palemoon firefox opera iron chomium chrome netsurf lynx )
+else
+  BROWSER_CHOICES=( opera palemoon firefox tazweb midori iron chomium chrome netsurf lynx )
+fi
+
+for  BROWSER_OPTION in "${BROWSER_CHOICES[@]}"; do  
+  case "$BROWSER_OPTION" in
+  opera|iron|iron-linux|chromium|chrome) #Maybe create a symblink if the name doesn't match
+  if [ ! -z "`which opera`" ]; then
+    if [ "`id -u`" -eq 0 ]; then
+      exec "$BROWSER_OPTION" --no-sandbox "$@"
+      break
+    else
+      exec opera "$BROWSER_OPTION"
+      break
+    fi
+  fi
+  ;;
+  palemoon)
+    if [ -f "/opt/palemoon/palemoon" ]; then
+      CMD=/opt/palemoon/palemoon
+    elif [ ! -z "`which palemoon`" ]; then 
+      CMD="palemoon"
+    else
+      continue
+    fi
+    exec "$CMD" "$@"
+    break
+    ;;
+  firefox*)
+    if [ -f "/opt/mozilla/firefox/firefox" ] && [ "$BROWSER_OPTION" = "firefox-official" ]; then
+      #Firefox craches when you drag tabs
+      #exec apulse /opt/mozilla/firefox/firefox "$@"
+      CMD=/opt/mozilla/firefox/firefox
+    elif [ ! -z `which "$BROWSER_OPTION"` ]; then #we expect $BROWSER_OPTION to be either firefox or firefox-official 
+      CMD="$BROWSER_OPTION"
+    elif [ ! -z "which firefox" ]; then
+      CMD=firefox
+    else
+      continue
+    fi 
+    if [ -h "$CMD" ]; then
+      CMD=`readlink "$CMD"`
+    fi
+    if [ ! -z "`which apulse`" ] && [ $(file $CMD | grep -c ELF ) -gt 0 ]; then
+      CMD="apulse $CMD"
+    fi    
+    exec $CMD "$@"
+    ;;
+  *) #e.g. tazweb, nidori
+    if [ ! -z "`which $BROWSER_OPTION`" ]; then
+      #The midori in the repo doesn't work. Maybe try one from a debian repo. 
+      exec "$BROWSER_OPTION" "$@"
+      break
+    fi 
+  esac
+done 

@@ -1,0 +1,4 @@
+filename=sqlite3-3.24.0-x86_64.tazpkg
+size=684	pkgs/core/base/next64/sqlite3-3.24.0-x86_64.tazpkg 
+checksum.md5=e1cb5103d5e5bfc7008f27708c323a29  pkgs/core/base/next64/sqlite3-3.24.0-x86_64.tazpkg
+checksum.sha256=fdac45437a77708912dcddd697e2afde242f5e4c1174e929e895858ade512baa  pkgs/core/base/next64/sqlite3-3.24.0-x86_64.tazpkg

@@ -1,0 +1,4 @@
+filename=libtirpc-1.0.3-x86_64.tazpkg
+size=56	pkgs/core/preinst/next64/libtirpc-1.0.3-x86_64.tazpkg 
+checksum.md5=90ba35f2477ef9174db6595a1acbe352  pkgs/core/preinst/next64/libtirpc-1.0.3-x86_64.tazpkg
+checksum.sha256=cff40208456ffd7b54f7c9db63fa543d61715ec5d4ee1ed9c29ef6d2ee294e25  pkgs/core/preinst/next64/libtirpc-1.0.3-x86_64.tazpkg

@@ -1,0 +1,4 @@
+filename=disktype
+size=80	tazpup-core-files/build/amd64/usr/bin/disktype 
+checksum.md5=e60a83f134a49f54d9c2c235f3ec02ef  tazpup-core-files/build/amd64/usr/bin/disktype
+checksum.sha256=9827ae6db7b5b1e268bf41b03a12cb9a9c47ceecf4694bca4cda56a07dcd5240  tazpup-core-files/build/amd64/usr/bin/disktype

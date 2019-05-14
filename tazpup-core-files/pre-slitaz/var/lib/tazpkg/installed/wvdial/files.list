@@ -1,0 +1,4 @@
+/etc/ppp/peers/wvdial-pipe
+/etc/ppp/peers/wvdial
+/usr/bin/wvdialconf
+/usr/bin/wvdial

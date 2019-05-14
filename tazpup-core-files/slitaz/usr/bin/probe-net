@@ -1,0 +1,132 @@
+#!/bin/sh
+
+xINTERFACE="$1"
+OPTS="$2"
+
+start_dhcp(){
+ if [ "$(busybox ps | grep "udhcpc" | grep "i $1" | grep -v "grep")" == "" ]; then
+  udhcpc -n -q -T 1 -A 12 -i $1 2>/dev/null
+ fi
+ 
+ if [ "$(cat /etc/resolv.conf | sed -e "s#\n##g" )" == "" ]; then
+  #No dns given. Use google and dns watch DNS server"
+  echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+  echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+  echo "nameserver 84.200.69.80" >> /etc/resolv.conf
+  echo "nameserver 84.200.70.40" >> /etc/resolv.conf
+ fi	
+
+}
+
+set_metrics(){
+
+INTF="$1"
+
+. /etc/network.conf
+. /etc/network-config/$INTF.conf
+	
+if [ "$INTF" != "$INTERFACE" ] && [ "$METRICS" != "" ]; then
+
+	GW=`route -n |  grep "$INTF" | awk '{if ($4=="UG")print $2}'`
+
+	if [ "$GW" != "" ]; then
+	 route delete default gw $GW dev $INTF > /dev/null
+	fi
+
+	route add default gateway $GW dev $INTF metric $METRICS > /dev/null
+	
+fi
+
+}
+
+static_ip() {
+
+INTF="$1"
+
+. /etc/network-config/$INTF.conf
+
+	if [ "$STATIC" == 'yes' ]; then
+	
+		echo "Configuring static IP on $INTF: $IP..."
+		
+		BCAST=$(ipcalc -b "$IP" "$NETMASK" | cut -d= -f2)
+		
+		ifconfig $INTF $IP netmask $NETMASK broadcast $BCAST up
+
+		# Use ip to set gateways if iproute.conf exists
+		if [ -f /etc/iproute.conf ]; then
+			while read line; do
+			   echo "Loading iproute configuration..."
+				ip route add $line
+			done < /etc/iproute.conf
+		else
+
+			GW=`route -n |  grep "$INTF" | awk '{if ($4=="UG")print $2}'`
+			
+			if [ "$GW" != "" ]; then
+			 route delete default gw $GW dev $INTF > /dev/null
+			fi
+			
+			route add default gateway $GATEWAY dev $INTF > /dev/null
+		fi
+		 
+		# Multi-DNS server in $DNS_SERVER
+		mv /etc/resolv.conf /tmp/resolv.conf.$$
+		{
+			printf 'nameserver %s\n' $DNS_SERVER			# Multiple allowed
+			[ -n "$DOMAIN" ] && echo "search $DOMAIN"
+		} >> /etc/resolv.conf
+		
+		if [ "$(cat /etc/resolv.conf | sed -e "s#\n##g" )" == "" ]; then
+		 #No dns given. Use google and dns watch DNS server"
+		 echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+		 echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+		 echo "nameserver 84.200.69.80" >> /etc/resolv.conf
+		 echo "nameserver 84.200.70.40" >> /etc/resolv.conf
+		fi	
+		
+		for HELPER in /etc/ipup.d/*; do
+			[ -x $HELPER ] && $HELPER $INTF $DNS_SERVER
+		done
+	fi
+}
+
+if [ -e /sys/class/net/$xINTERFACE/wireless ] || [ "$(cat /proc/net/wireless | grep "$xINTERFACE")" != "" ]; then
+ if [ "$OPTS" == "skipwifi" ]; then 
+  exit
+ fi
+fi
+
+if [ ! -e /etc/network-config/$xINTERFACE.conf ]; then
+ if [ -e /sys/class/net/$xINTERFACE/wireless ] || [ "$(cat /proc/net/wireless | grep "$xINTERFACE")" != "" ]; then
+  cp /etc/wireless-template.conf /etc/network-config/$xINTERFACE.conf
+ else
+  cp /etc/wired-template.conf /etc/network-config/$xINTERFACE.conf 
+ fi
+fi
+
+. /etc/network-config/$xINTERFACE.conf
+
+xstate="$(cat /sys/class/net/$xINTERFACE/operstate)"
+cs="$(cat /sys/class/net/$xINTERFACE/carrier 2>/dev/null)"
+if [ "$xstate" != "" ] && [ "$xstate" != "down" ] && [ "$cs" == "1" ]; then
+   xIP="$(busybox ifconfig $xINTERFACE | grep -Po "t addr:\K[\d.]+")"
+	 if [ "$xIP" == "" ]; then
+		 if [ "$STATIC" != "yes" ]; then
+		  start_dhcp $xINTERFACE
+		 else
+		  static_ip $xINTERFACE
+		 fi
+		 
+		 xMETRIC=`route -n |  grep "$xINTERFACE" | awk '{if ($4=="UG")print $5}'`
+		 xIP2="$(busybox ifconfig $xINTERFACE | grep -Po "t addr:\K[\d.]+")"
+		 
+		 if [ "$xIP2" != "" ] && [ "$METRICS" != "$xMETRIC" ]; then
+		  set_metrics $xINTERFACE
+		 fi
+	 fi
+else
+ if [ "$STATIC" != "yes" ] && [ "$(ip addr | grep "$xINTERFACE" | grep "inet ")" != "" ]; then
+  ip addr flush dev $xINTERFACE
+ fi
+fi

@@ -1,0 +1,11 @@
+/etc/dialogrc
+/usr/share/locale/de/LC_MESSAGES/dialog.mo
+/usr/share/locale/id/LC_MESSAGES/dialog.mo
+/usr/share/locale/pt_BR/LC_MESSAGES/dialog.mo
+/usr/share/locale/ro/LC_MESSAGES/dialog.mo
+/usr/share/locale/it/LC_MESSAGES/dialog.mo
+/usr/share/locale/fr/LC_MESSAGES/dialog.mo
+/usr/share/locale/da/LC_MESSAGES/dialog.mo
+/usr/share/locale/ru/LC_MESSAGES/dialog.mo
+/usr/share/applications/dialog.desktop
+/usr/bin/dialog

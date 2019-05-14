@@ -1,0 +1,4 @@
+filename=unzip-6.0-x86_64.tazpkg
+size=96	pkgs/core/preinst/next64/unzip-6.0-x86_64.tazpkg 
+checksum.md5=14d9af66923fc633fae1625865705e87  pkgs/core/preinst/next64/unzip-6.0-x86_64.tazpkg
+checksum.sha256=c5c5c07a4b6e90ab6e506b8e8000eaedad6758679651d7086da02cc22ad40e3b  pkgs/core/preinst/next64/unzip-6.0-x86_64.tazpkg

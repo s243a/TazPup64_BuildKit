@@ -1,0 +1,4 @@
+/etc/X11/xorg.conf.d/45-synaptics.conf
+/usr/lib/X11/modules/input/synaptics_drv.so
+/usr/bin/synclient
+/usr/bin/syndaemon

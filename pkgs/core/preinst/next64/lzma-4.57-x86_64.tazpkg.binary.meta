@@ -1,0 +1,4 @@
+filename=lzma-4.57-x86_64.tazpkg
+size=48	pkgs/core/preinst/next64/lzma-4.57-x86_64.tazpkg 
+checksum.md5=37a673857745a5e2055ee6dd8b5a6d3c  pkgs/core/preinst/next64/lzma-4.57-x86_64.tazpkg
+checksum.sha256=497e73826875a80a1e414a5226c9248bf88a3f7e98a38f73e718cddb3530195d  pkgs/core/preinst/next64/lzma-4.57-x86_64.tazpkg

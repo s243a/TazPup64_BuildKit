@@ -1,0 +1,9 @@
+/etc/init.d/pcscd
+/usr/lib/libpcsclite.so.1.0.0
+/usr/lib/libpcscspy.so.0.0.0
+/usr/sbin/pcscd
+/usr/bin/pcsc-spy
+/usr/lib/libpcscspy.so
+/usr/lib/libpcsclite.so
+/usr/lib/libpcsclite.so.1
+/usr/lib/libpcscspy.so.0

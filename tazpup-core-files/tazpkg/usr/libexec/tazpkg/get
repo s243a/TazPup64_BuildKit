@@ -1,0 +1,327 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# get - TazPkg module
+# Get package to the cache directory
+# Modified by mistfire for TazPuppy
+
+. /lib/libtaz.sh
+. /usr/lib/slitaz/libpkg.sh
+. /usr/libexec/tazpkg/getenv
+. /usr/libexec/tazpkg/find-depends
+
+get_cache_path() {
+local cache_dir
+if [ "$2" == 'extra' ]; then
+cache_dir="$SAVE_CACHE_DIR/extra/packages"
+elif [ "$1" == "$PKGS_DB" ]; then
+cache_dir="$SAVE_CACHE_DIR/$SLITAZ_RELEASE/packages"
+else
+cache_dir="$SAVE_CACHE_DIR/${1##*/}/packages"
+fi
+mkdir -p "$cache_dir"
+chmod a+w "$cache_dir"
+echo "$cache_dir"
+}
+
+download_from() {
+debug "\ndownload_from('$1', '$2')"
+
+case "$1" in
+http://* | https://* | ftp://*)
+debug "  wget -c -T 30 -U $UA ${1%/}/$2"
+q=''; [ -n "$quiet" ] && q='-q'
+wget -c $q -T 30 -U $UA ${1%/}/$2 2>&1 | awk '$0~"%"{printf "%s\r",$0}' >&2
+;;
+*)
+debug "  cp ${1%/}/$2 ."
+cp ${1%/}/$2 .;;
+esac
+}
+
+abort_package() {
+cd "$CUR_DIR"
+rm -rf "$tmp_dir"
+[ -n "$1" ] ||
+set -- 'Could not download "%s" from "%s". Exiting.' "${TARBALL:-$PACKAGE}" "${WGET_URL:-$WEB_SITE}"
+printf "$@"
+exit 1
+}
+
+get_pkg_extra() {
+debug "\nget_pkg_extra('$1', '$2')"
+
+local mirror extra_cache converted tmp_dir script
+
+if [ ! -s "$PKGS_DB/extra.list" ]; then
+	if [ "$2" != 'redo' ]; then
+	  tazpkg recharge >&2
+	  get_pkg_extra "$1" 'redo'; exit 0
+	else
+	_ 'File "%s" empty.' 'extra.list' >&2
+	die 'Unable to find package "%s" in the extra packages list.' "$(boldify $1)"
+	fi
+fi
+
+if ! grep -q "^$1|" "$PKGS_DB/extra.list"; then
+ die 'Unable to find package "%s" in the extra packages list.' "$(boldify $1)"
+fi
+
+if [ -z "$nocache" ]; then
+extra_cache="$(get_cache_path "$PKGS_DB" 'extra')"
+debug "cd '$extra_cache'"
+cd "$extra_cache"
+[ ! -f 'packages.info' ] && tazpkg mkdb "$extra_cache" --root='' --forced >/dev/null
+
+	if [ -f 'packages.info' ]; then
+	awk -F$'\t' -vp="$1" '$1==p{exit 1}' packages.info
+		if [ "$?" -eq 1 ]; then
+		[ -z "$quiet" ] && _ 'Package "%s" already in the cache' "$1">&2
+		echo -n "$(pwd)/"
+		awk -F$'\t' -vp="$1" '$1==p{printf "%s-%s.tazpkg\n", $1, $2; exit}' packages.info
+		exit 0
+		fi
+	fi
+fi
+
+mirror="$(cat "$PKGS_DB/mirror")"
+debug "mirror='$mirror'"
+converted="$(wget -O - http://mirror1.slitaz.org/packages/extra/ 2>/dev/null | \
+tr \'\" $'\n' | grep "$1-.*\.tazpkg$" | sort -u)"
+debug "converted='$converted'"
+
+if [ -n "$converted" ]; then
+	case "$mirror" in
+	http://*|https://*|ftp://*)
+	debug "wget -T 30 -U '$UA' '${mirror%packages/*}packages/extra/$converted'"
+	q=''; [ -n "$quiet" ] && q='-q'
+	wget $q -T 30 -U "$UA" "${mirror%packages/*}packages/extra/$converted" \
+	2>&1 | awk '$0~"%"{printf "%s\r",$0}' >&2;;
+	esac
+	
+	if [ -f "$converted" ]; then
+	echo "$extra_cache/$converted"; exit 0
+	fi
+fi
+
+case "$mirror" in
+http://*|https://*|ftp://*)
+debug "wget -T 30 -U '$UA' '${mirror%packages/*}packages/get/$1'"
+q=''; [ -n "$quiet" ] && q='-q'
+wget $q -T 30 -U "$UA" "${mirror%packages/*}packages/get/$1" \
+2>&1 | awk '$0~"%"{printf "%s\r",$0}' >&2;;
+esac
+
+if [ ! -f "$1" ]; then
+ die 'Unable to download extra package "%s".' "$(boldify $1)"
+fi
+
+unset_receipt
+
+PACKAGE="$1"
+script="$(realpath $1)"
+tmp_dir="$(mktemp -d)"
+cd "$tmp_dir"
+
+set -e
+. "$script"
+set +e
+
+[ "$PWD" != "$tmp_dir" ] && mv $PACKAGE* $tmp_dir
+
+cd $tmp_dir
+
+[ -n "$VERSION" ] || VERSION="$(date +%Y%m%d)"
+[ -d "$PACKAGE-$VERSION" ] || mv $PACKAGE $PACKAGE-$VERSION || abort_package
+[ -n "$TARBALL" ] || TARBALL="$(basename $WGET_URL)"
+
+if [ ! -s "$PACKAGE-$VERSION/receipt" ]; then
+cat > "$PACKAGE-$VERSION/receipt" <<EOT
+PACKAGE="$PACKAGE"
+VERSION="$VERSION"
+CATEGORY="${CATEGORY:-non-free}"
+WEB_SITE="${WEB_SITE:-$WEBSITE}"
+SHORT_DESC="${SHORT_DESC:-The $PACKAGE software package of SliTaz}"
+MAINTAINER="${MAINTAINER:-nobody@slitaz.org}"
+LICENSE="${LICENSE:-unknown}"
+TARBALL="$TARBALL"
+WGET_URL="${WGET_URL:-$WGETURL}"
+CONFIG_FILES="$CONFIG_FILES"
+SUGGESTED="$SUGGESTED"
+PROVIDE="$PROVIDE"
+DEPENDS="$DEPENDS"
+HOST_ARCH="$HOST_ARCH"
+TAGS="$TAGS"
+EXTRA_SOURCE_FILES="$EXTRA_SOURCE_FILES"
+EOT
+fi
+
+DEPENDS="$(unset DEPENDS; . "$PACKAGE-$VERSION/receipt"; echo $DEPENDS)"
+TMP_DIR="$tmp_dir"
+
+for i in $(find_depends "$PACKAGE-$VERSION/fs")
+do
+	case " $DEPENDS " in
+	*\ $i\ *) continue;;
+	esac
+	sed -i "s/^DEPENDS=\"/&$i /" "$PACKAGE-$VERSION/receipt"
+done
+
+sed -i '/=""$/d' "$PACKAGE-$VERSION/receipt"
+tazpkg pack "$PACKAGE-$VERSION" gzip >&2
+
+if [ -z "nocache" ]; then
+ mv -f "$tmp_dir/$PACKAGE-$VERSION.tazpkg" "$extra_cache"
+ tazpkg mkdb "$extra_cache" --root='' --forced >/dev/null
+else
+ mv -f "$tmp_dir/$PACKAGE-$VERSION.tazpkg" "$CUR_DIR"
+fi
+
+cd "$CUR_DIR"
+rm -rf "$tmp_dir"
+
+echo "$CUR_DIR/$PACKAGE-$VERSION.tazpkg"
+}
+
+virtual_name() {
+local i
+unset IFS
+for i in $(grep -hs "^$1=" "$2/packages.equiv" | sed "s/^$1=//"); do
+	if echo $i | fgrep -q : ; then
+		if [ -f $INSTALLED/${i%:*}/receipt ]; then
+		echo ${i#*:}
+		return
+		fi
+	elif ! grep -q "^$1	" "$2/packages.info" || [ -f "$INSTALLED/$i/receipt" ]; then
+	echo $i
+	return
+	fi
+done
+echo $1
+}
+
+virtual_pkg() {
+debug "\nvirtual_pkg('$1', '$2')"
+	if [ "$tazpkg_command" != 'get-install' ]; then
+		if [ -z "$(awk -F$'\t' -vp="$1" '{if ($1 == p) print p}' "$2/packages.info")" ]; then
+		virtual_name "$1" "$2"
+		else
+		echo $1
+		fi
+	return
+	fi
+virtual_name "$1" "$2"
+}
+
+get_pkg() {
+debug "\nget_pkg('$1', '$2')"
+local repo line namever pkgsum
+IFS=$'\n'
+
+for rep in $PRIORITY
+do
+[ ! -f "$rep/packages.info" ] && continue
+line=$(awk -F$'\t' -vpkg="$(virtual_pkg "$1" "$rep")" \
+'$1==pkg || $1"-"$2==pkg {printf "%s-%s:%s", $1, $2, $9; exit}' "$rep/packages.info")
+	if [ -n "$line" ]; then
+	namever=${line%:*}; pkgsum=${line#*:}
+	break
+	fi
+done
+
+unset IFS
+
+debug "  rep='$rep'\n  namever='$namever'\n  pkgsum='$pkgsum'"
+
+if [ -z "$line" ]; then
+ _ 'Unable to find package "%s" in the mirrored packages list.' "$1">&2
+	if [ "$2" != 'redo' ]; then
+	get_pkg "get-$1" 'redo'; exit 0
+	else
+	get_pkg_extra "${1#get-}"
+	exit 0
+	fi
+fi
+
+if [ -z "$nocache" ]; then
+ debug "cd '$(get_cache_path "$rep")'"
+ cd "$(get_cache_path "$rep")"
+fi
+
+if [ -f "$namever.tazpkg" ]; then
+	[ -z "$nocache" -a -z "$quiet" ] && _ 'Package "%s" already in the cache' "$namever">&2
+	if ! tail -c 2k "$namever.tazpkg" | fgrep -q '00000000TRAILER'; then
+	 [ -z "$quiet" ] && _ 'Continuing package "%s" download' "$namever">&2
+	 download_from "$(cat "$rep/mirror")" "$namever.tazpkg"
+	fi
+else
+    download_from "$(cat "$rep/mirror")" "$namever.tazpkg"
+fi
+
+if [ "$($CHECKSUM "$namever.tazpkg" | cut -d' ' -f1)" != "$pkgsum" ]; then
+_ 'Checksum error for "%s"' "$namever.tazpkg">&2
+rm "$namever.tazpkg"
+	if [ "$2" != 'redo' ]; then
+	  tazpkg recharge >&2
+	  get_pkg "$1" 'redo'; exit 0
+	else
+	die 'Please wait until the mirror synchronization is complete and try again.'
+	fi
+fi
+
+printf '%s/%s.tazpkg\n' "$(pwd)" "$namever"
+}
+
+get_pkg_cookmode() {
+local PKGS='/home/slitaz/packages' found='0'
+[ -e "/etc/slitaz/cook.conf" ] && . "/etc/slitaz/cook.conf"
+tempd="$(mktemp -d)"
+cd "$tempd"
+
+	for pkgfile in $PKGS/$1-*.tazpkg
+	do
+	[ -e "$pkgfile" ] || continue
+	cpio -F "$pkgfile" -i receipt >/dev/null 2>&1
+	name=$(. receipt; echo $PACKAGE)
+	rm receipt
+		if [ "$name" == "$1" ]; then
+		found='1'
+		echo "$pkgfile"
+		break
+		fi
+	done
+	
+cd "$CUR_DIR"
+rm -r "$tempd"
+
+if [ "$found" -eq 0 ]; then
+ get_pkg "$1"
+fi
+}
+
+if [ "$tazpkg_command" == 'get-install' ]; then
+	if grep -qs "^$1$" "$BLOCKED"; then
+	_ 'Package "%s" blocked.' "$1">&2
+	exit 1
+	fi
+
+	if [ -z "$forced" ]; then
+	 awk -F$'\t' -vpv="$1" '$1==pv { exit 1 }' "$PKGS_DB/installed.info"
+		if [ "$?" -eq 1 ]; then
+		[ -z "$quiet" ] && (
+		newline
+		_ '"%s" package is already installed.' "$(colorize 34 "$1")"
+		longline "$(_ 'You can use the --forced option to force installation.')"
+		newline
+		) >&2
+		exit 1
+		fi
+	fi
+fi
+
+if [ -n "$cookmode" ]; then
+ get_pkg_cookmode "$1"
+elif [ -n "$extra" ]; then
+ get_pkg_extra "$1"
+else
+ get_pkg "$1"
+fi

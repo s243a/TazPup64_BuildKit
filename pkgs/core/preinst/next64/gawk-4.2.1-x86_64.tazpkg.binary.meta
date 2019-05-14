@@ -1,0 +1,4 @@
+filename=gawk-4.2.1-x86_64.tazpkg
+size=220	pkgs/core/preinst/next64/gawk-4.2.1-x86_64.tazpkg 
+checksum.md5=6b914e1527d4a2ba1299f184cf32be51  pkgs/core/preinst/next64/gawk-4.2.1-x86_64.tazpkg
+checksum.sha256=73ef787be0a5b344b479c86fa2695e20cb79fbb2b560e943f7bf7d6ed20cf2f3  pkgs/core/preinst/next64/gawk-4.2.1-x86_64.tazpkg

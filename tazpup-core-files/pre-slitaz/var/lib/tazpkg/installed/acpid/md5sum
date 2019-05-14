@@ -1,0 +1,7 @@
+bc3f00d1c22d49f454c8502f8fc0526a  /etc/init.d/acpid
+97460d8009cd525d0b5c1dc9951d2de8  /etc/acpi/acpi_handler.sh
+b1ceec00aa9098437eecda7c1a028412  /etc/acpi/events/ac_adapter
+220c71100b87a545624d74eeba53f43d  /etc/acpi/events/buttons
+9844ca384a3ecef3f731d288f228edbe  /usr/bin/acpi_listen
+634c8a8fcea70acbfe75df9c4b3dd67d  /usr/sbin/acpid
+2d5462cbfb4bfe0d305ef78e6a7fac3b  /usr/sbin/kacpimon

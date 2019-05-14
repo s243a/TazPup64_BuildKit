@@ -1,0 +1,267 @@
+#!/bin/sh
+#written by mistfire
+#A slightly modified version of mistfire's TazWoof: http://murga-linux.com/puppy/viewtopic.php?p=996352#996352
+#180619-1a s243a a download failure shouldn't stop the build
+#180619-1b Keep track of sucessful and failed downloads
+#180619-1c Don't re download the file if it exists
+
+WEBSITE="http://mirror1.slitaz.org"
+DIRPKG="cooking"
+
+cmd1=$(basename $0)
+
+
+if [ "$1" != "" ]; then
+
+ if [ "$(whoami)" != root ]; then
+  exec sudo -A $0 $@
+  exit
+ fi
+
+ curdir="$1"
+ 
+ if [ ! -e $curdir ]; then
+  echo "Create working folder: $curdir"
+  mkdir -p $curdir 2>/dev/null
+  if [ $? -ne 0 ]; then
+  echo "Failed to create working folder"
+  exit
+  fi
+ fi
+ 
+else
+ echo "Usage: $cmd1 [working folder]"
+ echo "Creates DEVX module for compiling"
+ exit
+fi
+
+download_pkgs(){
+	
+	pkgs="$1"
+	PTRN="$(echo "^$pkgs-[0-9]" | sed -e "s#\+#\\\+#g")"
+	pkgname="$(cat $curdir/slitaz-devx/packages.list | grep -E "$PTRN")"
+
+    if [ "$pkgname" != "" ]; then
+        if [ ! -f "$curdir/slitaz-devx/$pkgname.tazpkg" ]; then #180619-1c
+		  wget -nc --timeout=10 $WEBSITE/packages/cooking/$pkgname.tazpkg -O $curdir/slitaz-devx/$pkgname.tazpkg
+		  if [ $? -ne 0 ]; then
+		    echo "Downloading package failed: $pkgname"
+		    #exit #180619-1
+		    echo "$pkgname.tazpkg" >> "$curdir/slitaz-devx/packages.list.fail" #180619-1b
+		  else
+		    echo "$pkgname.tazpkg" >> "$curdir/slitaz-devx/packages.list.success" #180619-1b		
+		  fi
+		else
+		  echo "$pkgname.tazpkg" >> "$curdir/slitaz-devx/packages.list.success"	#180619-1c
+		fi	
+	fi
+	
+}
+
+cleanup_TMP(){ #180619-1c
+  rm -f $curdir/slitaz-devx/packages.list.fail	
+  rm -f $curdir/slitaz-devx/packages.list.success
+  rm -f $curdir/slitaz-devx/packages.list	
+  rm -rf $curdir/temp-devx
+  mkdir $curdir/temp-devx
+}
+
+cleanup_ROOTFS(){
+  rm -rf $curdir/devx-rootfs
+}
+
+cleanup(){
+  rm -rf $curdir/slitaz-devx	
+  mkdir $curdir/slitaz-devx	
+  rm -rf $curdir/temp-devx
+  mkdir $curdir/temp-devx
+  rm -rf $curdir/devx-rootfs
+}
+
+extract_pkgdb(){
+  cd $curdir/slitaz-devx
+
+  unlzma ./bundle.tar.lzma
+  tar xvf ./bundle.tar packages.list
+  tar xvf ./bundle.tar packages.info
+  rm -f ./bundle.tar	
+}
+
+download_pkgdb(){
+
+  wget --timeout=10 $WEBSITE/packages/$DIRPKG/bundle.tar.lzma -O $curdir/slitaz-devx/bundle.tar.lzma
+
+  if [ $? -ne 0 ]; then
+    echo "Downloading slitaz package database failed"
+    exit
+  fi	
+}
+
+build_pkg_db(){
+  rm -f $curdir/slitaz-devx/packages.txt
+  cat $curdir/slitaz-devx/packages.info | sed -e "s#\t#;#g" >  $curdir/slitaz-devx/packages.txt
+}
+
+sniff_deps(){
+	
+  pkg="$1"
+
+  PTRN="$(echo "^$pkg;" | sed -e "s#\+#\\\+#g")"
+
+  if [ "$pkg" == "" ]; then
+    continue
+  fi
+
+	if [ ! -f $curdir/temp-devx/package-listed.txt ]; then
+	  echo "$pkg;" > $curdir/temp-devx/package-listed.txt
+	elif [ "$(cat $curdir/temp-devx/package-listed.txt | grep -E "$PTRN")" == "" ]; then
+	  echo "$pkg;" >> $curdir/temp-devx/package-listed.txt
+	else
+	 continue
+	fi
+
+
+  deps=$(cat $curdir/slitaz-devx/packages.txt | grep -E "$PTRN" | cut -f 8 -d ';')
+
+if [ "$deps" == "" ]; then
+ continue
+fi
+
+#echo "$pkg: $deps"
+	
+for dep in $deps
+do
+
+   #echo "$dep"
+
+	if [ "$dep" != "" ]; then
+
+	   xPTRN7="$(echo "^$dep\$" | sed -e "s#\+#\\\+#g")"
+	   xPTRN8="$(echo "^$dep;" | sed -e "s#\+#\\\+#g")"
+	   
+	   if [ -f /var/lib/tazpkg/blocked-packages.list ]; then
+		blkinst="$(cat var/lib/tazpkg/blocked-packages.list | grep -E "$xPTRN7")"
+	   fi
+	   
+	   if [ -f /var/lib/tazpkg/locked-packages ]; then
+		clkinst="$(cat var/lib/tazpkg/locked-packages | grep -E "$xPTRN7")"
+	   fi
+	   
+	   if [ "$blkinst" == "" ] && [ "$clkinst" == "" ] && [ ! -d /var/lib/tazpkg/installed/$dep ]; then
+	   
+		  if [ ! -f $curdir/temp-devx/package-deps.txt ]; then
+			  echo "$dep;" > $curdir/temp-devx/package-deps.txt
+		  elif [ "$(cat $curdir/temp-devx/package-deps.txt | grep -E "$xPTRN8")" == "" ]; then
+			  echo "$dep;" >> $curdir/temp-devx/package-deps.txt
+		  fi  
+	   
+		  sniff_deps "$dep"
+		 
+	   fi
+	   
+	fi
+          
+done
+	
+}
+
+process_template(){
+	
+  cat /usr/share/devx.txt | sed -e "s#;##g" | sort > $curdir/temp-devx/download-devx-packages.txt
+	
+}
+
+process_package() {
+	
+  chksum="$(md5sum $1)"
+
+  cpio -idm --quiet < "$1" && rm -f "$1"
+  if [ -f fs.cpio.lzma ]; then
+    unlzma < fs.cpio.lzma | cpio -idm --quiet && rm fs.cpio.lzma
+  elif [ -f fs.cpio.gz ]; then
+    zcat fs.cpio.gz | cpio -idm --quiet && rm fs.cpio.gz
+  fi
+  
+  if [ ! -d ./var/lib/tazpkg/installed ]; then
+   mkdir -p ./var/lib/tazpkg/installed
+  fi
+  
+  unset PACKAGE VERSION EXTRAVERSION CATEGORY SHORT_DESC WEB_SITE \
+  TAGS PACKED_SIZE UNPACKED_SIZE DEPENDS
+  
+  . /receipt
+  
+  mkdir -p ./var/lib/tazpkg/installed/$PACKAGE 2>/dev/null
+
+  mv -f ./receipt ./var/lib/tazpkg/installed/$PACKAGE/ 2>/dev/null
+  mv -f ./files.list ./var/lib/tazpkg/installed/$PACKAGE/ 2>/dev/null
+  mv -f ./description.txt ./var/lib/tazpkg/installed/$PACKAGE/ 2>/dev/null
+
+  rm -f ./md5sum > /dev/null
+  
+  cp -arf ./fs/* ./
+
+  rm -rf ./fs
+
+}
+
+process_pkg_dir(){
+  if [ ! -d $curdir/devx-rootfs ]; then
+    mkdir $curdir/devx-rootfs
+  fi	
+}
+
+install_packages(){
+  if [ ! -d  $curdir/slitaz-devx ]; then
+    echo "Devx tazpup package folder is missing."
+    exit
+  else
+
+	if [ $(find $curdir/slitaz-devx -type f -name "*.tazpkg" | wc -l) -eq 0 ]; then
+	  echo "Tazpup package is missing."
+	  exit
+	fi
+
+	for pkg in $(find $curdir/slitaz-devx -type f -name "*.tazpkg" | sort -r)
+	do
+	  echo "Processing package:  $(basename $pkg)"
+	  cp -f $pkg $curdir/devx-rootfs/
+	  cd $curdir/devx-rootfs/
+	  process_package "$(basename $pkg)"
+	done
+	
+  fi	
+}
+
+fetch_pkg(){
+  for pkg in $(cat $curdir/temp-devx/download-devx-packages.txt)
+  do
+    download_pkgs "$pkg"
+  done	
+  
+  echo "Download sucess: $(cat $curdir/slitaz-devx/packages.list.success | wc -l)"
+  echo "Download failed: $(cat $curdir/slitaz-devx/packages.list.fail | wc -l)"
+  	
+}
+
+make_sfs(){
+  cd $curdir	
+  mksquashfs "$curdir/devx-rootfs/" "$curdir/devx_tazpup.sfs" -comp xz -Xbcj x86 -b 1M -Xdict-size 100%	
+  
+  if [ $? -eq 0 ]; then
+   echo "DEVX modules sucessfully created: $curdir/devx_tazpup.sfs"
+  fi
+  
+}
+
+#### MAIN ####
+
+cleanup
+download_pkgdb
+extract_pkgdb
+build_pkg_db
+process_template
+fetch_pkg
+process_pkg_dir
+install_packages
+make_sfs

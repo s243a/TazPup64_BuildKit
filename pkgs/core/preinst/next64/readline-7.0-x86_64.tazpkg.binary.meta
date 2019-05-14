@@ -1,0 +1,4 @@
+filename=readline-7.0-x86_64.tazpkg
+size=92	pkgs/core/preinst/next64/readline-7.0-x86_64.tazpkg 
+checksum.md5=1aea0621e3f9ee0b1c02871d195814c7  pkgs/core/preinst/next64/readline-7.0-x86_64.tazpkg
+checksum.sha256=eb3100b953232910078d97e541f3ed99f6567ba3133adc21648d4b2dd9d7cbd1  pkgs/core/preinst/next64/readline-7.0-x86_64.tazpkg

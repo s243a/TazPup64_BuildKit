@@ -1,0 +1,4 @@
+filename=libgusb-0.3.0-x86_64.tazpkg
+size=24	pkgs/applications/dependencies/next64/libgusb-0.3.0-x86_64.tazpkg 
+checksum.md5=295b0b807bfdbb67ea9299f8e968a2de  pkgs/applications/dependencies/next64/libgusb-0.3.0-x86_64.tazpkg
+checksum.sha256=0e2817bc60defe9a44fd66321d638cc5d030b2f7e4c9554fd5d27f834632c870  pkgs/applications/dependencies/next64/libgusb-0.3.0-x86_64.tazpkg

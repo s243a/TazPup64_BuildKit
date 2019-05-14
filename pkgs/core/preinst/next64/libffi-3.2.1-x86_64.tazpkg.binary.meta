@@ -1,0 +1,4 @@
+filename=libffi-3.2.1-x86_64.tazpkg
+size=16	pkgs/core/preinst/next64/libffi-3.2.1-x86_64.tazpkg 
+checksum.md5=269b7ffac075147b8c6e7943b8ecfb5f  pkgs/core/preinst/next64/libffi-3.2.1-x86_64.tazpkg
+checksum.sha256=79299d21eb6eccfd664608bb00d58a2b3558d0fd76c7c0eec69c99e4c6d81d79  pkgs/core/preinst/next64/libffi-3.2.1-x86_64.tazpkg

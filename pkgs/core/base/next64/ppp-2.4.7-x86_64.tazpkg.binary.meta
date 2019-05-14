@@ -1,0 +1,4 @@
+filename=ppp-2.4.7-x86_64.tazpkg
+size=200	pkgs/core/base/next64/ppp-2.4.7-x86_64.tazpkg 
+checksum.md5=48949f1e784dba327d7adcba0aea63a5  pkgs/core/base/next64/ppp-2.4.7-x86_64.tazpkg
+checksum.sha256=861442f1b1c63f32d986224d21a20f38b9ddf0fad392945037a88810f7820d0a  pkgs/core/base/next64/ppp-2.4.7-x86_64.tazpkg

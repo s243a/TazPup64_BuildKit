@@ -1,0 +1,4 @@
+filename=liblzma-5.2.4-x86_64.tazpkg
+size=44	pkgs/core/preinst/next64/liblzma-5.2.4-x86_64.tazpkg 
+checksum.md5=fc602d57aaf00250de9091773fd074f2  pkgs/core/preinst/next64/liblzma-5.2.4-x86_64.tazpkg
+checksum.sha256=dde0a6af75afe734a6e4019c3a1c00f63d09d97369790fc7aaf26be19350a9c5  pkgs/core/preinst/next64/liblzma-5.2.4-x86_64.tazpkg

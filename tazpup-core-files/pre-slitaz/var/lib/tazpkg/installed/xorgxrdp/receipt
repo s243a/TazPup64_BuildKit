@@ -1,0 +1,36 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="52.0K"
+UNPACKED_SIZE="192.0K"
+PACKAGE="xorgxrdp"
+VERSION="0.2.4"
+CATEGORY="network"
+SHORT_DESC="Xorg drivers for xrdp."
+MAINTAINER="pascal.bellard@slitaz.org"
+LICENSE="MIT"
+TARBALL="$PACKAGE-$VERSION.tar.gz"
+WEB_SITE="http://www.xrdp.org/"
+WGET_URL="https://github.com/neutrinolabs/xorgxrdp/releases/download/v$VERSION/$TARBALL"
+
+DEPENDS="xorg-server"
+BUILD_DEPENDS="autoconf automake libtool pkg-config nasm xorg-server-dev \
+xrdp-dev"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	./configure --prefix=/usr \
+		--sysconfdir=/etc \
+		$CONFIGURE_ARGS &&
+	make &&
+	make DESTDIR=$DESTDIR install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $install/usr/share/doc
+	cp -a $src/*.md $src/COPYING $install/usr/share/doc
+	cp -a $install/* $fs/
+	find $fs/usr -name '*a' -exec rm -f {} \;
+}

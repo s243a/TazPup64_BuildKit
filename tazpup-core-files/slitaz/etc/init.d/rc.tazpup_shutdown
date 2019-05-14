@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+# /etc/init.d/rc.shutdown : Executed on system shutdown or reboot
+# Modified by mistfire
+
+. /etc/init.d/rc.functions
+. /etc/rcS.conf
+
+log=/var/log/slitaz/shutdown.log
+
+# Kill all processes.
+if [ "$LOGIN_MANAGER" != "" ]; then
+ killall -TERM $LOGIN_MANAGER 2>/dev/null
+fi
+
+killall nmbd 2>/dev/null
+killall smbd 2>/dev/null
+killall user_crond 2>/dev/null
+killall gvfs-udisks2-volume-monitor 2>/dev/null
+killall udisksd 2>/dev/null
+
+exec 1>/dev/tty1
+  
+# Clear and quiet shutdown
+clear
+
+echo 'System is going down for reboot or halt.' > $log
+uptime >> $log
+
+# Store last alsa settings.
+#if [ -x /usr/sbin/alsactl ]; then
+  echo "Saving last alsa settings..."
+  alsactl -f /etc/asound.state store 2>> $log
+#fi
+
+# Stop all daemons started at boot time.
+for daemon in $RUN_DAEMONS; do
+	if [ -x /etc/init.d/$daemon ]; then
+	    echo "Stopping $daemon ..."
+		/etc/init.d/$daemon stop >> $log
+	fi
+done
+
+sync
+
+killall -TERM getty
+killall -TERM agetty
+killall -TERM mingetty
+
+if [ -d /proc/acpi ] || [ -d /proc/apm ]; then
+ SMP1=1
+else
+ SMP1=0
+fi
+
+exec 1>/dev/console
+
+/etc/rc.d/rc.shutdown
+
+if [ $SMP1 -eq 0 ]; then
+ dialog --ascii-lines --infobox "SHUTDOWN COMPLETE: The computer can now be poweroff or reset\n(If the computer was going to reboot just wait or press reset button)" 6 48
+fi

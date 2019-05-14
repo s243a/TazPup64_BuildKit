@@ -1,0 +1,5 @@
+9e5d898963f5a89bdf11ab6d770a96d0  /etc/init.d/pcscd
+c8246462f9ab58190cdefe8286de2c34  /usr/lib/libpcsclite.so.1.0.0
+d674cfaf73f93ff95d00f2a5ca1295a3  /usr/lib/libpcscspy.so.0.0.0
+43fb430864daa7f7579cae8b40c26cdd  /usr/sbin/pcscd
+6b67d7e83edeaeeabd7c7c17f8461119  /usr/bin/pcsc-spy

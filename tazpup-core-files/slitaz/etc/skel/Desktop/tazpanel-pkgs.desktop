@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Package Manager web interface
+Name[fr]=Interface web du gestionnaire de paquets
+Name[pt_BR]=Interface da web do gerenciador de pacotes
+Name[ru]=Веб-интерфейс менеджера пакетов
+TryExec=tazweb
+Exec=/usr/local/bin/default_packagemanager
+Icon=pet48.png
+Categories=Settings;PackageManager;

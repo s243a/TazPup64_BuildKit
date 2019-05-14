@@ -1,0 +1,7 @@
+867fd0c1767f2c00f32ee51a3b649af4  /etc/X11/xrdp/xorg.conf
+bbecacb1d97eecc7a3e6e3068b28280f  /usr/lib/X11/modules/input/xrdpkeyb_drv.so
+83c2e75e8b924d96500b408333160771  /usr/lib/X11/modules/input/xrdpmouse_drv.so
+63fc966a3aee7d05091f6daebf154bf5  /usr/lib/X11/modules/libxorgxrdp.so
+c16339b051ccc49ea3733ddd6ce87cab  /usr/lib/X11/modules/drivers/xrdpdev_drv.so
+a2523660329fdca3d954c0a87390e007  /usr/share/doc/COPYING
+e34a8a8115f1db6ff52bf2e74433156c  /usr/share/doc/README.md

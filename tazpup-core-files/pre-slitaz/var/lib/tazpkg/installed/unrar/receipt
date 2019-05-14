@@ -1,0 +1,28 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="128.0K"
+UNPACKED_SIZE="324.0K"
+PACKAGE="unrar"
+VERSION="5.4.5"
+CATEGORY="utilities"
+SHORT_DESC="The free unrar"
+MAINTAINER="gokhlayeh@slitaz.org"
+LICENSE="freeware"
+TARBALL="${PACKAGE}src-$VERSION.tar.gz"
+WEB_SITE="https://www.rarlab.com/"
+WGET_URL="$WEB_SITE/rar/$TARBALL"
+
+DEPENDS="gcc-lib-base"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	make
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/bin
+	cp -a $src/unrar $fs/usr/bin
+}

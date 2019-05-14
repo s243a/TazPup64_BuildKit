@@ -1,0 +1,17 @@
+95b54a74ece0d613d36fdbcc4da84f09  /init
+22c435a846ab086bfeb9b43cd3c22bd2  /etc/inittab
+688e7b46d1c00798188b6a748038b737  /etc/network.conf
+463025d88267430332850d575eb210d1  /etc/init.d/README
+206c845b59ab4fd22b4186a1e40ba571  /etc/init.d/wpa_cli_static.sh
+6eb24f86be36a34892cc7fc9faf6d64f  /etc/init.d/wpa_action.sh
+f323942d88fa71a2cdbad9342f3c3a68  /etc/init.d/system.sh
+7b5a5b7053142d5028749214b20ac6ae  /etc/init.d/rcS
+d31d20458a74443ea42022285151a215  /etc/init.d/local.sh
+d7afd1fc72c66ea301fbe58ef8885500  /etc/init.d/rc.shutdown
+be144dca100d51e7fdc92aa10a1efde6  /etc/init.d/network.sh
+cc797ffc25bfed9137b878e15800ab6b  /etc/init.d/bootopts.sh
+100ea1485f998c6cb120f099ca96ce85  /etc/rcS.conf
+01fff29a4db6c8fda169c262319e743c  /usr/share/slitaz/network.conf_migration
+0192a0d6bfd305f844860c5aa0153ab8  /usr/share/applications/bootlog.desktop
+58b9b731be94bb5def66d86bfe07a168  /usr/bin/bootlog
+45ac8286cc1d0a6e0ce73c77832e2031  /usr/bin/rcSconf

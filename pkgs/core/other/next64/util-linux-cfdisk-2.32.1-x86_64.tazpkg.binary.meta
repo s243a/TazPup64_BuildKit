@@ -1,0 +1,4 @@
+filename=util-linux-cfdisk-2.32.1-x86_64.tazpkg
+size=32	pkgs/core/other/next64/util-linux-cfdisk-2.32.1-x86_64.tazpkg 
+checksum.md5=6e963eab08e909e0917ee5a0a0a9a58a  pkgs/core/other/next64/util-linux-cfdisk-2.32.1-x86_64.tazpkg
+checksum.sha256=6570ae110c88c0f1e5832bafc03fc28829ea662f57a3096e22143c32b5514f5b  pkgs/core/other/next64/util-linux-cfdisk-2.32.1-x86_64.tazpkg

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+NoDisplay=true
+Exec=tazpet-box %f
+Name=TazPet Graphical Installer
+Icon=pet48x.png
+Comment=Puppy Linux Package Installer
+NoDisplay=True

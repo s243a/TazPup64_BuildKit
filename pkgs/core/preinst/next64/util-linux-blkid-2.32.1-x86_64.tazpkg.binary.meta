@@ -1,0 +1,4 @@
+filename=util-linux-blkid-2.32.1-x86_64.tazpkg
+size=132	pkgs/core/preinst/next64/util-linux-blkid-2.32.1-x86_64.tazpkg 
+checksum.md5=d6358bc75305ddcb4bdaca17b8a913dc  pkgs/core/preinst/next64/util-linux-blkid-2.32.1-x86_64.tazpkg
+checksum.sha256=710829f8c031bc7f22f31eb069b9bace74fb17fe59d1b11fe59a67306cc52ebc  pkgs/core/preinst/next64/util-linux-blkid-2.32.1-x86_64.tazpkg

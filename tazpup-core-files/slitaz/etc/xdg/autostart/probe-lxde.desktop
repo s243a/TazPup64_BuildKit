@@ -1,0 +1,6 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+NoDisplay=true
+Name=Probe LXDE
+Exec=user_crond /usr/local/user_cron/task-lxde

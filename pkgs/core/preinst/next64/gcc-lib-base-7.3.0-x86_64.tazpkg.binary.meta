@@ -1,0 +1,4 @@
+filename=gcc-lib-base-7.3.0-x86_64.tazpkg
+size=1728	pkgs/core/preinst/next64/gcc-lib-base-7.3.0-x86_64.tazpkg 
+checksum.md5=c826eafa0512e6f1ccae45bd31be9e45  pkgs/core/preinst/next64/gcc-lib-base-7.3.0-x86_64.tazpkg
+checksum.sha256=8fb91ff9b8935f0786c13d4bcf8681dd05e6594e0e0031cbec002c86b49a22b5  pkgs/core/preinst/next64/gcc-lib-base-7.3.0-x86_64.tazpkg

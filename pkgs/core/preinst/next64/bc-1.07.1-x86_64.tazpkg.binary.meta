@@ -1,0 +1,4 @@
+filename=bc-1.07.1-x86_64.tazpkg
+size=40	pkgs/core/preinst/next64/bc-1.07.1-x86_64.tazpkg 
+checksum.md5=3b822a0da771c3a6c894a1b1002891c7  pkgs/core/preinst/next64/bc-1.07.1-x86_64.tazpkg
+checksum.sha256=46aa8d097993f943e1118364914eebc67240d02610bfb9301ace2106ed88bcb4  pkgs/core/preinst/next64/bc-1.07.1-x86_64.tazpkg

@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<pinboard>
+  <backdrop style="Stretched">/usr/share/backgrounds/default.svg</backdrop>
+  <icon x="4000" y="70" label="trash">/usr/local/apps/Trash</icon>
+</pinboard>

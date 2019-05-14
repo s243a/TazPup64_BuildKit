@@ -1,0 +1,14 @@
+#!/bin/sh
+exec /opt/mozilla/firefox/firefox "$@"
+
+#!/bin/sh
+if [ ! -z "`which midori`" ]; then
+  exec midori "$@"
+elif [ ! -f "/opt/mozilla/firefox/firefox" ]; then
+  exec /opt/mozilla/firefox/firefox "$@"
+elif [ ! -z "`which firefox-official`" ]; then
+  exec firefox-official "$@"
+elif [ ! -z "`which firefox`" ]; then
+  exec firefox-official "$@"
+fi
+

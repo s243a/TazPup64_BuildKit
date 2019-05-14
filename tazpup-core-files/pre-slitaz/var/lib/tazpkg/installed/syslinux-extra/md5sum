@@ -1,0 +1,12 @@
+2f9f112e496b709a8a6adeaf4fb43b37  /bin/extlinux
+0a7a7606bc568d5248f862d4e2f1b4ab  /bin/syslinux
+76dd6c4ffd3df889382661a583eea0b7  /usr/share/boot/pxelinux.0.lzma
+25df5d62e4ab5e7c1e777aa7f4eae18f  /usr/share/boot/README.custom
+23b571400a29918f5392f6e85eeb756e  /usr/share/boot/mbr.bin
+8b3b0652adf8a1557f1b516c6acda81a  /usr/share/boot/init.custom
+4e0ae481e7ebf887920fb0b9ec11f58b  /usr/share/boot/memdisk.lzma
+20e8536652a770a6beb6a74f69544d67  /usr/share/boot/sdi.c32
+f120205471a79e72e8c3f099a8e368f1  /usr/share/boot/gptmbr.bin
+82ae8a09ac61f2939da12e9215e9921d  /usr/bin/isohybrid
+0962c327ec80d02ca2a6775d39b163ec  /usr/bin/iso2exe
+dd84a8ee1084e328a48063a0918d3dd6  /usr/bin/taziso

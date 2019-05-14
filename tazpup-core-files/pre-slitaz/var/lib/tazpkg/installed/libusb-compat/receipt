@@ -1,0 +1,36 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="20.0K"
+UNPACKED_SIZE="40.0K"
+PACKAGE="libusb-compat"
+VERSION="0.1.4"
+CATEGORY="system-tools"
+SHORT_DESC="Compatibility layer to convert libusb 0.1 calls into 1.0 equivalents."
+MAINTAINER="pankso@slitaz.org"
+LICENSE="LGPL2.1"
+TARBALL="$PACKAGE-$VERSION.tar.bz2"
+WEB_SITE="http://libusb.sourceforge.net/"
+WGET_URL="$SF_MIRROR/libusb/$TARBALL"
+HOST_ARCH="i486 arm"
+
+DEPENDS="libusb"
+BUILD_DEPENDS="libusb-dev udev-dev"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	cd $src
+	./configure \
+		--prefix=/usr \
+		$CONFIGURE_ARGS &&
+	make &&
+	make DESTDIR=$DESTDIR install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/lib
+	cp -a $install/usr/lib/*.so* $fs/usr/lib
+}
+

@@ -1,0 +1,4 @@
+filename=libao-1.1.0-x86_64.tazpkg
+size=20	pkgs/core/base/next64/libao-1.1.0-x86_64.tazpkg 
+checksum.md5=aacec64f5e3271ddc33e1e573231423f  pkgs/core/base/next64/libao-1.1.0-x86_64.tazpkg
+checksum.sha256=65931366ec677f6dfafeb11d9a30ccf8ae45bd19ebba2a9362a9a34dd76ce26a  pkgs/core/base/next64/libao-1.1.0-x86_64.tazpkg

@@ -1,0 +1,829 @@
+#!/bin/ash
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# install - TazPkg module
+# Install pet packages
+# Modified by mistfire for TazPuppy
+
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A $0 $@
+exit
+fi
+
+. /lib/libtaz.sh
+. /usr/lib/slitaz/libpkg.sh
+. /usr/libexec/tazpkg/getenv
+. /usr/libexec/tazpkg/find-depends
+. /etc/rc.d/PUPSTATE
+
+SAVE_CACHE_DIR="$CACHE_DIR"
+
+if [ "$(echo "$1" | cut -c 1-3)" != "../" ] && [ "$(echo "$1" | cut -c 1-2)" != "./" ] && [ "$(echo "$1" | cut -c 1)" != "/" ]; then
+ xPKG="$(pwd)/$(basename $1)"
+elif [ "$(echo "$1" | cut -c 1-2)" == "./" ] || [ "$(echo "$1" | cut -c 1-3)" == "../" ]; then
+ xPKG="$(realpath "$1")"
+else
+ if [ ! -f "$1" ]; then
+  xPKG="$(pwd)/$1"
+ else
+  xPKG="$1"
+ fi
+fi
+
+if [ "$2" == "--forced" ]; then
+ forced="1"
+fi
+
+
+
+xTMP_DIR="/var/tmp/$(basename $xPKG .pet)"
+xPKGBASE=$(basename $xPKG .pet)
+PACKAGE_FILE="$xPKG"
+
+mkdir $xTMP_DIR
+
+show_unresolved_lib() {
+if [ -s "$xTMP_DIR/unresolved" ]; then
+echo -e "BUGS=\"$(_n 'No dependency for:')">> $1
+sort < $xTMP_DIR/unresolved | uniq | \
+while read file; do
+_ 'WARNING: unknown dependency for %s' "$lib"
+echo -n " $file">> $1
+done
+echo "\"">> $1
+fi
+}
+
+parse_pkgname() {
+debug "parse_pkgname('$1', '$2')"
+package=$(basename "${2:-$xPKG}" "$1")
+IFS='-'
+set -- "$package"
+unset IFS
+package="$1"
+
+version="$2"
+
+if [ "$(echo "$version" | grep "-")" != "" ]; then
+ version="$(echo "$version" | cut -f 1 -d '-')"
+fi
+
+if [ "$(echo "$version" | grep "&")" != "" ]; then
+ version="$(echo "$version" | cut -f 1 -d '&')"
+fi
+
+if [ "$(echo "$version" | grep "_")" != "" ]; then
+ version="$(echo "$version" | cut -f 1 -d '_')"
+fi
+
+if [ -z "$version" ]; then
+package=${1%%-[0-9\.]*}
+version=${1#$package-}
+
+ if [ "$(echo "$version" | grep "-")" != "" ]; then
+  version="$(echo "$version" | cut -f 1 -d '-')"
+ fi
+
+ if [ "$(echo "$version" | grep "&")" != "" ]; then
+  version="$(echo "$version" | cut -f 1 -d '&')"
+ fi
+
+ if [ "$(echo "$version" | grep "_")" != "" ]; then
+  version="$(echo "$version" | cut -f 1 -d '_')"
+ fi
+ 
+fi
+
+file="$package-$version"
+mkdir "$file"
+debug "  package='$package' version='$version' file='$file'"
+}
+
+finish_convert_puppy() {
+	
+cd $xTMP_DIR
+
+cat > "$xTMP_DIR/receipt" <<EOT
+PACKAGE="$package"
+VERSION="$version"
+CATEGORY="misc"
+SHORT_DESC="$desc"
+WEB_SITE="http://puppylinux.org/"
+MAINTAINER="nobody@slitaz.org"
+DEPENDS="$depends"
+EOT
+
+show_unresolved_lib "$xTMP_DIR/receipt"
+
+#exit
+rm -f $xTMP_DIR/fs/pet.specs
+ptrn1="$(echo "$xTMP_DIR" | sed -e "s#\/#\\\/#g")"
+find $xTMP_DIR/fs -type f | grep -v "/receipt" | grep -v "/files.list" | sed -e "s#$ptrn1##g" > $xTMP_DIR/files.list.new
+cat $xTMP_DIR/files.list.new | grep -Ev "$\/receipt" | grep -Ev "$\/files.list" | sed -e "s#\/fs\/#\/#g" > $xTMP_DIR/files.list
+rm -f $xTMP_DIR/files.list.new
+
+PKGSIZEK=`du -h "$xPKG" | cut -f 1 | tail -n 1`
+EXPSIZEK=`du -h $xTMP_DIR/fs | cut -f 1 | tail -n 1`	
+
+cat > "$xTMP_DIR/receipt" <<EOT
+PACKAGE="$package"
+VERSION="$version"
+CATEGORY="misc"
+SHORT_DESC="$desc"
+WEB_SITE="http://puppylinux.org/"
+MAINTAINER="nobody@slitaz.org"
+DEPENDS="$depends"
+PACKED_SIZE="$PKGSIZEK"
+UNPACKED_SIZE="$EXPSIZEK"
+EOT
+
+for i in install uninstall; do
+if [ -f "$xTMP_DIR/fs/p${i}.sh" ]; then
+SEPARATOR="EOT$RANDOM"
+cat >> "$xTMP_DIR/receipt" <<EOT
+post_$i()
+{
+chroot \$1/ sh - <<$SEPARATOR
+cd /
+$(sed -e 's/\\/\\\\/g' -e 's/\$/\\$/g' < "$xTMP_DIR/fs/p${i}.sh" ; rm -f "$xTMP_DIR/fs/p${i}.sh")
+$SEPARATOR
+}
+EOT
+rm -f $xTMP_DIR/fs/p${i}.sh
+fi
+done
+sed -i 's/post_uninstall/post_remove/' "$xTMP_DIR/receipt"
+
+}
+
+extract_pet() {
+debug "extract_pet()"
+TMP_DIR="$xTMP_DIR"
+cd "$xTMP_DIR"
+parse_pkgname .pet
+
+busybox tar -xJf "$xPKG"
+FS_DIR=$(busybox find $xTMP_DIR -maxdepth 3 -name "*bin" -type d -o -name "lib*" -type d -o -name "etc" -type d -o -name "boot" -type d -o -name "dev" -type d -o -name "opt" -type d -o -name "root" -type d -o -name "var" -type d -o -name "usr" -type d | wc -l) 
+if [ $FS_DIR -eq 0 ]; then
+ echo "Extracting using gzip..."
+ busybox tar -xzf "$xPKG"
+ FS_DIR=$(busybox find $xTMP_DIR -maxdepth 3 -name "*bin" -type d -o -name "lib*" -type d -o -name "etc" -type d -o -name "boot" -type d -o -name "dev" -type d -o -name "opt" -type d -o -name "root" -type d -o -name "var" -type d -o -name "usr" -type d | wc -l)
+ if [ $FS_DIR -eq 0 ]; then
+  echo "Extracting using bzip..."
+  busybox tar -xjf "$xPKG"
+  FS_DIR=$(busybox find $xTMP_DIR -maxdepth 3 -name "*bin" -type d -o -name "lib*" -type d -o -name "etc" -type d -o -name "boot" -type d -o -name "dev" -type d -o -name "opt" -type d -o -name "root" -type d -o -name "var" -type d -o -name "usr" -type d | wc -l)
+  if [ $FS_DIR -eq 0 ]; then
+   echo "Failed to extract package"
+   rm -rf "$xTMP_DIR"
+   exit 50
+  fi
+ fi
+fi
+
+PET_SPECS="$(find $xTMP_DIR -maxdepth 2 -type f -name "pet.specs" | head -n 1)"
+
+if [ -e "$PET_SPECS" ]; then
+
+ depends=""
+ xdepends="$(awk -F'|' '{print $9}' $PET_SPECS | sed -e "s#^+##g" -e "s#,+# #g")"
+ 
+ for xdep in $xdepends
+ do
+	if [ "$(echo "$xdep" | grep "&")" != "" ]; then
+	 if [ "$depends" == "" ]; then
+	  depends="$(echo "$xdep" | cut -f 1 -d '&')"
+	 else
+	  depends="$depends $(echo "$xdep" | cut -f 1 -d '&')"
+	 fi
+	else
+     if [ "$depends" == "" ]; then
+	  depends="$xdep"
+	 else
+	  depends="$depends $xdep"
+	 fi
+	fi
+ done
+ 
+ foldername="$(awk -F'|' '{print $1}' $PET_SPECS)"
+ version="$(awk -F'|' '{print $3}' $PET_SPECS)"
+ 
+  if [ "$(echo "$version" | grep "-")" != "" ]; then
+  version="$(echo "$version" | cut -f 1 -d '-')"
+ fi
+
+ if [ "$(echo "$version" | grep "&")" != "" ]; then
+  version="$(echo "$version" | cut -f 1 -d '&')"
+ fi
+
+ if [ "$(echo "$version" | grep "_")" != "" ]; then
+  version="$(echo "$version" | cut -f 1 -d '_')"
+ fi
+ 
+fi
+
+if [ -e "$PET_SPECS" ]; then
+debug "pet.specs with '|'"
+desc="$(awk -F'|' '{print $10}' $PET_SPECS)"
+else
+ PET_SPECS="$(find $xTMP_DIR -maxdepth 2 -type f -name '*.pet.specs' | head -n 1)"
+ if [ -e "$PET_SPECS" ]; then
+  desc="$(. "$PET_SPECS"; echo "$PETMENUDESCR")"
+  depends="$(. "$PET_SPECS"; echo "$PETOFFICIALDEPS" | sed -e "s#^+##g" -e "s#,+# #g")"
+  foldername="$(basename $PET_SPECS .pet.specs)"
+ else
+  foldername="$(find $xTMP_DIR -maxdepth 1 -type d | head -n 1)"
+  DESKTOP="$(find $xTMP_DIR -type f -name '*.desktop' | head -n 1)"
+  if [ -n "$DESKTOP" ]; then
+   desc="$(awk -F'=' '($1=="Name"){print $2}' $DESKTOP)"
+  fi
+ fi
+fi
+
+[ -z "$desc" ] && desc="$package"
+
+debug "desc='$desc'"
+
+if [ -d ./$xPKGBASE ]; then
+mv -f ./$xPKGBASE ./fs
+elif [ -d ./$foldername ]; then
+mv -f ./$foldername ./fs
+fi
+
+rm -f ./fs/*.specs
+
+finish_convert_puppy
+}
+
+edit_line(){
+
+if [ "$1" != "" ]; then
+ xline2="$(echo "$1")"
+ xcount="$(echo "$1" | wc -l)"
+ if [ $xcount -gt 1 ]; then
+	echo "$xline2" |
+	while read d1
+	do
+	 sed -i -e "s%$d1%echo>\/dev\/null%g" $INSTALLED/$PACKAGE/receipt
+	done
+ elif [ $xcount -ne 0 ]; then
+   sed -i -e "s%$xline2%echo>\/dev\/null%g" $INSTALLED/$PACKAGE/receipt
+ fi
+fi 
+	
+}
+
+edit_pkg_receipt(){
+	
+xstart="$(cat $INSTALLED/$PACKAGE/receipt | grep "/etc/init.d/" | grep " start")"
+xstop="$(cat $INSTALLED/$PACKAGE/receipt | grep "/etc/init.d/" | grep " stop")"
+xrestart="$(cat $INSTALLED/$PACKAGE/receipt | grep "/etc/init.d/" | grep " restart")"
+xdepmod="$(cat $INSTALLED/$PACKAGE/receipt | grep "depmod -a")"
+xgio="$(cat $INSTALLED/$PACKAGE/receipt | grep "gio-query")"
+xpixbuf="$(cat $INSTALLED/$PACKAGE/receipt | grep "gdk-pixbuf-query")"
+xglib="$(cat $INSTALLED/$PACKAGE/receipt | grep "glib-compile-schema")"
+xfont="$(cat $INSTALLED/$PACKAGE/receipt | grep "fc-cache")"
+xmime="$(cat $INSTALLED/$PACKAGE/receipt | grep "update-mime-database")"
+xdesktop="$(cat $INSTALLED/$PACKAGE/receipt | grep "update-desktop-database")"
+xicon="$(cat $INSTALLED/$PACKAGE/receipt | grep "gtk-update-icon-cache")"
+
+edit_line "$xstart"
+edit_line "$xstop"
+edit_line "$xrestart"
+edit_line "$xdepmod"
+edit_line "$xgio"
+edit_line "$xpixbuf"
+edit_line "$xglib"
+edit_line "$xfont"
+edit_line "$xmime"
+edit_line "$xdesktop"
+edit_line "$xicon"
+
+}
+
+audit_bb_core(){
+	
+if [ -L /sbin/init ]; then
+  cp -f /usr/share/pupcore/init.bak /sbin/init
+else
+ xinit1="$(md5sum /sbin/init | cut -f 1 -d ' ')"
+ xinit2="$(md5sum /usr/share/pupcore/init.bak | cut -f 1 -d ' ')"
+ if [ "$xinit1" != "$xinit2" ] && [ -f /usr/share/pupcore/init.bak ]; then
+  cp -f /sbin/init /sbin/init-FULL 
+  cp -f /usr/share/pupcore/init.bak /sbin/init
+ fi
+fi
+
+if [ -L /sbin/losetup ]; then
+  cp -f /usr/share/pupcore/losetup.bak /sbin/losetup
+else
+ xinit1="$(md5sum /sbin/losetup | cut -f 1 -d ' ')"
+ xinit2="$(md5sum /usr/share/pupcore/losetup.bak | cut -f 1 -d ' ')"
+ if [ "$xinit1" != "$xinit2" ] && [ -f /usr/share/pupcore/losetup.bak ]; then
+  cp -f /sbin/losetup /sbin/losetup-FULL 
+  cp -f /usr/share/pupcore/losetup.bak /sbin/losetup
+ fi
+fi
+
+if [ -L /bin/ps ]; then
+  cp -f /usr/share/pupcore/ps.bak /bin/ps
+else
+ xinit1="$(md5sum /bin/ps | cut -f 1 -d ' ')"
+ xinit2="$(md5sum /usr/share/pupcore/ps.bak | cut -f 1 -d ' ')"
+ if [ "$xinit1" != "$xinit2" ] && [ -f /usr/share/pupcore/ps.bak ]; then
+  cp -f /bin/ps /bin/ps-FULL 
+  cp -f /usr/share/pupcore/ps.bak /bin/ps
+ fi
+fi
+
+}
+
+log_pkg() {
+debug "\nlog_pkg('$1')\n  PACKAGE='$PACKAGE'\n  VERSION='$VERSION'\n  EXTRAVERSION='$EXTRAVERSION'"
+local extra
+[ "$1" == 'Installed' ] && \
+extra=" - $(fgrep " $PACKAGE-$VERSION" "$PKGS_DB/installed.$SUM" | awk '{print $1}')"
+debug "  extra='$extra'"
+[ -w "$LOG" ] &&
+echo "$(date +'%F %T') - $1 - $PACKAGE ($VERSION$EXTRAVERSION)$extra">> $LOG
+}
+
+equivalent_pkg() {
+local i rep rules rule out
+rules=$(for rep in $PRIORITY; do
+grep -hs "^$1=" "$rep/packages.equiv"
+done | sed "s|^$1=||")
+debug ">rules='$rules'"
+
+for rule in $rules; do
+	debug ">rule='$rule'"
+	case $rule in
+	*:*)
+	debug '-- x:x'
+	out="${rule#*:}"
+	awk -F$'\t' -vp="${rule%:*}" '$1==p{exit 1}' "$PKGS_DB/installed.info" || break
+	debug '-- x:x /'
+	;;
+	*)
+	debug '-- x'
+	out="$rule"
+	awk -F$'\t' -vp="$rule" '$1==p{exit 1}' "$PKGS_DB/installed.info" || break
+	debug '-- x /'
+	;;
+	esac
+	unset out
+done
+
+debug '--'
+echo "${out:-$1}"
+}
+
+install_all_deps() {
+debug "\ninstall_all_deps('$1')"
+local TMP_DIR DEPENDS num missing_packages equiv pkg answer dir found pkgfile
+
+cd "$xTMP_DIR"
+. $xTMP_DIR/receipt
+#echo "Dependencies: $DEPENDS"
+DEPENDS="$DEPENDS"
+
+unset num missing_packages
+
+for depend in $DEPENDS; do
+ debug "  depend='$depend'"
+ equiv=$(equivalent_pkg $depend)
+ debug "  equiv='$equiv'\n"
+		if [ ! -d "$INSTALLED/$equiv" ]; then
+		 missing_packages="$missing_packages $equiv"
+		 num=$((num+1))
+		elif [ ! -f "$INSTALLED/$equiv/receipt" ]; then
+		 [ -z "$quiet" ] && _ 'WARNING! Dependency loop between "%s" and "%s".' "$PACKAGE" "$equiv"
+		fi
+done
+
+[ -z "$num" ] && return
+
+title "$(_ 'Tracking dependencies for package "%s"' "$PACKAGE")"
+
+if [ -z "$quiet" ]; then
+	for pkg in $missing_packages; do
+	_ 'Missing package "%s"' "$pkg"
+	done
+fi
+
+footer "$(_p \
+'%s missing package to install.' \
+'%s missing packages to install.' "$num" \
+"$num")"
+
+if [ -f /tmp/tazpkg-skipdep.lock ]; then
+ answer=1
+else
+ if [ "$AUTO_INSTALL_DEPS" == 'yes' ] || [ -n "$quiet" ]; then
+  answer=0
+  [ -n "$noconfirm" ] && answer=1
+ else
+   newline
+   confirm "$(_ 'Install all missing dependencies? (y/N)')"
+   answer=$?
+   newline
+ fi
+fi
+
+debug "  answer='$answer'"
+
+dir="$(dirname "$1")"
+
+debug "  dir='$dir'"
+
+[ "$dir" == '/home/boot/packages' ] && local='yes'
+
+debug "  local='$local'"
+
+if [ "$answer" -eq 0 -a -z "$nodeps" ]; then
+ debug "  let's install missing packages"
+  for pkg in $missing_packages; do
+	debug "  pkg='$pkg'"
+	 if [ ! -d "$INSTALLED/$pkg" ]; then
+ 	  found='0'
+		if [ -n "$local" ]; then
+		 [ -z "$quiet" ] && _ 'Checking if package "%s" exists in local list...' "$pkg"
+		 tempd="$(mktemp -d)"
+		 cd "$tempd"
+			for pkgfile in $dir/$pkg-*.tazpkg; do
+			  [ -e "$pkgfile" ] || continue
+			  cpio -F "$pkgfile" -i receipt >/dev/null 2>&1
+			  name=$(. receipt; echo $PACKAGE)
+			  rm receipt
+			   if [ "$name" == "$pkg" ]; then
+				 found='1'
+				 tazpkg install "$pkgfile"
+			   fi
+			done
+		  cd ..
+		  rm -r "$tempd"
+		fi
+		debug "    found='$found'"
+		[ "$found" -eq 0 ] && tazpkg get-install "$pkg"
+	 fi
+	done
+else
+ newline
+ _ 'Leaving dependencies for package "%s" unresolved.' "$PACKAGE"
+ _ 'The package will be installed but will probably not work.'
+ newline
+fi
+}
+
+print_short_description() {
+local short_desc=''
+
+for LC in $LANG ${LANG%_*}; do
+	[ -e "$PKGS_DB/packages-desc.$LC" ] &&
+	short_desc=$(awk -F$'\t' -vp="$1" '$1==p{print $2; exit}' "$PKGS_DB/packages-desc.$LC")
+done
+
+[ -z "$short_desc" -a -s "$PKGS_DB/packages.info" ] &&
+short_desc=$(awk -F$'\t' -vp="$1" '$1==p{print $4; exit}' "$PKGS_DB/packages.info")
+[ -z "$short_desc" ] && short_desc="$SHORT_DESC"
+longline "$short_desc"
+}
+
+grepesc() {
+sed 's/\[/\\[/g'
+}
+
+call_pre_install() {
+local tmp
+if grep -q '^pre_install()' "$1"; then
+ action 'Execute pre-install commands...'
+ tmp="$(mktemp)"
+ cp "$1" "$tmp"
+ echo ""
+ sed -i 's|$1/*$INSTALLED|$INSTALLED|g' "$tmp"
+ ( . "$tmp"; pre_install "$root" )
+ separator '-'
+ status
+ rm "$tmp"
+fi
+}
+
+call_post_install() {
+local tmp
+if grep -q '^post_install()' "$1"; then
+	action 'Execute post-install commands...'
+	tmp="$(mktemp)"
+	cp "$1" "$tmp"
+	sed -i 's|$1/*$INSTALLED|$INSTALLED|g' "$tmp"
+	echo ""
+	( . "$tmp"; post_install "$root" )
+	separator '-'
+	status
+	rm "$tmp"
+fi
+}
+
+install_package() {
+	
+debug "\ninstall_package('$1')"
+
+local dir
+
+. "$xTMP_DIR/receipt"
+
+mkdir -p "$INSTALLED/$PACKAGE"
+
+find "$INSTALLED/$PACKAGE" -type f \( ! -name modifiers ! -name files.list \) -delete
+
+touch "$PKGS_DB/installed.$SUM"
+
+sed -i "/ $(basename "$PACKAGE_FILE")$/d" "$PKGS_DB/installed.$SUM" 2>/dev/null
+
+cd "$(dirname "$PACKAGE_FILE")"
+
+$CHECKSUM "$(basename "$PACKAGE_FILE")">> "$PKGS_DB/installed.$SUM"
+
+install_all_deps "$PACKAGE_FILE"
+
+if [ -n "$cookmode" ]; then
+f=${PACKAGE_FILE%/*}; f=${f%/*}; f=${f##*/}
+	if [ "$f" == "$(cat /etc/slitaz-release)" ]; then
+	_ 'Installing (web/cache): %s' "$(basename $PACKAGE_FILE .tazpkg)"
+	else
+	_ 'Installing (pkg/local): %s' "$(basename $PACKAGE_FILE .tazpkg)"
+	fi
+fi
+
+if [ -n "$sequence" ]; then
+ title 'Installation of package "%s" (%s)' "$PACKAGE" "$sequence"
+else
+ title 'Installation of package "%s"' "$PACKAGE"
+fi
+
+if [ -z "$quiet" ]; then
+ print_short_description "$PACKAGE"
+ separator '-'
+fi
+
+action 'Copying package...'
+status
+cd "$xTMP_DIR"
+. "$xTMP_DIR/receipt"
+cd "$INSTALLED"
+IFS=$'\n'
+
+if [ -f "$PACKAGE/files.list" ]; then
+	while read file; do
+		grep -q "^$(echo "$file" | grepesc)$" "$xTMP_DIR/files.list" && continue
+			for i in $(cat "$PACKAGE/modifiers" 2>/dev/null;
+				fgrep -sl "$PACKAGE" */modifiers | cut -d/ -f1); do
+				grep -qs "^$(echo "$file" | grepesc)$" "$i/files.list" && continue 2
+			done
+		echo "$file"
+	done < "$PACKAGE/files.list"> "$xTMP_DIR/files2remove.list"
+fi
+
+unset IFS
+action 'Remember modified packages...'
+
+{
+check=false
+for i in $(fgrep -v [ $xTMP_DIR/files.list); do
+ [ -e "$root$i" ] || continue
+ [ -d "$root$i" ] && continue
+ echo "- $i"
+ check=true
+done ;
+$check && \
+for i in *; do
+ [ "$i" == "$PACKAGE" ] && continue
+ [ -s "$i/files.list" ] || continue
+ awk "{ printf \"$i %s\\n\",\$1 }" < "$i/files.list"
+done;
+} | awk '
+{
+if ($1 == "-" || file[$2] != "") {
+file[$2] = file[$2] " " $1
+if ($1 != "-") {
+if (pkg[$1] == "") all = all " " $1
+pkg[$1] = pkg[$1] " " $2
+}
+}
+}
+END {
+for (i = split(all, p, " "); i > 0; i--)
+for (j = split(pkg[p[i]], f, " "); j > 0; j--)
+printf "%s %s\n",p[i],f[j];
+}
+' | while read dir file; do
+
+ if grep -qs "^$dir$" "$PACKAGE/modifiers"; then
+  rm "$xTMP_DIR/$file" 2>/dev/null
+  #continue
+ fi
+
+ grep -qs "^$PACKAGE$" "$dir/modifiers" && continue
+
+ if [ -s "$dir/volatile.cpio.gz" ]; then
+  zcat "$dir/volatile.cpio.gz" | cpio -t --quiet | \
+  grep -q "^${file#/}$" && continue
+ fi
+
+ echo "$PACKAGE">> "$dir/modifiers"
+done
+
+status
+
+cd "$xTMP_DIR"
+
+for file in receipt files.list description.txt $CHECKSUM; do
+ [ -f "$file" ] && cp "$file" "$INSTALLED/$PACKAGE"
+done
+
+cp -f $INSTALLED/$PACKAGE/receipt $INSTALLED/$PACKAGE/receipt.bak
+
+if [ -f /tmp/tazpkg-editreceipt.lock ]; then
+ edit_pkg_receipt
+fi
+
+call_pre_install "$INSTALLED/$PACKAGE/receipt"
+
+if [ -n "$CONFIG_FILES" ]; then
+ action 'Saving configuration files...'
+ debug "\n"
+ cd fs
+ local config_file
+	for config_file in $CONFIG_FILES; do
+	 debug "  config_file: '$config_file'"
+	 find ${config_file#/} -type f 2>/dev/null
+	done | cpio -o -H newc --quiet | gzip -9 > "$INSTALLED/$PACKAGE/volatile.cpio.gz"
+ cd ..
+	if [ -z "$newconf" ]; then
+	debug "  no '--newconf': clean official config files"
+		for config_file in $CONFIG_FILES; do
+			for config_file_official in $(find "fs$config_file" ! -type d 2>/dev/null | sed 's|^fs||'); do
+				if [ -e "$root$config_file_official" ]; then
+				 debug "    official '$config_file_official' will be skipped"
+				 rm "fs$config_file_official"
+				else
+				 debug "    official '$config_file_official' will be written"
+				fi
+			done
+		done
+	fi
+:; status
+fi
+
+if [ -n "$(ls fs/* 2>/dev/null)" ]; then
+ action 'Installing package...'
+ debug '\n  resolving destination links in source'
+ IFS=$'\n'
+	for dir in $(find fs -type d | sed 's|^fs||;/^$/d'); do
+	 if ldir=$(readlink -n $root$dir); then
+	  debug "  * mv 'fs$dir'\n    -> 'fs${dir%/*}/$ldir'"
+	  mkdir -p "fs${dir%/*}/${ldir%/*}"
+	  mv "fs$dir" "fs${dir%/*}/$ldir"
+	 fi
+	done
+ unset IFS
+ debug '  copying folders and files to destination'
+ cp -af fs/* "$root/"
+ status
+fi
+
+if [ -s files2remove.list ]; then
+action 'Removing old files...'
+	while read file; do
+	 dir="$root$file"
+	 rm -f "$dir"
+		while [ "$dir" != "$root/" ]; do
+		 dir=$(dirname "$dir")
+		 rmdir "$dir" 2>/dev/null || break
+		done
+	done < files2remove.list
+:; status
+fi
+
+action "Removing all tmp files..."
+
+cd ..
+rm -rf "$xTMP_DIR"
+
+status
+
+call_post_install "$INSTALLED/$PACKAGE/receipt"
+
+mv -f $INSTALLED/$PACKAGE/receipt.bak $INSTALLED/$PACKAGE/receipt
+
+local fl="$INSTALLED/$PACKAGE/files.list" upd=0 udesk umime uicon uschm ukrnl ukrnlfs
+
+if [ "$(cat $fl | grep "^/sbin/init")" != "" ] || [ "$(cat $fl | grep "^/sbin/losetup")" != "" ]; then
+ audit_bb_core
+fi
+
+fgrep    /usr/share/applications/    "$fl" | fgrep -q .desktop && udesk='yes'
+fgrep -q /usr/share/mime             "$fl" && umime='yes'
+fgrep -q /usr/share/icon/hicolor     "$fl" && uicon='yes'
+fgrep    /usr/share/glib-2.0/schemas "$fl" | fgrep -q .xml && uschm='yes'
+fgrep    /usr/lib/gdk-pixbuf         "$fl" | fgrep -q .so && upixb='yes'
+fgrep    /usr/lib/gio/modules         "$fl" | fgrep -q .so && ugio='yes'
+fgrep    /usr/share/fonts         "$fl" && ufont='yes'
+
+if fgrep -q /lib/modules             "$fl"; then
+ ukrnl='yes'
+	if fgrep -q /kernel/fs/ "$fl"; then
+	 ukrnlfs='yes'
+	fi
+fi
+
+if [ ! -f /tmp/tazpkg-skipupdate.lock ]; then
+
+if [ -n "$udesk$umime$uicon$uschm$upixb$ukrnl" ]; then
+ action 'Update system databases...'
+ upd=1
+fi
+
+[ -n "$udesk" ] && chroot "$root/" /usr/bin/update-desktop-database /usr/share/applications 2>/dev/null
+[ -n "$umime" ] && chroot "$root/" /usr/bin/update-mime-database /usr/share/mime
+[ -n "$uicon" ] && chroot "$root/" /usr/bin/gtk-update-icon-cache /usr/share/icons/hicolor
+[ -n "$uschm" ] && chroot "$root/" /usr/bin/glib-compile-schemas /usr/share/glib-2.0/schemas 2>&1 | fgrep -v '/apps/'
+[ -n "$upixb" ] && chroot "$root/" /usr/bin/gdk-pixbuf-query-loaders --update-cache
+[ -n "$ugio" ] && chroot "$root/" /usr/bin/gio-querymodules /usr/lib/gio/modules	
+[ -n "$ufont" ] && chroot "$root/" /usr/bin/fc-cache -f	
+
+if [ -n "$ukrnlfs" ]; then
+	for i in $(awk -F/ '{if($6=="fs" && $8~$7)print $7}' "$fl" | sort -u); do
+	 touch "$root/etc/filesystems"
+	 grep -q "^$i\$" "$root/etc/filesystems" || echo "$i">> "$root/etc/filesystems"
+	done
+fi
+
+if [ $(ls -1 /lib/modules | wc -l) -ne 0 ]; then
+ [ -n "$ukrnl" ] && grep '/lib/modules' "$fl" | cut -d'/' -f4 | uniq | xargs chroot "$root/" /sbin/depmod -a
+fi
+
+[ "$upd" -eq 1 ] && status
+
+fi
+
+SIZES=$(echo $PACKED_SIZE $UNPACKED_SIZE | sed 's|\.0||g')
+DEPENDS=$(echo $DEPENDS)
+PKG_SUM="$(fgrep " $PACKAGE-$VERSION$EXTRAVERSION.tazpkg" "$PKGS_DB/installed.$SUM" | cut -d' ' -f1)"
+ii="$PKGS_DB/installed.info"
+
+sed -i "/^$PACKAGE	/d" "$ii"
+
+cat >> "$ii" <<EOT
+$PACKAGE	$VERSION$EXTRAVERSION	$CATEGORY	$SHORT_DESC	$WEB_SITE	$TAGS	$SIZES	$DEPENDS	$PKG_SUM
+EOT
+
+TEMP_FILE="$(mktemp)"
+
+sort "$ii"> "$TEMP_FILE"; mv -f "$TEMP_FILE" "$ii"; chmod a+r "$ii"; unset ii
+
+cd "$CUR_DIR"
+
+footer "$(_ 'Package "%s" (%s) is installed.' "$PACKAGE" "$VERSION$EXTRAVERSION")"
+
+log_pkg Installed
+
+[ -s "$UP_LIST" ] && sed -i "/^$PACKAGE\$/d" "$UP_LIST"
+}
+
+#echo "Package name: $PACKAGE"
+
+cd "$xTMP_DIR"
+
+extract_pet "$xPKG"
+
+. $xTMP_DIR/receipt
+
+PACKAGE="$PACKAGE"
+
+if grep -qs "^$PACKAGE$" "$BLOCKED"; then
+ _ 'Package "%s" blocked.' "$PACKAGE"
+ rm -rf "$xTMP_DIR"
+ exit 1
+fi
+
+if [ -z "$forced" ]; then
+ debug "\ncheck for installed package '$PACKAGE'"
+ awk -F$'\t' -vpv="$PACKAGE" '$1==pv { exit 1 }' "$PKGS_DB/installed.info"
+	if [ "$?" -eq 1 ]; then
+		if [ -z "$quiet" ]; then
+		newline
+		_ '"%s" package is already installed.' "$(colorize 34 "$PACKAGE")"
+		longline "$(_ 'You can use the --forced option to force installation.')"
+		newline
+		fi
+	rm -rf "$xTMP_DIR"	
+	exit 1
+	fi
+fi
+
+if [ $PUPMODE -eq 3 -o $PUPMODE -eq 7 -o $PUPMODE -eq 13 ];then
+ action 'Waiting for snapmergepuppy to finish...'
+  while [ "`pidof snapmergepuppy`" != "" ];do
+   sleep 1
+  done
+fi
+
+install_package "$xPKG"

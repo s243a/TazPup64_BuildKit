@@ -1,0 +1,16 @@
+d5012afa03252341be8a9c2937499648  /usr/lib/mate-notification-daemon/engines/libstandard.so
+fa8c687285fd80eebe307f0ce51155cf  /usr/lib/mate-notification-daemon/engines/libcoco.so
+bb9af4ec82d8a28d821d6c2de1c628bc  /usr/lib/mate-notification-daemon/engines/libslider.so
+bf4c9127052243b354781ef26b8b4799  /usr/lib/mate-notification-daemon/engines/libnodoka.so
+ece23f6d3b30bef13d122eeb9f16a039  /usr/share/mate-notification-daemon/mate-notification-properties.ui
+5c5c97688b45045763f199483b33d92f  /usr/share/glib-2.0/schemas/org.mate.NotificationDaemon.gschema.xml
+42562aaed9e85172ad2bf0b5bf6bb603  /usr/share/icons/hicolor/32x32/apps/mate-notification-properties.png
+d49a650a343926feec9faf1d51362f30  /usr/share/icons/hicolor/scalable/apps/mate-notification-properties.svg
+0a448982542adb1f70da4331cf0b2c30  /usr/share/icons/hicolor/48x48/apps/mate-notification-properties.png
+9314b071bad53dfb1af3d0668182b707  /usr/share/icons/hicolor/22x22/apps/mate-notification-properties.png
+60300ff4ac3793516b30e4b070536a9c  /usr/share/icons/hicolor/16x16/apps/mate-notification-properties.png
+291bbc03164784f63f1b0808b81aaa90  /usr/share/icons/hicolor/24x24/apps/mate-notification-properties.png
+5e128dcc16d42c6b6cf52ece9c3c2498  /usr/share/dbus-1/services/org.freedesktop.mate.Notifications.service
+84ebad9c41cda03c61b691c5101d853d  /usr/share/applications/mate-notification-properties.desktop
+932fe4d739dc4635aa88f37a38e67326  /usr/libexec/mate-notification-daemon
+ee1d71a16295e5405ccebdf62443950c  /usr/bin/mate-notification-properties

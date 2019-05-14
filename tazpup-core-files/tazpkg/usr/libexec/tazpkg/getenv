@@ -1,0 +1,178 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# getenv - TazPkg module
+# Get TazPkg working environment
+# Modified by mistfire for TazPuppy
+
+for i in awk basename bzcat cat chmod chroot clear cmp cp cpio cut date dd diff dirname dpkg-deb \
+du egrep fgrep find grep gzip head httpd id ln ls lzcat md5sum mkdir mktemp mv readlink \
+realpath rm rmdir rpm rpm2cpio sed sort stat su tac tail tar tee touch tr tty uniq unlzma wc \
+wget which xzcat zcat; do
+alias $i="busybox $i"
+done
+
+. /lib/libtaz.sh
+
+debug() {
+if [ -n "$debug" ]; then
+ colorize 036 "$@">&2
+ [ -n "$LOG" ] && echo -e "$(date +%f) $@">> "${LOG/.log/.debug}"
+fi
+}
+
+debug "\n========\n$0 '$1' '$2' '$3' '$4'"
+
+missing_file() {
+if [ ! -f "$1" ]; then
+	case $(id -u) in
+	0)  mkdir -p "$(dirname "$1")"; touch "$1"
+	[ -n "$2" ] && cp -a "$2" "$(dirname "$1")"
+	;;
+	*) _ 'Missing: %s' "$1">&2; die 'Please run tazpkg as root.';;
+	esac
+fi
+}
+
+missing_dir() {
+if [ ! -d "$1" ]; then
+	case $(id -u) in
+	0) mkdir -p "$1";;
+	*) _ 'Missing: %s' "$1">&2; die 'Please run tazpkg as root.';;
+	esac
+fi
+}
+
+fill() {
+if [ ! -s "$1" ]; then
+	case $(id -u) in
+	0) echo "$2"> "$1";;
+	*) _ 'File "%s" empty.' "$1">&2; die 'Please run tazpkg as root.';;
+	esac
+fi
+}
+
+root="${root%/}"
+
+debug "root        = '$root'"
+
+missing_dir  "$root/etc/slitaz/"
+
+missing_file "$root/etc/slitaz/slitaz.conf" '/etc/slitaz/slitaz.conf'
+
+missing_file "$root/etc/slitaz/tazpkg.conf" '/etc/slitaz/tazpkg.conf'
+
+missing_file "$root/etc/slitaz-release"; fill "$root/etc/slitaz-release" 'cooking'
+
+if [ -n "$root" ]; then
+ slitaz_conf=$(mktemp); cp "$root/etc/slitaz/slitaz.conf" "$slitaz_conf"
+ tazpkg_conf=$(mktemp); cp "$root/etc/slitaz/tazpkg.conf" "$tazpkg_conf"
+ sed -i "s| /| $root/|g; s|\"/|\"$root/|g" "$slitaz_conf" "$tazpkg_conf"
+ . "$slitaz_conf"; . "$tazpkg_conf"
+ rm "$slitaz_conf" "$tazpkg_conf"
+else
+ . /etc/slitaz/slitaz.conf; . /etc/slitaz/tazpkg.conf
+fi
+
+debug "PKGS_DB     = '$PKGS_DB'"
+
+debug "INSTALLED   = '$INSTALLED'"
+
+debug "SLITAZ_LOGS = '$SLITAZ_LOGS'"
+
+debug "LOG         = '$LOG'"
+
+BLOCKED="$PKGS_DB/blocked-packages.list"
+
+debug "BLOCKED     = '$BLOCKED'"
+
+UP_LIST="$PKGS_DB/packages.up"
+
+debug "UP_LIST     = '$UP_LIST'"
+
+debug "CACHE_DIR   = '$CACHE_DIR'"
+
+SAVE_CACHE_DIR="$CACHE_DIR"
+
+for dir in "$PKGS_DB" "$CACHE_DIR" "$INSTALLED" "$SLITAZ_LOGS"; do
+ missing_dir "$dir"
+done
+
+for file in "$BLOCKED" "$UP_LIST" "$LOG" "$PKGS_DB/packages.info" "$PKGS_DB/mirror"; do
+ missing_file "$file"
+done
+
+if [ ! -e $PKGS_DB/mirror ] || [ "$(cat $PKGS_DB/mirror | grep -E "^http:|^https:|^ftp:")" == "" ]; then
+ fill "$PKGS_DB/mirror" "${ONLINE_PKGS%/}/"
+fi
+
+info_path="$PKGS_DB/installed.info"
+
+missing_file "$info_path"
+
+if [ ! -s "$info_path" ]; then
+	if [ -n "$(find "$INSTALLED" -name 'receipt')" ]; then
+		if [ "$(id -u)" -eq 0 ]; then
+		_ 'File "%s" generated. Please wait...' 'installed.info' >&2
+			for pkg in $(find "$INSTALLED" -name receipt); do
+			unset PACKAGE VERSION EXTRAVERSION CATEGORY SHORT_DESC WEB_SITE \
+			TAGS PACKED_SIZE UNPACKED_SIZE DEPENDS
+			. $pkg
+			SIZES=$(echo $PACKED_SIZE $UNPACKED_SIZE | sed 's|\.0||g')
+			DEPENDS=$(echo $DEPENDS)
+			MD5="$(fgrep " $PACKAGE-$VERSION$EXTRAVERSION.tazpkg" "$PKGS_DB/installed.md5" | awk '{print $1}')"
+			cat >> "$info_path" << EOT
+			$PACKAGE	$VERSION$EXTRAVERSION	$CATEGORY	$SHORT_DESC	$WEB_SITE	$TAGS	$SIZES	$DEPENDS	$MD5
+EOT
+
+			done
+		else
+		 fill "$info_path"
+		fi
+	fi
+else
+	if [ -n "$(awk -F$'\t' 'BEGIN{ n = "" } { if(NF != 9){ n = "o"; } } END{ print n }' $info_path)" ]; then
+		if [ "$(id -u)" -eq 0 ]; then
+		_n 'File "%s" generated. Please wait...' 'installed.info.new' >&2
+		awk -F$'\t' -vm="$PKGS_DB/installed.md5" 'BEGIN{OFS="\t"}
+		{
+		if (NF != 9) {
+		pkg = $1 "-" $2 ".tazpkg";
+		"fgrep " pkg " " m " | cut -c-32" | getline $9;
+		$9 = ($9 == "") ? "00000000000000000000000000000000" : $9;
+		}
+		print;
+		}' $info_path > $info_path.new
+		mv -f $info_path.new $info_path
+		status
+		else
+		_ 'Old "%s".' 'installed.info' >&2; die 'Please run tazpkg as root.'
+		fi
+	fi
+fi
+
+if [ ! -s "$PKGS_DB/packages.info" -a "$(id -u)" -eq 0 -a "$0" != '/usr/libexec/tazpkg/recharge' ]; then
+ if [ $(active-networks) -ne 0 ] && [ ! -f /tmp/tazpkg-local.lock ]; then
+  /usr/libexec/tazpkg/recharge >&2
+ fi
+fi
+
+PRIORITY="$(
+{
+[ -s "$PKGS_DB/priority" ] && cat "$PKGS_DB/priority"
+echo 'main'
+[ -d "$PKGS_DB/undigest" ] && ls "$PKGS_DB/undigest"
+} | awk -vv="$PKGS_DB/undigest/" '{
+if(arr[$0] != 1) { arr[$0]=1; print v $0; }
+}' | sed 's|/undigest/main||')"
+
+debug "PRIORITY    = '$PRIORITY'"
+
+export VERSION=$(awk -F$'\t' '$1=="tazpkg"{print $2;exit}' "$PKGS_DB/installed.info")
+
+export UA="TazPkg-${VERSION:-Unknown}"
+
+debug "UA          = '$UA'"
+
+CUR_DIR="$(pwd)"
+
+debug '-- end getenv --'

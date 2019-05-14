@@ -1,0 +1,4 @@
+filename=memdisk
+size=28	tazpup-core-files/unknown/usr/share/boot/memdisk 
+checksum.md5=520fcf8950cc596594d6e55ba7aa1442  tazpup-core-files/unknown/usr/share/boot/memdisk
+checksum.sha256=ed8db44f4f8a2b64b82cec8ac6dac0eb3f84eca0ea92a3ba7774c0ed371811df  tazpup-core-files/unknown/usr/share/boot/memdisk

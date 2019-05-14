@@ -1,0 +1,33 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="32.0K"
+UNPACKED_SIZE="84.0K"
+PACKAGE="lxtask"
+VERSION="0.1.8"
+CATEGORY="system-tools"
+SHORT_DESC="LXDE task manager"
+MAINTAINER="pankso@slitaz.org"
+LICENSE="GPL2"
+TARBALL="$PACKAGE-$VERSION.tar.xz"
+WEB_SITE="https://lxde.org"
+WGET_URL="$SF_MIRROR/lxde/$TARBALL"
+TAGS="LXDE"
+HOST_ARCH="i486 arm"
+
+DEPENDS="gtk+ xorg-libXdamage"
+BUILD_DEPENDS="gtk+-dev xorg-libXdamage-dev xorg-xproto"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	./configure \
+		$CONFIGURE_ARGS &&
+	make && make install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr
+	cp -a $install/usr/bin $fs/usr
+}

@@ -1,0 +1,4 @@
+filename=linux-squashfs-4.17.7-x86_64.tazpkg
+size=20	pkgs/core/other/next64/linux-squashfs-4.17.7-x86_64.tazpkg 
+checksum.md5=8ff33c27bcf9188343e733f0867a8718  pkgs/core/other/next64/linux-squashfs-4.17.7-x86_64.tazpkg
+checksum.sha256=03ffa04ca6c9ba1feef71b4e10f602762b4e88544f6562604cb19391d8f825e9  pkgs/core/other/next64/linux-squashfs-4.17.7-x86_64.tazpkg

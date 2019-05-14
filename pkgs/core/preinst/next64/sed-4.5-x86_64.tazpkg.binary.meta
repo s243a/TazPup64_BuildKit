@@ -1,0 +1,4 @@
+filename=sed-4.5-x86_64.tazpkg
+size=40	pkgs/core/preinst/next64/sed-4.5-x86_64.tazpkg 
+checksum.md5=d31bb336ad316997e649592773d964b7  pkgs/core/preinst/next64/sed-4.5-x86_64.tazpkg
+checksum.sha256=b5ad7db97cb62dfa48acc72a330ce73ee5a263c6cea3151cbab685f68773cd7e  pkgs/core/preinst/next64/sed-4.5-x86_64.tazpkg

@@ -1,0 +1,20 @@
+=======
+CREDITS
+=======
+
+Code....................SFR
+PNG icon................SFR (icon assembled using vovchik's Pikona* and its built-in icons)
+SVG icon................nilsonmorales
+PL translation..........SFR
+RU translation..........Sender & Pro
+DE translation..........L18L
+ES translation..........nilsonmorales & vicmz
+FR translation..........Argolance
+
+* Pikona: http://www.murga-linux.com/puppy/viewtopic.php?t=49129
+
+Special thanks to:
+- pemasu: for help with making 'pinstall.sh' Woof-friendly
+- musher0: for continuous support
+
+And thanks for testing, feedback and ideas to everyone at http://www.murga-linux.com/puppy/viewtopic.php?t=87864

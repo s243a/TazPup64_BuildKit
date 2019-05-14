@@ -1,0 +1,4 @@
+filename=findutils-4.6.0-x86_64.tazpkg
+size=104	pkgs/core/preinst/next64/findutils-4.6.0-x86_64.tazpkg 
+checksum.md5=33939345d16abb71bfde1b57eb46404a  pkgs/core/preinst/next64/findutils-4.6.0-x86_64.tazpkg
+checksum.sha256=9aff8e1980e19a2ae672d2bbd131212decbfac89030348c51613479c9a650811  pkgs/core/preinst/next64/findutils-4.6.0-x86_64.tazpkg

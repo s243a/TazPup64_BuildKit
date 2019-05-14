@@ -1,0 +1,142 @@
+#!/bin/bash
+
+###############################################################################
+# UExtract v3.32 by SFR'2013-2017                                             #
+# GNU GPL v2 applies                                                          #
+###############################################################################
+
+MYPATH="$(dirname "$(readlink -f "$0")")"
+PATH="${MYPATH}/bin:${PATH}"
+LD_LIBRARY_PATH="${MYPATH}/bin:${LD_LIBRARY_PATH}"
+
+APPNAME="$(grep "^APPNAME=\".*\"" "${MYPATH}/uextract" | cut -f2 -d '"')"
+
+export TEXTDOMAINDIR="${MYPATH}/locale"
+export TEXTDOMAIN=uextract
+export OUTPUT_CHARSET=UTF-8
+
+TMPEXEC=/tmp/uextract_exec_${$}_$RANDOM
+CUSTOM_GTK=/tmp/uextract_gtk_${$}_$RANDOM
+
+echo "style 'fixed_font' {
+font_name=\"Monospace\"
+}
+widget '*Text*' style 'fixed_font'" > "${CUSTOM_GTK}"
+
+trap 'rm -f "${CUSTOM_GTK}"' EXIT
+
+CUR_LANG="${LANG:0:2}"
+[ "$LANGUAGE" ] && CUR_LANG="${LANGUAGE:0:2}"
+
+FILETYPES="${MYPATH}/doc/FILETYPES.txt"
+[ -f "${MYPATH}/doc/FILETYPES_${CUR_LANG}.txt" ] && FILETYPES="${MYPATH}/doc/FILETYPES_${CUR_LANG}.txt"
+
+LINKS="${MYPATH}/doc/LINKS.txt"
+
+MSG_OK="$(gettext 'OK')"
+MSG_MISSING="$(gettext 'MISSING')"
+
+case "$1" in
+  --filetypes)
+    Xdialog --fixed-font --rc-file "${CUSTOM_GTK}" --center --no-cancel --title "$APPNAME" --backtitle "$(gettext 'Filetypes')" --textbox "$FILETYPES" 32 101
+    exit
+  ;;
+  --backends)
+    Xdialog --fixed font --rc-file "${CUSTOM_GTK}" --center --no-cancel --title "$APPNAME" --backtitle "$(gettext 'Backends')" --textbox <(${MYPATH}/uextract -b | sed -r "s/\x1B\[([0-9]{1,3}((;[0-9]{1,3})*)?)?[m|K]//g" | tail -n +5 | head -n -1 | sed 's/\[OK\]/\['${MSG_OK}'\]/' | sed 's/\[MISSING\]/\['${MSG_MISSING}'\]/') 32 51
+    exit
+  ;;
+  --weblinks)
+    Xdialog --fixed font --rc-file "${CUSTOM_GTK}" --center --no-cancel --title "$APPNAME" --backtitle "$(gettext 'Weblinks')" --textbox "$LINKS" 32 101
+    exit
+  ;;
+esac
+
+rm -f "${CUSTOM_GTK}"	# not needed anymore
+
+IFILES=( "$@" )
+if [ ${#IFILES[@]} -eq 0 ]; then
+  IFILES=$(Xdialog --stdout --no-buttons --center --title "$APPNAME" --backtitle "$(gettext 'Select file to extract:')" --fselect "" 0 0 2>/dev/null)
+  [ $? -ne 0 ] && exit
+fi
+
+CURRENTDIR="${IFILES[0]%/*}/"
+cd -- "$CURRENTDIR" || exit 1
+
+CUSTOMDIR="$(Xdialog --stdout --center --title "$APPNAME" --backtitle "$(gettext 'Select output directory:')" --check "$(gettext 'Autoclose output window if no errors.')" on --dselect "${CURRENTDIR}" 0 0 2>/dev/null)"
+[ $? -ne 0 ] && exit
+
+AUTOCLOSE="`echo "$CUSTOMDIR" | tail -n 1`"
+CUSTOMDIR="`echo "$CUSTOMDIR" | head -n -1`"
+
+# =============================================================================
+
+export PS1='# '
+
+[ "`which gtkdialog4 2>/dev/null`" ] && GTKDIALOG=gtkdialog4 || GTKDIALOG=gtkdialog
+
+if [ ! "`$GTKDIALOG --version | grep 'VTE'`" ] || [ ! -z "$UEXTRACT_TERM" ]; then
+
+echo '#! /bin/bash
+trap "'"rm -f $TMPEXEC"'" EXIT
+'${MYPATH}'/uextract "$@"
+RETVAL=$?
+#beep -f 1024 -l 100 -d 100 -r 3	# not yet
+rm -f '$TMPEXEC'' > $TMPEXEC
+[ "$AUTOCLOSE" = "checked" ] && echo '[ $RETVAL -eq 0 ] && exit' >> $TMPEXEC
+echo '/bin/bash' >> $TMPEXEC
+
+  chmod +x $TMPEXEC
+  
+  for i in $UEXTRACT_TERM $TERM defaultterm urxvt xterm rxvt lxterminal sakura; do
+    [ `which $i 2>/dev/null` ] && { EXEC_TERMINAL=$i; break; }
+  done
+
+  exec $EXEC_TERMINAL -T "$APPNAME" -e $TMPEXEC -o "$CUSTOMDIR" "${IFILES[@]}"
+
+else
+
+  echo "clear; trap 'rm -f $TMPEXEC' EXIT" > $TMPEXEC
+  
+  CUSTOMDIR="${CUSTOMDIR//\\/\\\\}"	# escape backslashes
+  CUSTOMDIR="${CUSTOMDIR//\"/\\\"}"	# escape "
+  CUSTOMDIR="${CUSTOMDIR//\$/\\\$}"	# escape $
+  CUSTOMDIR="${CUSTOMDIR//\`/\\\`}"	# escape `
+  
+  echo -n "${MYPATH}/uextract -o \"$CUSTOMDIR\"" >> $TMPEXEC
+  
+  for FILE in $(seq 0 $((${#IFILES[@]}-1))); do
+    IFILES[$FILE]="${IFILES[$FILE]//\\/\\\\}"	# escape backslashes
+    IFILES[$FILE]="${IFILES[$FILE]//\"/\\\"}"	# escape "
+    IFILES[$FILE]="${IFILES[$FILE]//\$/\\\$}"	# escape $
+    IFILES[$FILE]="${IFILES[$FILE]//\`/\\\`}"	# escape `
+    echo -n " \"${IFILES[$FILE]}\"" >> $TMPEXEC
+  done
+
+  echo -e '\n#beep -f 1024 -l 100 -d 100 -r 3	#not yet' >> $TMPEXEC
+
+  chmod +x $TMPEXEC
+  
+  export MAIN='
+  <window title="'$APPNAME'" image-name="'${MYPATH}/UExtract.png'">
+    <vbox>
+      <terminal argv0="/bin/sh"
+				scrollback-lines="100000"
+  	  	  	    has-focus="true"
+  			    text-background-color="#fff"
+			    text-foreground-color="#000">
+	    <variable>vte0</variable>
+	    <width>83</width>
+	    '$(if [ "$AUTOCLOSE" = "checked" ]; then
+             echo '<input>echo "HISTFILE=;' ${TMPEXEC}' && exit"</input>'
+           else
+             echo '<input>echo "HISTFILE=;' ${TMPEXEC}'"</input>'
+           fi)'
+        <action signal="child-exited">exit:EXIT</action>
+      </terminal>
+    </vbox>
+  </window>'
+
+  exec $GTKDIALOG -cp MAIN
+fi
+
+exit

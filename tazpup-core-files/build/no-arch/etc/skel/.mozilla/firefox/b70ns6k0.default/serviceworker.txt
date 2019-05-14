@@ -1,0 +1,11 @@
+8
+
+https://outlook.live.com/mail/
+https://outlook.live.com/mail/sw.js
+true
+{c894de99-bdd5-47d3-8ee6-2e9efb9eadeb}
+0
+1553054925058350
+1553054925140586
+1553054916958884
+#

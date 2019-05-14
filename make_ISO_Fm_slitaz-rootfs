@@ -1,0 +1,97 @@
+#!/bin/bash
+#written by mistfire, modified by s243a
+#Build TazPuppy either online or local
+
+
+if [ -z "$curdir" ]; then
+    curdir=`pwd`
+    prefix="/64"
+    source $curdir/build-scripts/make-tazpup_functions.sh
+fi
+clean_cache_and_logs
+ls -1 $curdir/slitaz-rootfs/pkgs > $curdir/un_used_pkgs.txt
+rm  $curdir/slitaz-rootfs/pkgs
+
+  if [ -f $curdir/custom-tazpup.iso ]; then
+    echo "Deleting custom-tazpup.iso..."
+    rm -f $curdir/custom-tazpup.iso
+  fi
+  if [ -d $curdir/tazpup-preiso ]; then
+    echo "Deleting tazpup-preiso..."
+    rm -rf $curdir/tazpup-preiso
+  fi
+prepare_working_folders
+
+  #if [ -d $curdir/kernel-modules ]; then
+  #  echo "Deleting kernel-modules..."
+  #  rm -rf $curdir/kernel-modules
+  #fi
+
+select_re_extract_kernal_Modules
+
+
+. $curdir/tazpup-core-files/puppy/etc/DISTRO_SPECS
+
+#exit
+
+echo "Creating tazpup zdrv sfs..."
+
+mksquashfs "$curdir/kernel-modules" "$curdir/tazpup-preiso/$DISTRO_ZDRVSFS" -comp xz -Xbcj x86 -b 1M -Xdict-size 100%
+
+echo "Creating tazpup sfs..."
+
+mksquashfs "$curdir/slitaz-rootfs$prefix" "$curdir/tazpup-preiso/$DISTRO_PUPPYSFS" -comp xz -Xbcj x86 -b 1M -Xdict-size 100%
+
+echo "Creating live cd..."
+
+#mv -f $curdir/$DISTRO_PUPPYSFS $curdir/tazpup-preiso/
+cp -rf $curdir/tazpup-livecd-files/* $curdir/tazpup-preiso/
+
+BOOTPARM=""
+[ -f $curdir/tazpup-preiso/grldr ] && BOOTPARM="-b grldr"
+[ -f $curdir/tazpup-preiso/isolinux.bin ] && BOOTPARM="-b isolinux.bin -c boot.cat"
+
+if [ -f $curdir/tazpup-preiso/boot.catalog ]; then
+BOOTPARM="-b isolinux.bin -c boot.catalog"
+else
+BOOTPARM="-b isolinux.bin -c boot.cat"
+fi
+
+if [ -f $curdir/tazpup-preiso/efiboot.img ]; then
+efi1="true"
+efiimg1="efiboot.img"
+elif [ -f $curdir/tazpup-preiso/efi.img ]; then
+efi1="true"
+efiimg1="efi.img"
+else
+efi1="false"
+fi
+
+VOLI="tazpup-preiso"
+
+cd $curdir
+
+if [ -f $curdir/custom-tazpup.iso ]; then
+rm -f $curdir/custom-tazpup.iso
+fi
+if [ -f $curdir/custom-tazpup.iso.md5 ]; then
+rm -f $curdir/custom-tazpup.iso.md5
+fi
+
+
+  if [ "$efi1" == "true" ]; then
+  #rxvt -bg blue -fg white -title "$m_01 (with UEFI)" -e mkisofs -U -A $VOLI -J -joliet-long -r -v -T -o $curdir/custom-tazpup.iso $BOOTPARM -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -e efi.img -no-emul-boot $curdir/tazpup-preiso
+  echo "UEFI enabled"
+  mkisofs -D -R -J -o $curdir/custom-tazpup.iso $BOOTPARM -no-emul-boot -boot-load-size 4 -boot-info-table -eltorito-alt-boot -eltorito-platform 0xEF -eltorito-boot $efiimg1 -no-emul-boot $curdir/tazpup-preiso/ 
+  isohybrid --uefi $curdir/custom-tazpup.iso
+  else
+  mkisofs -D -R -J -o $curdir/custom-tazpup.iso $BOOTPARM -no-emul-boot -boot-load-size 4 -boot-info-table $curdir/tazpup-preiso/  
+  fi
+
+MD5=`md5sum $curdir/custom-tazpup.iso | cut -f 1 -d ' '`
+
+echo "$MD5" > $curdir/custom-tazpup.iso.md5
+
+echo "MD5 Checksum: ${MD5}"
+echo ""
+echo "Process complete!"

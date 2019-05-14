@@ -1,0 +1,4 @@
+filename=syslinux-modules-4.06-x86_64.tazpkg
+size=4	pkgs/core/base/next64/syslinux-modules-4.06-x86_64.tazpkg 
+checksum.md5=b75ea0f65527e98d936ea585442410a4  pkgs/core/base/next64/syslinux-modules-4.06-x86_64.tazpkg
+checksum.sha256=600fca7c27c6fd6965c886dd92aa652f58e0dc6ec00a2c86deadd3119a97b7fc  pkgs/core/base/next64/syslinux-modules-4.06-x86_64.tazpkg

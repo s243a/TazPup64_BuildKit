@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Start X session on SliTaz GNU/Linux.
+#
+export EXIT_IN_XINITRC=0
+if [ ! -f "$HOME/.xsession" ]; then
+  tazx
+fi
+echo "jwm" > /etc/windowmanager
+export CURRENTWM=jwm
+Xorg &
+#rox &
+~/.xinitrc_puppy
+
+[ -f /tmp/wmexitmode.txt ] || exit
+
+# Shutdown menu calls wmreboot, wmpoweroff, wmexit or restartwm, which create this file...
+WMEXITMODE="`cat /tmp/wmexitmode.txt`"
+if [ "$WMEXITMODE" = "exit" ];then #see /usr/bin/wmexit.
+	rm -f /tmp/wmexitmode.txt
+	exit
+fi
+[ "$WMEXITMODE" = "poweroff" ] && exec /sbin/poweroff #see /usr/bin/wmpoweroff
+[ "$WMEXITMODE" = "reboot" ] && exec /sbin/reboot #see /usr/bin/wmreboot

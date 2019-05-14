@@ -1,0 +1,34 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="24.0K"
+UNPACKED_SIZE="56.0K"
+PACKAGE="gxmessage"
+VERSION="2.6.2"
+CATEGORY="utilities"
+SHORT_DESC="GTK2-based clone of xmessage"
+MAINTAINER="erjo@slitaz.org"
+LICENSE="GPL2"
+TARBALL="$PACKAGE-$VERSION.tar.gz"
+WEB_SITE="http://homepages.ihug.co.nz/~trmusson/programs.html#gxmessage"
+WGET_URL="http://homepages.ihug.co.nz/~trmusson/stuff/$TARBALL"
+
+DEPENDS="gtk+ expat xorg-libXdamage"
+BUILD_DEPENDS="gtk+-dev"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	cd $src
+	./configure --prefix=/usr $CONFIGURE_ARGS && \
+	make 
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/bin $fs/usr/share/pixmaps
+	
+	cp -a $src/gxmessage $fs/usr/bin
+	cp -a $src/gxmessage.png $fs/usr/share/pixmaps
+}
+

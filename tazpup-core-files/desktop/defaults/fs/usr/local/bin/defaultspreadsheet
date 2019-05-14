@@ -1,0 +1,6 @@
+#!/bin/sh
+#exec puppyapps defaultspreadsheet "$@"
+#exec tazweb http://localhost/wiki/index.sh\?page=Calc
+TEXTDOMAIN='tazpanel'
+export TEXTDOMAIN
+exec /usr/local/bin/defaultbrowser http://localhost/wiki/index.sh\?page=Calc

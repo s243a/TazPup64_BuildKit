@@ -1,0 +1,10 @@
+#!/bin/sh
+# set file permission to 777
+# written by mistfire
+
+for i in $@
+do
+ if [ -f $i ]; then
+  chmod +x $i
+ fi
+done

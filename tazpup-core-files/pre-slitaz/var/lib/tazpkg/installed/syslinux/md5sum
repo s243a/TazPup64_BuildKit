@@ -1,0 +1,11 @@
+3e390560e7c5f883610e0531687a4a5c  /boot/linld.com
+2e249e09dfd46d272f4308a59e41c090  /boot/isolinux/help.fr
+e3f738cdcf5a31be4d1a8cde820d0284  /boot/isolinux/isolinux.bin
+2fb6b7477f531fa732983a6b59cef75e  /boot/isolinux/opts.fr
+36f61c2f750fa37b8f2cfcf5123a6bbf  /boot/isolinux/opts.en
+5096050fa7f9f30572dacd7c549883ce  /boot/isolinux/kbd
+4a3f59566d8166ad1e076d761d53ca40  /boot/isolinux/isolinux.cfg
+14cf44335af9ca5ac302cab174578211  /boot/isolinux/i18n.cfg
+5c90d1e9fe6e84fb601c7b0931dd13d2  /boot/isolinux/vesamenu.c32
+78d52608ace717aff53459f599417baf  /boot/isolinux/c32box.c32
+f40286b90203fa8e6c3caebd245ce52d  /boot/isolinux/help.en

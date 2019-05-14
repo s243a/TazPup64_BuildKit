@@ -1,0 +1,4 @@
+filename=volatile.cpio.gz
+size=4	tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/slitaz-boot-scripts/volatile.cpio.gz 
+checksum.md5=093ef56a31f035923415336b20b7cba5  tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/slitaz-boot-scripts/volatile.cpio.gz
+checksum.sha256=6de736bc4d65ab0c8200dcf958fbb5c21afd8c2077d31848c25d76a45d4ed485  tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/slitaz-boot-scripts/volatile.cpio.gz

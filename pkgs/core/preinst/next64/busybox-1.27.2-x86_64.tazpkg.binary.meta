@@ -1,0 +1,4 @@
+filename=busybox-1.27.2-x86_64.tazpkg
+size=420	pkgs/core/preinst/next64/busybox-1.27.2-x86_64.tazpkg 
+checksum.md5=a77660db0bb71b3229662f815afee15c  pkgs/core/preinst/next64/busybox-1.27.2-x86_64.tazpkg
+checksum.sha256=1baef1acc748aa3fe4566d795f534305c6fbad4666a7af8f09c4534f1f7dc878  pkgs/core/preinst/next64/busybox-1.27.2-x86_64.tazpkg

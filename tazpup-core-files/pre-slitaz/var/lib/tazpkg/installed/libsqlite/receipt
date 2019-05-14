@@ -1,0 +1,21 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="300.0K"
+UNPACKED_SIZE="676.0K"
+PACKAGE="libsqlite"
+_realver=3180000
+VERSION="${_realver:0:1}.${_realver:1:2}.${_realver:3:1}"
+CATEGORY="office"
+SHORT_DESC="Small SQL database engine."
+MAINTAINER="erjo@slitaz.org"
+LICENSE="PublicDomain"
+WEB_SITE="http://www.sqlite.org/"
+WANTED="sqlite"
+HOST_ARCH="i486 arm"
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/lib
+	cp -a $install/usr/lib/*.so* $fs/usr/lib
+}

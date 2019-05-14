@@ -1,0 +1,4 @@
+filename=pam_krb5-4.6-x86_64.tazpkg
+size=20	pkgs/applications/dependencies/next64/pam_krb5-4.6-x86_64.tazpkg 
+checksum.md5=c315afd54c887ab455780f695606a89e  pkgs/applications/dependencies/next64/pam_krb5-4.6-x86_64.tazpkg
+checksum.sha256=ef378bb9161d9ba983688397e53d4fe55b0fde7fa51eecc41066e9203fedc30d  pkgs/applications/dependencies/next64/pam_krb5-4.6-x86_64.tazpkg

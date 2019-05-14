@@ -1,0 +1,4 @@
+filename=cpio-2.12-x86_64.tazpkg
+size=60	pkgs/core/preinst/next64/cpio-2.12-x86_64.tazpkg 
+checksum.md5=08a9efd59da269e36019527c219950c2  pkgs/core/preinst/next64/cpio-2.12-x86_64.tazpkg
+checksum.sha256=59c233e8c6a229969aedbea300b020e1d9f30798b5aa1407d47db304f7a1e2f9  pkgs/core/preinst/next64/cpio-2.12-x86_64.tazpkg

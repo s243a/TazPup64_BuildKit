@@ -1,0 +1,4 @@
+filename=ncurses-libpanel-6.1-x86_64.tazpkg
+size=8	pkgs/core/preinst/next64/ncurses-libpanel-6.1-x86_64.tazpkg 
+checksum.md5=8db7a68d1d7446bd1ce57d20e53e1374  pkgs/core/preinst/next64/ncurses-libpanel-6.1-x86_64.tazpkg
+checksum.sha256=49f9c019d4e2f4ca8601f38fe36e884cdad933e119e8dd908af61f2e403a3305  pkgs/core/preinst/next64/ncurses-libpanel-6.1-x86_64.tazpkg

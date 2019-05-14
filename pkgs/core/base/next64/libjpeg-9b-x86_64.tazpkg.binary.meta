@@ -1,0 +1,4 @@
+filename=libjpeg-9b-x86_64.tazpkg
+size=80	pkgs/core/base/next64/libjpeg-9b-x86_64.tazpkg 
+checksum.md5=95bd620e7048a6e52581e12709a69b88  pkgs/core/base/next64/libjpeg-9b-x86_64.tazpkg
+checksum.sha256=11cbd6c50282a87d454e7beeb5a7e29ecd2050c9952ee5983827074d889db948  pkgs/core/base/next64/libjpeg-9b-x86_64.tazpkg

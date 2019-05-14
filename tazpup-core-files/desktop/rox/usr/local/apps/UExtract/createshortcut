@@ -1,0 +1,47 @@
+#! /bin/bash
+
+###############################################################################
+# UExtract v3.32 by SFR'2013-2017                                             #
+# GNU GPL v2 applies                                                          #
+###############################################################################
+
+MYPATH="$(dirname "$(readlink -f "$0")")"
+APPNAME="$(grep "^APPNAME=\".*\"" "${MYPATH}/uextract" | cut -f2 -d '"')"
+
+export TEXTDOMAINDIR="${MYPATH}/locale"
+export TEXTDOMAIN=uextract
+export OUTPUT_CHARSET=UTF-8
+
+# -----------------------------------------------------------------------------
+# Add shortcut on the pinboard (if in use) and/or in $HOME/Desktop/ (if exists)
+# -----------------------------------------------------------------------------
+
+if [ -e "$HOME/Choices/ROX-Filer/PuppyPin" ] || [ -d "$HOME/Desktop" ]; then
+
+  [ "`which gxmessage 2>/dev/null`" ] && XMESSAGE=gxmessage || XMESSAGE=xmessage
+  $XMESSAGE -buttons "$(gettext 'Yes'):100,$(gettext 'No'):101" -center -title "$APPNAME" "$(gettext 'Create a shortcut on the desktop?')"
+  if [ $? -eq 100 ]; then
+
+    [ -e "$HOME/Choices/ROX-Filer/PuppyPin" ] &&
+    rox --RPC << EOF
+<?xml version="1.0"?>
+<env:Envelope xmlns:env="http://www.w3.org/2001/12/soap-envelope">
+ <env:Body xmlns="http://rox.sourceforge.net/SOAP/ROX-Filer">
+  <PinboardAdd>
+   <Path>${MYPATH}</Path>
+  </PinboardAdd>
+ </env:Body>
+</env:Envelope>
+EOF
+
+    [ -d "$HOME/Desktop" ] && {
+    cp -f "${MYPATH}/UExtract.desktop" "$HOME/Desktop/UExtract.desktop"
+    # Add %F in order to enable extracting multiple files while using, e.g. PCManFM
+    #sed -i 's|Exec=/usr/local/apps/UExtract/AppRun.*|Exec=/usr/local/apps/UExtract/AppRun %F|' "$HOME/Desktop/UExtract.desktop"
+    # Fix path to AppRun
+    sed -i "s|Exec=./AppRun %F|Exec=${MYPATH}/AppRun %F|" "$HOME/Desktop/UExtract.desktop"
+    }
+
+  fi
+
+fi

@@ -1,0 +1,4 @@
+filename=dbus-glib-0.110-x86_64.tazpkg
+size=64	pkgs/core/base/next64/dbus-glib-0.110-x86_64.tazpkg 
+checksum.md5=bb8ca6ee8e8e8d1085424b05d614d660  pkgs/core/base/next64/dbus-glib-0.110-x86_64.tazpkg
+checksum.sha256=c74c8b9481b797892d9ff9dde162b5175353259be4cdf5fad27a41311e6b27dc  pkgs/core/base/next64/dbus-glib-0.110-x86_64.tazpkg

@@ -1,0 +1,4 @@
+filename=util-linux-smartcols-2.32.1-x86_64.tazpkg
+size=64	pkgs/core/preinst/next64/util-linux-smartcols-2.32.1-x86_64.tazpkg 
+checksum.md5=116f97aa72b82fb0196883ad879f983e  pkgs/core/preinst/next64/util-linux-smartcols-2.32.1-x86_64.tazpkg
+checksum.sha256=c867334ea9de31184b390a258930d6c2eb20f720b7dcaea1efb1730d9300ef53  pkgs/core/preinst/next64/util-linux-smartcols-2.32.1-x86_64.tazpkg

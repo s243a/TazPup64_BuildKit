@@ -1,0 +1,2 @@
+/etc/X11/xorg.conf.d/40-evdev.conf
+/usr/lib/X11/modules/input/evdev_drv.so

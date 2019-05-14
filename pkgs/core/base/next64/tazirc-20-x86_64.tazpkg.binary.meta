@@ -1,0 +1,4 @@
+filename=tazirc-20-x86_64.tazpkg
+size=8	pkgs/core/base/next64/tazirc-20-x86_64.tazpkg 
+checksum.md5=f3fd69319457faa180a4b9b966afd352  pkgs/core/base/next64/tazirc-20-x86_64.tazpkg
+checksum.sha256=a3c3f64686b00b218f69653bf10fc8f5179ef3a4502cab14a46f34784b6b0b46  pkgs/core/base/next64/tazirc-20-x86_64.tazpkg

@@ -1,0 +1,3 @@
+VERSION=0.1
+ARCH=x86_64
+kernel_version-slitaz=4.9.30

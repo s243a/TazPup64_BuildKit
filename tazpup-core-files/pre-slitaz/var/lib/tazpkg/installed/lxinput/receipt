@@ -1,0 +1,37 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="24.0K"
+UNPACKED_SIZE="80.0K"
+PACKAGE="lxinput"
+VERSION="0.3.4"
+CATEGORY="x-window"
+SHORT_DESC="LXDE keyboard and mouse configuration"
+MAINTAINER="pankso@slitaz.org"
+LICENSE="GPL3"
+WEB_SITE="https://lxde.org"
+TARBALL="$PACKAGE-$VERSION.tar.xz"
+WGET_URL="$SF_MIRROR/lxde/$TARBALL"
+TAGS="LXDE keyboard mouse"
+HOST_ARCH="i486 arm"
+GENERIC_MENUS="no"
+
+DEPENDS="gtk+ xorg-xset"
+BUILD_DEPENDS="gtk+-dev"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	./configure \
+		$CONFIGURE_ARGS &&
+	make && make install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	cp -a $install/* $fs
+	rm -r $fs/usr/share/locale $fs/usr/share/man
+	rm -r $fs/usr/share/lxinput/*.png
+	sed -i 's|^Icon=.*$|Icon=preferences-desktop-keyboard|' \
+		$fs/usr/share/applications/lxinput.desktop
+}

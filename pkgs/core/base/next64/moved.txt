@@ -1,0 +1,9 @@
+#This file contains packages that have been moved from this core folder for more build flexility:
+s
+/applications/console_editors/nano/next64/nano-2.9.8-x86_64.tazpkg
+/applications/graphics/mtpaint/next64/mtpaint-3.49.13-x86_64.tazpkg
+/applications/games/nanochess/next64/nanochess-1.0-x86_64.tazpkg
+/applications/terminal_emulators/xterm/next64/xterm-330-x86_64.tazpkg
+/applications/terminal_emulators/sakura/next64/sakura-3.6.0-x86_64.tazpkg
+/applications/terminal_emulators/urxvt/next64/urxvt-9.22-x86_64.tazpkg
+/applications/terminal_emulators/urxvt/next64/urxvt-full-9.22-x86_64.tazpkg

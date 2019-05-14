@@ -1,0 +1,23 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="328.0K"
+UNPACKED_SIZE="1.1M"
+PACKAGE="libgnutls"
+VERSION="3.3.16"
+CATEGORY="security"
+SHORT_DESC="GNU Transport Layer Security Library headers"
+MAINTAINER="erjo@slitaz.org"
+LICENSE="GPL3"
+WANTED="gnutls"
+WEB_SITE="http://www.gnu.org/software/gnutls/"
+HOST_ARCH="i486 arm"
+
+DEPENDS="nettle libtasn1 p11-kit"
+SUGGESTED="cacerts"
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr/lib
+	cp -a $install/usr/lib/*.so* $fs/usr/lib
+}

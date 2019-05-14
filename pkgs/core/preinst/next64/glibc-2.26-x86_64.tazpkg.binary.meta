@@ -1,0 +1,4 @@
+filename=glibc-2.26-x86_64.tazpkg
+size=4	pkgs/core/preinst/next64/glibc-2.26-x86_64.tazpkg 
+checksum.md5=0d22f707c07e6e68900d01724887d034  pkgs/core/preinst/next64/glibc-2.26-x86_64.tazpkg
+checksum.sha256=1a66a0edd164bb7ba9466fb24e7b916d6e9a934abb1074da144a2560758e55ad  pkgs/core/preinst/next64/glibc-2.26-x86_64.tazpkg

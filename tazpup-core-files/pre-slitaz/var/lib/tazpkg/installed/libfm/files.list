@@ -1,0 +1,11 @@
+/etc/xdg/libfm/libfm.conf
+/usr/lib/libfm/modules/vfs-search.so
+/usr/lib/libfm/modules/vfs-menu.so
+/usr/lib/libfm-extra.so.4.0.5
+/usr/lib/libfm.so.4.0.5
+/usr/share/libfm/terminals.list
+/usr/share/libfm/archivers.list
+/usr/lib/libfm.so
+/usr/lib/libfm-extra.so.4
+/usr/lib/libfm.so.4
+/usr/lib/libfm-extra.so

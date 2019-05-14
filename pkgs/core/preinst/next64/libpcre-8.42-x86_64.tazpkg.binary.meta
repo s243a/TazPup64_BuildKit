@@ -1,0 +1,4 @@
+filename=libpcre-8.42-x86_64.tazpkg
+size=112	pkgs/core/preinst/next64/libpcre-8.42-x86_64.tazpkg 
+checksum.md5=dffe960fec7c03453343cf7acf0d8833  pkgs/core/preinst/next64/libpcre-8.42-x86_64.tazpkg
+checksum.sha256=1fe9601f0e9c23e9c89acc09d5f56a28bf4952dce5534a00e04dc93a6e94fd1a  pkgs/core/preinst/next64/libpcre-8.42-x86_64.tazpkg

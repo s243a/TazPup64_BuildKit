@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ -d /proc/acpi ] || [ -d /proc/apm ]; then
+    if [ -f /etc/init.d/acpid ]; then
+	 /etc/init.d/acpid "$@"
+	else
+	 echo "acpid is not installed"
+	fi
+else
+	echo "The computer is not acpi compliant"
+fi

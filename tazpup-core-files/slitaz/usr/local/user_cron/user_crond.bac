@@ -1,0 +1,67 @@
+REM Written by mistfire
+REM Created based from Barry Kauler's pup_event_frontend_d
+REM License GPL3 (refer: /usr/share/doc/legal)
+REM libc ref: http://www.gnu.org/software/libc/manual/html_node/Function-Index.html#Function-Index
+REM this little daemon reads performs task every 5 seconds.
+REM vovchik: compile like this, reduces executable 34K to 9K...
+REM bacon -o -s -o -Os -o -fdata-sections -o -ffunction-sections -o -Wl,--gc-sections -d /tmp $myfile
+
+REM initialization script... note, RETVAL has exit status.
+
+ SPLIT ARGUMENT$ BY " " TO arg$ SIZE dim
+ 
+ IF dim >= 2 THEN
+  IF arg$[1]=="-help" OR arg$[1]=="--help" OR arg$[1]=="-?" THEN
+   PRINT "Execute script periodically"
+   PRINT "Usage: " & arg$[0] & " [shell script] [seconds]"
+   PRINT "Default shell script is /usr/local/user_cron/tasks"
+   PRINT "Default period is 5 seconds"
+   END
+  END IF 
+ END IF
+ 
+ IF arg$[1] != "" AND FILEEXISTS(arg$[1])==1 THEN
+  xscript$=arg$[1]
+ ELSE
+  xscript$=""
+ END IF
+ 
+ IF dim > 2 THEN
+  IF arg$[2] != "" AND VAL(arg$[2])>0 THEN
+   period=VAL(arg$[2])
+  ELSE
+   period=5
+  END IF
+ ELSE
+  period=5
+ END IF 
+
+ IF FILEEXISTS("/usr/local/user_cron/startup")==1 THEN
+  SYSTEM "/usr/local/user_cron/startup"
+ END IF
+ 
+cnt=0 
+
+WHILE TRUE DO
+
+ REM call a script every N seconds...
+ 
+ INCR cnt
+  
+ IF cnt>=period THEN
+	  IF xscript$ != "" AND FILEEXISTS(xscript$)==1 THEN
+	   SYSTEM xscript$
+	  ELIF FILEEXISTS("/usr/local/user_cron/tasks")==1 THEN
+	   SYSTEM "/usr/local/user_cron/tasks"
+	  ELSE
+	   PRINT "Nothing to execute. Aborting"
+	   BREAK  
+	  END IF
+ cnt=0
+ END IF
+
+ SLEEP 1000
+
+WEND
+
+END

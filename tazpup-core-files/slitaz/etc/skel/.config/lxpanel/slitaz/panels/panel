@@ -1,0 +1,149 @@
+# lxpanel <profile> config file. Manually editing is not recommended.
+# Use preference dialog in lxpanel to adjust config when you can.
+
+Global {
+    edge=bottom
+    allign=center
+    margin=0
+    widthtype=percent
+    width=100
+    height=22
+    transparent=1
+    tintcolor=#0045a6
+    alpha=255
+    autohide=0
+    heightwhenhidden=2
+    setdocktype=1
+    setpartialstrut=1
+    usefontcolor=1
+    fontsize=10
+    fontcolor=#ffffff
+    usefontsize=0
+    background=0
+    backgroundfile=/usr/share/themes/Clearlooks Human Dark/gtk-2.0/Panels/panel-bg-dark.png
+    iconsize=22
+    loglevel=2
+}
+
+Plugin {
+    type = menu
+    Config {
+        name=SliTazMenu.directory
+        image=/usr/share/pixmaps/tazpup-start.png
+        name=SliTazMenu.directory
+        name=SliTazMenu.directory
+        name=SliTazMenu.directory
+        tintcolor=#33230D
+        system {
+        }
+        separator {
+        }
+        item {
+            command=run
+            image=gtk-execute
+        }
+        separator {
+        }
+        item {
+            image=system-shutdown-panel-restart
+            command=logout
+        }
+    }
+}
+
+Plugin {
+    type = pager
+}
+
+Plugin {
+    type = taskbar
+    Config {
+        tooltips=1
+        IconsOnly=0
+        ShowAllDesks=0
+        UseMouseWheel=1
+        UseUrgencyHint=1
+        FlatButton=1
+        MaxTaskWidth=100
+        spacing=1
+        GroupedTasks=1
+    }
+}
+
+Plugin {
+    type = space
+    expand=1
+    Config {
+        Size=2
+    }
+}
+
+Plugin {
+    type = space
+    Config {
+        Size=2
+    }
+}
+
+Plugin {
+    type = xkb
+    Config {
+        DisplayType=1
+        PerWinLayout=0
+        NoResetOpt=0
+        KeepSysLayouts=1
+        Model=pc105
+        LayoutsList=us
+        VariantsList=,
+        ToggleOpt=shift_caps_toggle
+        FlagSize=4
+    }
+}
+
+Plugin {
+    type = tray
+}
+
+Plugin {
+    type = volumealsa
+}
+
+Plugin {
+    type = netstatus
+    Config {
+        iface=eth0
+        configtool=subox tazpanel network
+    }
+}
+
+Plugin {
+    type = batt
+    Config {
+        HideIfNoBattery=1
+        AlarmCommand=battery-notify low
+        AlarmTime=5
+        BackgroundColor=#0045A6
+        BorderWidth=3
+        ChargingColor1=#00FF00
+        ChargingColor2=#00FF00
+        DischargingColor1=#DB2C23
+        DischargingColor2=#DB2C23
+        Size=11
+    }
+}
+
+Plugin {
+    type = cpu
+}
+
+Plugin {
+    type = dclock
+    Config {
+        ClockFmt=%R
+        TooltipFmt=%c
+        BoldFont=1
+        IconOnly=0
+        CenterText=1
+    }
+}
+

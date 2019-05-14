@@ -1,0 +1,14 @@
+0dcd020771b4eb138ef78fc0d6324e5d  /usr/share/hal/fdi/policy/10osvendor/10-cpufreq.fdi
+7ebab6c0350700418b4652a30c50d68b  /usr/share/hal/fdi/policy/10osvendor/10-dockstation.fdi
+f241f98dcc7da2bb49d23599b3776212  /usr/share/hal/fdi/policy/10osvendor/10-imac-backlight.fdi
+dcd4e759ed1994ea5506a7d364d614e3  /usr/share/hal/fdi/policy/10osvendor/15-storage-luks.fdi
+341f23714df3c0ea17e08753d2478380  /usr/share/hal/fdi/policy/10osvendor/30-wol.fdi
+60ea6212c88bc57367ca9cbf9d0a0a38  /usr/lib/hal/hald-probe-pc-floppy
+85da0b38bd1e7e0ec1d0822fb8b4f545  /usr/lib/hal/hald-addon-cpufreq
+82803f3b0d6a78fae7fafeb9e40b4b50  /usr/lib/hal/hald-probe-video4linux
+bdee0e42c226c47083604031f9277b97  /usr/lib/hal/hald-probe-net-bluetooth
+57a22b37f034cfda38f6eab5526c0ac5  /usr/lib/hal/hald-addon-ipw-killswitch
+66a55f0a5fa6348cf894d2b98de7c8ac  /usr/lib/hal/hald-probe-ieee1394-unit
+4791b8ca0f16367df1212abee9ad18db  /usr/lib/hal/hald-addon-imac-backlight
+d951cabddbf30ab62d113afd482e3753  /usr/lib/hal/hald-probe-printer
+a3f24fb057c859884841448212729655  /usr/lib/hal/hald-addon-hid-ups

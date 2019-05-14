@@ -1,0 +1,42 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="172.0K"
+UNPACKED_SIZE="1.1M"
+PACKAGE="iptables"
+EXTRAVERSION="_3.16.55"
+VERSION="1.4.21"
+CATEGORY="security"
+SHORT_DESC="Packet filtering framework (Firewall)."
+MAINTAINER="pankso@slitaz.org"
+LICENSE="GPL2"
+TARBALL="$PACKAGE-$VERSION.tar.bz2"
+WEB_SITE="http://www.netfilter.org/"
+WGET_URL="http://www.netfilter.org/projects/iptables/files/$TARBALL"
+TAGS="firewall"
+
+DEPENDS="linux-netfilter"
+BUILD_DEPENDS="linux-module-headers"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	cd $src
+	# Set the right Kernel path to compile.
+	KERNEL_PATH="/usr/src/linux"
+	./configure \
+		--prefix=/usr \
+		--libexecdir=/usr/lib/iptables \
+		--mandir=/usr/share/man \
+		$CONFIGURE_ARGS &&
+	make && make DESTDIR=$DESTDIR install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	EXTRAVERSION=_${kvers}
+	mkdir -p $fs/usr/lib
+	cp -a $install/usr/sbin        $fs/usr
+	cp -a $install/usr/lib/lib*    $fs/usr/lib
+	cp -a $install/usr/lib/xtables $fs/usr/lib
+}

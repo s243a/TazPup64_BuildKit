@@ -1,0 +1,4 @@
+/usr/include/X11/extensions/renderproto.h
+/usr/include/X11/extensions/render.h
+/usr/share/licenses/xorg-renderproto.txt
+/usr/lib/pkgconfig/renderproto.pc

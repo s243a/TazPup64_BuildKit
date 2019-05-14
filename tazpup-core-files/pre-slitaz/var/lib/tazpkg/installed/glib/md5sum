@@ -1,0 +1,14 @@
+51c7aa87ac16f5fd714a15557284b554  /usr/lib/libglib-2.0.so.0.4303.0
+40ea7e14c53cd77727cf9bc8ad49799d  /usr/lib/libgmodule-2.0.so.0.4303.0
+e21c9c567acd98ed59cb5dd1e6555874  /usr/lib/libgobject-2.0.so.0.4303.0
+e3f9bf26fc5f892a93520322529eb835  /usr/lib/libgthread-2.0.so.0.4303.0
+00a66903099af5a7e341385ca819a479  /usr/bin/gio-querymodules
+ab0436645ffcf1b9292a31f00e9ef6c6  /usr/bin/gdbus
+f872340f1d709d8126507e0088d9e0f7  /usr/bin/gsettings
+f03970e490d0afc4ca0f13ddbff4ffd8  /usr/bin/gapplication
+5c2eee7b4e7930b7d081974e1b2e741c  /usr/bin/glib-genmarshal
+f6ceefdadf5a76fb4260f0a4481df93c  /usr/bin/gresource
+328bbbdc40b11baec907dba6ca9fffd1  /usr/bin/glib-gettextize
+f373eb0c062842420de84fb5371c7948  /usr/bin/glib-compile-schemas
+00ae4f4e121039c63426f094353e9951  /usr/bin/gobject-query
+e6dfed32fe863b317c0520433a5f1c7b  /usr/bin/glib-compile-resources

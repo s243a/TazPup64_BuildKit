@@ -1,0 +1,4 @@
+filename=volatile.cpio.gz
+size=4	tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/busybox/volatile.cpio.gz 
+checksum.md5=59b35fea0f859f9b13377e2a9d0f8d1b  tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/busybox/volatile.cpio.gz
+checksum.sha256=8f36817f9bb2024994d9dfff7fd467373bc5525b21d207ff7b46002f3c64c235  tazpup-core-files/pre-slitaz/var/lib/tazpkg/installed/busybox/volatile.cpio.gz

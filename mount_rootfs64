@@ -1,0 +1,38 @@
+#!/bin/sh
+curdir=`pwd`
+unmount_vfs(){
+ umount -l $curdir/slitaz-rootfs$prefix/dev 2>/dev/null
+ umount -l $curdir/slitaz-rootfs$prefix/sys 2>/dev/null
+ umount -l $curdir/slitaz-rootfs$prefix/proc 2>/dev/null
+ #umount /mnt/wktaz 2>/dev/null
+ #umount /mnt/wksfs 2>/dev/null
+}  
+prefix='/64'
+trap unmount_vfs EXIT
+trap unmount_vfs SIGKILL
+trap unmount_vfs SIGTERM
+xinteractive=1
+echo "PUPMODE='2'" > $curdir/slitaz-rootfs$prefix/etc/rc.d/PUPSTATE
+mount -o rbind /proc $curdir/slitaz-rootfs$prefix/proc
+mount -t sysfs none $curdir/slitaz-rootfs$prefix/sys
+if [ $xinteractive -eq 1 ]; then
+ echo "Removing block device files..."
+ #rm -rf $curdir/slitaz-rootfs/dev/*
+ #mount bind -t devtmpfs none $curdir/slitaz-rootfs/dev
+ mount -o rbind /dev $curdir/slitaz-rootfs$prefix/dev
+ cp -f /etc/resolv.conf $curdir/slitaz-rootfs/etc/resolv.conf 
+fi
+
+chroot $curdir/slitaz-rootfs$prefix /bin/bash
+
+
+if [ "$(mount | grep "$curdir/slitaz-rootfs/dev")" != "" ]; then
+ umount -l $curdir/slitaz-rootfs$prefix/dev
+fi	
+
+if [ "$(mount | grep "$curdir/slitaz-rootfs/sys")" != "" ]; then
+ umount -l $curdir/slitaz-rootfs$prefix/sys
+fi	
+if [ "$(mount | grep "$curdir/slitaz-rootfs/proc")" != "" ]; then
+ umount -l $curdir/slitaz-rootfs$prefix/proc
+fi

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+ALL_INTF=`ls -1 /sys/class/net | grep -E '^eth|^usb|^wwan|^wan|^www|^bnep' | tr '\n' ' '`
+
+for iface in $ALL_INTF
+do
+ probe-net $iface skipwifi
+done

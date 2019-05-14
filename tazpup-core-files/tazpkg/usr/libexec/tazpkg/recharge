@@ -1,0 +1,167 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# recharge - TazPkg module
+# Recharge packages databases from a mirror
+# Modified by mistfire for TazPuppy
+
+. /lib/libtaz.sh
+. /usr/libexec/tazpkg/getenv
+
+silent=""
+
+if [ $(active-networks) -eq 0 ]; then
+echo "No active network connection"
+exit
+fi
+
+get_from_mirror() {
+debug "get_from_mirror($1)"
+debug "  mirror='$mirror'"
+case "$mirror" in
+http://* | https://* | ftp://*)
+debug "  wget -c -q -T 30 -U '$UA' '$mirror$1'"
+if [ "$silent" == "" ]; then
+ newline
+ wget -c -T 30 -U "$UA" "$mirror$1" 2>&1 | awk '$0~"%"{printf "%s\r",$0}' >&2
+else
+ wget -c -q -T 30 -U "$UA" "$mirror$1" 2>/dev/null
+fi
+;;
+*)
+debug "  cp '$mirror$1' ."
+cp "$mirror$1" .;;
+esac
+#status
+}
+
+recharging_failed() {
+action 'Restoring database files...'
+[ -e 'ID'  -a ! -e 'ID.bak' ]  && rm ID
+[ -e 'IDs' -a ! -e 'IDs.bak' ] && rm IDs
+for file in $(ls "$1"/*.bak); do
+mv -f "$file" "${file%.bak}"
+done
+status
+footer "$(colorize 31 "$(_ 'Recharging failed')")"
+}
+
+xSILENT=""
+REPO="$1"
+
+if [ "$REPO" == "quiet" ]; then
+ xSILENT="$1"
+ REPO="$2"
+else
+ xSILENT="$2"
+ REPO="$1"
+fi
+
+case "$REPO" in
+main) repo_to_recharge="$PKGS_DB";;
+'')   repo_to_recharge="$PKGS_DB $PKGS_DB/undigest/*";;
+*)    repo_to_recharge="$PKGS_DB/undigest/$REPO"
+
+if [ ! -d "$repo_to_recharge" ]; then
+_ "Repository \"%s\" doesn't exist." "$repo_to_recharge">&2
+exit 1
+fi
+
+;;
+esac
+
+if [ "$xSILENT" != "" ] && [ "$xSILENT" == "quiet" ]; then
+ silent="1"
+fi
+
+for path in $repo_to_recharge; do
+[ ! -s "$path/mirror" ] && continue
+cd "$path"
+mirror=$(cat mirror); mirror="${mirror%/}/"
+if [ "$path" == "$PKGS_DB" ]; then
+repo_name='Main'
+else
+repo_name="$(_n 'Undigest %s' "$(basename "$path")")"
+fi
+title 'Recharging repository "%s"' "$repo_name"
+if [ -h ID  ]; then mv -f ID  ID.lnk;  cat ID.lnk  > ID;  rm ID.lnk;  fi
+if [ -h IDs ]; then mv -f IDs IDs.lnk; cat IDs.lnk > IDs; rm IDs.lnk; fi
+[ -f ID ]  && mv ID  ID.bak
+[ -f IDs ] && mv IDs IDs.bak
+action 'Checking...'
+get_from_mirror IDs
+[ -e 'IDs' ] && awk '{print $1}' IDs > ID
+[ -e 'IDs' -a -z "$quiet" ] && \
+_ 'Database timestamp: %s' "$(date -d "@$(awk '{print $2}' IDs)" "+%x %R")"
+if [ -f 'IDs' ] && [ -f 'packages.info' ] && [ -f 'files.list.lzma' ] && \
+cmp -s IDs IDs.bak; then
+footer "$(_ 'Repository "%s" is up to date.' "$repo_name")"
+rm IDs.bak ID.bak
+continue
+fi
+rm IDs.bak ID.bak 2>/dev/null
+action 'Creating backup of the last packages list...'
+for i in packages.desc packages.$SUM packages.txt packages.list \
+packages.equiv files.list.lzma extra.list mirrors packages.info; do
+[ -f "$i" ] && mv -f $i $i.bak 2>/dev/null
+done
+:; status
+bundle='bundle.tar.lzma'
+action 'Getting "%s"...' "$bundle"
+get_from_mirror "$bundle"
+if [ -f "$bundle" ]; then
+tar -xaf "$bundle"; rm "$bundle"
+else
+recharging_failed "$path"; continue
+fi
+files_local='files.list.lzma'; files_remote='files-list.lzma'
+if [ -e "$files_local.bak" ]; then
+md5sum "$files_local.bak" | awk '{printf $1}' > files-list.md5.bak
+if cmp -s files-list.md5 files-list.md5.bak; then
+mv "$files_local.bak" "$files_remote"
+else
+action 'Getting "%s"...' "$files_remote"
+get_from_mirror "$files_remote"
+fi
+else
+action 'Getting "%s"...' "$files_remote"
+get_from_mirror "$files_remote"
+fi
+if [ ! -e "$files_remote" ]; then
+recharging_failed "$path"; continue
+fi
+mv -f "$files_remote" "$files_local"
+for i in packages.desc packages.$SUM packages.txt packages.equiv \
+files.list.lzma mirrors packages.info files-list.md5; do
+[ -f "$i.bak" ] && rm $i.bak 2>/dev/null
+done
+footer "$(_ 'Last database is ready to use.')"
+if [ -f 'packages.list.bak' ]; then
+diff -u packages.list.bak packages.list | grep ^+[a-z] > packages.diff
+rm packages.list.bak
+if [ -f 'extra.list.bak' ]; then
+if [ -f 'extra.list' ]; then
+awk -F'|' '{print $1 " (extra)"}' extra.list     > extra.list1
+awk -F'|' '{print $1 " (extra)"}' extra.list.bak > extra.list1.bak
+diff -u extra.list1.bak extra.list1 | grep ^+[a-z] >> packages.diff
+rm extra.list.bak extra.list1 extra.list1.bak
+else
+mv extra.list.bak extra.list
+fi
+fi
+sed -i s/+// packages.diff
+new_pkgs=$(wc -l < packages.diff)
+if [ "$new_pkgs" -gt 0 ]; then
+title 'Mirrored packages diff'
+cat packages.diff
+footer "$(emsg "$(_p \
+'%s new package on the mirror.' \
+'%s new packages on the mirror.' "$new_pkgs" \
+"<c 32>$new_pkgs</c>")")"
+fi
+else
+longline "$(_ "Note that next time you recharge the list, a list of \
+differences will be displayed to show new and upgradeable packages.")"
+fi
+done
+newline
+echo "quit"> /tmp/tazpkg-notify.fifo

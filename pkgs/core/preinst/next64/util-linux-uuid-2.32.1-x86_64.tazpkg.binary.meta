@@ -1,0 +1,4 @@
+filename=util-linux-uuid-2.32.1-x86_64.tazpkg
+size=24	pkgs/core/preinst/next64/util-linux-uuid-2.32.1-x86_64.tazpkg 
+checksum.md5=83b9dc9aeb18b5a0ae969e7785f20959  pkgs/core/preinst/next64/util-linux-uuid-2.32.1-x86_64.tazpkg
+checksum.sha256=0333539a07a0111915d8731551ec954daa3f0e6cc613bd3730c2bc9412aea67f  pkgs/core/preinst/next64/util-linux-uuid-2.32.1-x86_64.tazpkg

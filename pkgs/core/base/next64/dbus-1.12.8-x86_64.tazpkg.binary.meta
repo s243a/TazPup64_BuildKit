@@ -1,0 +1,4 @@
+filename=dbus-1.12.8-x86_64.tazpkg
+size=188	pkgs/core/base/next64/dbus-1.12.8-x86_64.tazpkg 
+checksum.md5=cbaf739103ea53dd271b0e931366ca3e  pkgs/core/base/next64/dbus-1.12.8-x86_64.tazpkg
+checksum.sha256=f25fc59554cbd4505d22173c4163e797bd27b54bffbb1a63c69a88b6d5087360  pkgs/core/base/next64/dbus-1.12.8-x86_64.tazpkg

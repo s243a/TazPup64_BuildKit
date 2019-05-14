@@ -1,0 +1,256 @@
+#!/bin/sh
+#
+# Small Wi-Fi utility to quickly connect to a network. Easy network connection
+# is most important, this tool provides a quick way to connect or change Wi-Fi
+# settings while full network configuration is done in TazPanel.
+#
+# Copyright (C) 2012-2016 SliTaz GNU/Linux - GNU GPL v2
+#
+# Authors: Christophe Lincoln <pankso@slitaz.org>
+#
+# Modified by mistfire for TazPuppy
+
+. /lib/libtaz.sh
+
+export TEXTDOMAIN='slitaz-boxes' #i18n
+
+ALL_INTF=`ls -1 /sys/class/net | grep -v '^lo$' | tr '\n' ' '`
+xWLAN=""
+
+for IF1 in $ALL_INTF
+do
+
+xIF_DRIVER="`readlink /sys/class/net/$IF1/device/driver | rev | cut -f1 -d'/' | rev`" #ex: ath5k
+[ "$xIF_DRIVER" = "ath5k_pci" ] && [ "`lsmod | grep '^ath5k '`" != "" ] && xIF_DRIVER='ath5k'
+
+ePATTERN="${IF1}:"
+if [ "`grep "$ePATTERN" /proc/net/wireless`" != "" ] || [ "$xIF_DRIVER" = "prism2_usb" ] || [ -d /sys/class/net/${IF1}/wireless ]; then
+ if [ "$xWLAN" == "" ]; then
+  xWLAN="$IF1"
+ else
+  xWLAN="$xWLAN $IF1"
+ fi
+fi
+
+done
+
+
+usage() {
+	newline; _ 'Small Wi-Fi utility to quickly connect to a network.'
+	newline; boldify "$(_ 'Usage:')"
+	echo "  $(basename $0) [$(_ 'interface')]"
+	newline
+}
+
+error_msg(){
+		icon='dialog-error'
+	    yad --fixed --title="$(_n 'Error')" --window-icon=$icon \
+		--width=320 --on-top --center \
+		--image=$icon --image-on-top \
+		--text="\n<b>$(_n '%s' "$1")</b>\n" \
+		--button="gtk-close:1"	
+}
+
+
+# Start a Wi-Fi connection
+
+start_wifi() {
+	sed -i -e s'/^WIFI=.*/WIFI="yes"/' 	/etc/network.conf
+	ifconfig $WIFI_INTERFACE up
+	iwconfig $WIFI_INTERFACE txpower auto
+	/etc/init.d/network.sh start
+}
+
+
+# Catch ESSIDs and format output for GTK tree. We get the list of
+# networks by Cell and without spaces.
+
+detect_wifi() {
+	if [ -d /sys/class/net/$WIFI_INTERFACE/wireless ]; then
+		ifconfig $WIFI_INTERFACE up
+		echo -e "$( _n 'any')\n$(_n 'N/A')\n$(_n 'none')\n$(_n '-')"
+		for i in $(iwlist $WIFI_INTERFACE scan | sed s/"Cell "/Cell-/ | grep "Cell-" | awk '{print $1}')
+		do
+			scan=$(iwlist $WIFI_INTERFACE scan last | \
+				awk '/(Cell|ESS|Qual|Encry|IE: WPA|WPA2)/ {print}' | \
+				sed s/"Cell "/Cell-/ | grep -A 5 "$i")
+			essid=$(echo $scan | cut -d '"' -f 2)
+
+			if echo "$scan" | grep -q Quality; then
+				quality=$(echo $scan | sed 's/.*Quality=\([^ ]*\).*/\1/' | sed 's/.*Quality:\([^ ]*\).*/\1/')
+			else
+				quality="$(_n '-')"
+			fi
+
+			crypto=$(echo $scan | sed 's/.*key:\([^ ]*\).*/\1/')
+			# Check encryption type
+			if echo "$scan" | grep -q WPA*; then
+				crypto="WPA"
+			fi
+
+			# Connected or not connected...
+			if ifconfig | grep -A 1 $WIFI_INTERFACE | \
+				grep -q inet && iwconfig $WIFI_INTERFACE | \
+				grep ESSID | grep -q -w "$essid"; then
+				status="$(_n 'connected')"
+			else
+				status="$(_n '-')"
+			fi
+
+			echo -e "$essid\n$quality\n${crypto/off/NONE}\n$status"
+		done
+	fi
+}
+
+
+# Prompt for password or connect
+
+connect_main() {
+	case $keytype in
+		WPA)	label="$(_n 'WPA Password:')" ;;
+		WEP)	label="$(_n 'WEP Password:')" ;;
+		*)		label= ;;
+	esac
+	case $keytype in
+		WPA|WEP)
+			icon='network-wireless'
+			yad --title="$(_n 'Wi-Fi connection')" --window-icon=$icon \
+				--width=520 --height=140 --on-top --center \
+				--image=$icon --image-on-top \
+				--text="$(_n 'Connection to:') <b>$essid</b>" \
+				--form \
+				--field="$label:H" ;;
+		none) continue ;;
+		*) exit 0 ;;
+	esac
+}
+
+
+connect() {
+	main=$(connect_main)
+	ret=$?
+	# Deal with --button values
+	case $ret in
+		1) exit 0 ;;
+		*) continue ;;
+	esac
+	/etc/init.d/network.sh stop
+	sleep 1
+	key=$(echo "$main" | cut -d '|' -f 1)
+	sed -i \
+		-e s"/^WIFI_ESSID=.*/WIFI_ESSID=\"$essid\""/ \
+		-e s"/^WIFI_KEY=.*/WIFI_KEY=\"$key\"/" \
+		-e s"/^WIFI_KEY_TYPE=.*/WIFI_KEY_TYPE=\"$keytype\"/" \
+		/etc/network-config/$WIFI_INTERFACE.conf
+	start_wifi
+}
+
+
+# Main GUI box function with pure Yad spec
+
+wifi_main() {
+	
+	if [ ! -e /sys/class/net/$WIFI_INTERFACE ]; then
+		
+		RX=""
+		
+		for wlan1 in $xWLAN
+		do
+			if [ "$wlan1" != "" ] && [ "$RX" == "" ]; then
+			 sed -i -e s'/^WIFI_INTERFACE=.*/WIFI_INTERFACE="$wlan1"/' 	/etc/network.conf
+		     RX="$wlan1"
+		     break
+		    fi
+		done
+	
+	. /etc/network.conf
+	
+	fi
+	
+	
+	if [ ! -e /etc/network-config/$WIFI_INTERFACE.conf ]; then
+	 cp -f /etc/wireless-template.conf /etc/network-config/$WIFI_INTERFACE.conf 
+	fi
+	
+	icon='network-wireless'
+	
+	if iwconfig 2>/dev/null | grep -q 'Tx-Power=off'; then
+		startstop="$(_n 'Start Wi-Fi')!media-playback-start:4"
+		refresh=''
+	else
+		startstop="$(_n 'Stop Wi-Fi')!media-playback-stop:3"
+		refresh="--button=gtk-refresh:5"
+	fi
+	
+	detect_wifi | yad --title="$(_n 'Wi-Fi network: %s' $WIFI_INTERFACE)" --window-icon=$icon \
+		--width=520 --height=300 --center \
+		--image=$icon --image-on-top \
+		--text="$(_n '<b>Connect to a Wi-Fi network</b> (Double click to connect)')" \
+		--list \
+		--column "$(_n 'ESSID Name')" --column "$(_n 'Quality')" \
+		--column "$(_n 'Encryption')" --column "$(_n 'Status')" \
+		--button="$startstop" $refresh \
+		--button="gtk-preferences:2" --button="gtk-close:1"
+}
+
+
+# Main function
+
+wifi() {
+	# Store box results
+	main=$(wifi_main)
+	ret=$?
+	# Deal with --button values
+	case $ret in
+		1) exit 0 ;;
+		2) tazpanel network#wifi; exit 0 ;;
+		3) /etc/init.d/network.sh stop "" $WIFI_INTERFACE; $0 ;;
+		4) start_wifi; $0 ;;
+		5) $0 ;;
+	esac
+	
+	if [ -n "$main" ]; then
+		essid=$(echo "$main" | cut -d "|" -f 1)
+		keytype=$(echo "$main" | cut -d "|" -f 3)
+		connect
+	fi
+}
+
+
+#
+# Script commands
+#
+
+case "$1" in
+	-h|--help|usage|help|-*)
+		usage ;;
+	*)
+		# Only for root.
+		if [ $(id -u) -ne 0 ]; then
+			exec tazbox su $0 $@
+			exit 0
+		fi
+
+		. /etc/network.conf
+		
+		if [ "$xWLAN" == "" ]; then
+		 error_msg "No wireless adapters found"
+		 exit
+		fi
+		
+		if [ -n "$1" ]; then
+			 if [ "$(echo "$xWLAN" | grep "$1")" != "" ]; then
+				WIFI_INTERFACE="$1"
+			 else
+				error_msg "Not a wireless interface: $1"
+				exit
+			 fi
+		fi
+		
+		wifi
+		
+        ;;
+esac
+
+exit 0
+

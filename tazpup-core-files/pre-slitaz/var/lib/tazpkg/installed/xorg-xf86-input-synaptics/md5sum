@@ -1,0 +1,4 @@
+fdbf803ee8b76e277237a0075d7f3f12  /etc/X11/xorg.conf.d/45-synaptics.conf
+84eb030cfbc1769c65e59b3af86d556a  /usr/lib/X11/modules/input/synaptics_drv.so
+8c3309e0f84a980d92947468dca18ca3  /usr/bin/synclient
+2169e208473fa42be85523cd3096fa83  /usr/bin/syndaemon

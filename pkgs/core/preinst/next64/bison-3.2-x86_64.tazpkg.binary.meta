@@ -1,0 +1,4 @@
+filename=bison-3.2-x86_64.tazpkg
+size=216	pkgs/core/preinst/next64/bison-3.2-x86_64.tazpkg 
+checksum.md5=ca8ef669690dd5dfb6295a299a8e16f2  pkgs/core/preinst/next64/bison-3.2-x86_64.tazpkg
+checksum.sha256=7a807aa9f2ccbe65faf26610eab852a36eadcbbb2c27cec3742b8e85b3f1074f  pkgs/core/preinst/next64/bison-3.2-x86_64.tazpkg

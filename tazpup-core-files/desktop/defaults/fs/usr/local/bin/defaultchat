@@ -1,0 +1,11 @@
+#!/bin/sh
+#exec puppyapps defaultchat "$@"
+if [ ! -z "`which lxterminal`" ]; then
+  exec lxterminal --command="tazirc --ask"
+elif [ ! -z "`which sakura`" ]; then
+  exec sakura -e "tazirc --ask"
+elif [ ! -z "`which urxvt`" ]; then
+  exec urxvt -e "tazirc --ask"
+else
+  xterm -e "tazirc --ask"
+fi

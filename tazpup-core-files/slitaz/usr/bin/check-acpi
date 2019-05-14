@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ "$(whoami)" != "root" ]; then
+ exec sudo -A ${0} ${@}
+exit
+fi
+
+if [ -d /proc/acpi ] || [ -d /proc/apm ]; then
+ exit
+fi
+
+if [ -f /etc/init.d/acpid ]; then
+	/etc/init.d/acpid stop
+else
+	killall acpid
+fi

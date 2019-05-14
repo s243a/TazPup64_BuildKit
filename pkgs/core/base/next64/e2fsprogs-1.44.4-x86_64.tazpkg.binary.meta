@@ -1,0 +1,4 @@
+filename=e2fsprogs-1.44.4-x86_64.tazpkg
+size=384	pkgs/core/base/next64/e2fsprogs-1.44.4-x86_64.tazpkg 
+checksum.md5=c7d073035eacba3b4c0fc59ee1243538  pkgs/core/base/next64/e2fsprogs-1.44.4-x86_64.tazpkg
+checksum.sha256=1aae9a65f0e253e8b4294cde3de3fadc645b54d1787755cef04ceddc588c8f68  pkgs/core/base/next64/e2fsprogs-1.44.4-x86_64.tazpkg

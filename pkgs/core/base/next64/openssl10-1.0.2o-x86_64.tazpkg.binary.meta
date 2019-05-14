@@ -1,0 +1,4 @@
+filename=openssl10-1.0.2o-x86_64.tazpkg
+size=1244	pkgs/core/base/next64/openssl10-1.0.2o-x86_64.tazpkg 
+checksum.md5=92e0e90d5d9443ebb6dbcff7b66b9f18  pkgs/core/base/next64/openssl10-1.0.2o-x86_64.tazpkg
+checksum.sha256=18ab532a5c9938e6980bf19274ff32ff275886ecb8cd7ddffb7fd872e65aac03  pkgs/core/base/next64/openssl10-1.0.2o-x86_64.tazpkg

@@ -1,0 +1,7 @@
+/etc/init.d/acpid
+/etc/acpi/acpi_handler.sh
+/etc/acpi/events/ac_adapter
+/etc/acpi/events/buttons
+/usr/bin/acpi_listen
+/usr/sbin/acpid
+/usr/sbin/kacpimon

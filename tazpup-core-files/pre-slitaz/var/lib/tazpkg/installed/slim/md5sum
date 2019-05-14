@@ -1,0 +1,8 @@
+6a62ac61814bda60185fbb416fb00dae  /etc/slim.conf
+d630e120535833c72c37fbe9d2f49063  /etc/init.d/slim
+c3f226be419f1c94a18fc8d9f8cb978a  /usr/share/slim/strings
+87713944aad921a7b7c06121ffc86ce6  /usr/share/slim/themes/base/panel.png
+5389e6ca90f9aefbe8bc0f9cda0d1d9c  /usr/share/slim/themes/base/background.png
+1fadf88345cc6c6a2f3cd120d2f678ed  /usr/share/slim/themes/base/slim.theme
+94882c47466c69bd8615ea6e99be3a7a  /usr/bin/slim
+c5a03f929c1ab053e0d7be32c68ec60c  /usr/bin/slim-theme

@@ -1,0 +1,4 @@
+filename=lz4-1.8.2-x86_64.tazpkg
+size=48	pkgs/core/base/next64/lz4-1.8.2-x86_64.tazpkg 
+checksum.md5=ec9eba94e0751ebb8ae7e61e61698b5c  pkgs/core/base/next64/lz4-1.8.2-x86_64.tazpkg
+checksum.sha256=61367e02bdcaa4c29dc1ebcc1ea8af0fbb64192a055249199ee0c567a0e992e4  pkgs/core/base/next64/lz4-1.8.2-x86_64.tazpkg

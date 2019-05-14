@@ -1,0 +1,4 @@
+filename=firefox-official
+size=0	tazpup-core-files/desktop/defaults/apps/browsers/firefox/fs/usr/bin/firefox-official 
+checksum.md5=77c95bd868c6d6e24fb99c72cd524941  tazpup-core-files/desktop/defaults/apps/browsers/firefox/fs/usr/bin/firefox-official
+checksum.sha256=b9bde80e457458d5b5524eb8c69efda9024ae6bdc3578ab3c26ec8c827f06021  tazpup-core-files/desktop/defaults/apps/browsers/firefox/fs/usr/bin/firefox-official

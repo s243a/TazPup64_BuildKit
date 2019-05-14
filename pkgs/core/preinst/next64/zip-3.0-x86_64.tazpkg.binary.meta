@@ -1,0 +1,4 @@
+filename=zip-3.0-x86_64.tazpkg
+size=128	pkgs/core/preinst/next64/zip-3.0-x86_64.tazpkg 
+checksum.md5=04c7789a83a34642be6f6b95e99450db  pkgs/core/preinst/next64/zip-3.0-x86_64.tazpkg
+checksum.sha256=970d64469be6cd46fa8e146dc57f108e689067921fe2794a703672c36e60a3fc  pkgs/core/preinst/next64/zip-3.0-x86_64.tazpkg

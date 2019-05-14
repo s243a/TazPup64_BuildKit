@@ -1,0 +1,76 @@
+#!/bin/sh
+#written by mistfire, modified by s243a
+#Build TazPuppy either online or local
+curdir=`pwd`
+prefix="/64"
+theme_inst_folder=/theme
+#Draft Function (Not used yet)
+move_in_target(){
+	mv $curdir/slitaz-rootfs$prefix/$1 $curdir/slitaz-rootfs$prefix/$2
+}
+#Draft Function (Not used yet)
+install_fm_desktop_jwm_woof_CE(){
+    Source_Path=$curdir/tazpup-core-files/desktop/jwm/no-arch/rootfs-packages/woof-CE-19-03-06/
+    Target_Path=$curdir/slitaz-rootfs$prefix
+    Theme_Inst_Folder=$Target_Path/desktop_pkg_inst_scripts
+    mkdir -p $Theme_Inst_Folder
+ 	cp --remove-destination -arf $Source_Path/$1/* \
+	                             $Target_Path/ 2>/dev/null	
+    chroot $Target_Path pinstall.sh   
+    move_in_target pintstall.sh $Theme_Inst_Folde/$1_pinstall.sh   
+}
+
+add_puppy_jwm_files(){
+	
+	#cp --remove-destination -arf $curdir/tazpup-core-files/desktop/jwm/no-arch/ptheme/* $curdir/slitaz-rootfs$prefix/ 2>/dev/null
+	
+	cp --remove-destination -arf $curdir/tazpup-core-files/desktop/jwm/no-arch/rootfs-skeleton/rootfs-skeleton-slacko6.9.9/* \
+	                             $curdir/slitaz-rootfs$prefix/ 2>/dev/null	
+	                             
+	mkdir -p $curdir/slitaz-rootfs$prefix/usr/local/petget/
+	cp --remove-destination -arf $curdir/tazpup-core-files/pkg-managers/petget/usr/local/petget/pinstall.sh \
+	                             $curdir/slitaz-rootfs$prefix/usr/local/petget/pinstall.sh 2>/dev/null	 
+	                             
+	cp --remove-destination -arf $curdir/tazpup-core-files/desktop/jwm/no-arch/rootfs-packages/woof-CE-19-03-06/pt_buntoo/* \
+	                             $curdir/slitaz-rootfs$prefix/ 2>/dev/null		                                                         
+
+	cp --remove-destination -arf $curdir/tazpup-core-files/desktop/jwm/no-arch/rootfs-packages/woof-CE-19-03-06/wallpaper/* \
+	                             $curdir/slitaz-rootfs$prefix/ 2>/dev/null	
+
+	cp --remove-destination -arf $curdir/tazpup-core-files/desktop/jwm/no-arch/rootfs-packages/woof-CE-19-03-06/ptheme/* \
+	                             $curdir/slitaz-rootfs$prefix/ 2>/dev/null	
+    chroot "$curdir/slitaz-rootfs$prefix/" /pinstall.sh   
+    move_in_target pintstall.sh theme_inst_folder/ptherme_pinstall.sh
+    mkdir -p $curdir/slitaz-rootfs$prefix/desktop_pkg_inst_scripts
+    mv $curdir/slitaz-rootfs$prefix/pinstall.sh $curdir/slitaz-rootfs$prefix/desktop_pkg_inst_scripts/rox_config_pinstall.sh    
+
+	cp --remove-destination -arf $curdir/tazpup-core-files/desktop/jwm/no-arch/rootfs-packages/woof-CE-19-03-06/rox_config/* \
+	                             $curdir/slitaz-rootfs$prefix/ 2>/dev/null	
+    chroot "$curdir/slitaz-rootfs$prefix/" /pinstall.sh   
+    #mkdir -p $curdir/slitaz-rootfs$prefix/ #Already done above
+    mv $curdir/slitaz-rootfs$prefix/pinstall.sh $curdir/slitaz-rootfs$prefix/desktop_pkg_inst_scripts/rox_config_pinstall.sh
+
+	cp --remove-destination -arf $curdir/tazpup-core-files/desktop/jwm/no-arch/rootfs-packages/woof-CE-19-03-06/jwm_config/* \
+	                             $curdir/slitaz-rootfs$prefix/ #2>/dev/null	
+    chroot "$curdir/slitaz-rootfs$prefix/" /pinstall.sh   
+    #mkdir -p $curdir/slitaz-rootfs$prefix/ #Already done above
+    mv $curdir/slitaz-rootfs$prefix/pinstall.sh $curdir/slitaz-rootfs$prefix/desktop_pkg_inst_scripts/jwm_config_pinstall.sh
+
+}
+#Draft Function (Not used yet)
+#add_puppy_jwm_files_fm_list(){
+#	while IFS= read -r -d read desktop_pkg; do
+#	;
+#	done <<-EOM
+#		pt_buntu
+#		wallpaper
+#		rox_config
+#	EOM
+#}
+add_puppy_jwm_files
+cp --no-clobber -arf $curdir/tazpup-core-files/desktop/jwm/no-arch/rootfs-skeleton/s243a/* $curdir/slitaz-rootfs$prefix/ 2>/dev/null 
+cd $curdir/slitaz-rootfs$prefix/usr/bin
+ln -s rox-filer roxfiler
+
+cd $curdir/slitaz-rootfs$prefix/usr/share/fox-filer
+ln -s ROX-Filer rox-filer

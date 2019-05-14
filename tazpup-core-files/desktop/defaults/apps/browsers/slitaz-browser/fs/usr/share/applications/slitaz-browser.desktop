@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Slitaz Browser
+Name[de]=TazWeb-Browser
+Name[fr]=Navigateur TazWeb
+Name[pt_BR]=Navegador TazWeb
+Name[ru]=Браузер TazWeb
+Comment=SliTaz simple, fast and small Web Browser
+Comment[de]=Der einfache, schnelle und kleine Webbrowser von SliTaz
+Comment[fr]=Navigateur web simple et rapide de SliTaz
+Comment[pt_BR]=Navegador web simples e rápido do SliTaz
+Comment[ru]=Простой, быстрый и маленький браузер SliTaz
+Exec=tazweb %u
+Icon=www48.png
+Categories=Network;WebBrowser;
+MimeType=x-scheme-handler/http;x-scheme-handler/https;text/html;text/xml;text/plain;application/xhtml+xml;application/xml;image/svg+xml;application/x-shockwave-flash;image/jpeg;image/png;

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+NoDisplay=true
+Exec=tazpkg-convert %f
+Name=Tazpkg Converter
+Icon=configuration48.png
+Comment=Convert a linux package to tazpkg
+NoDisplay=True

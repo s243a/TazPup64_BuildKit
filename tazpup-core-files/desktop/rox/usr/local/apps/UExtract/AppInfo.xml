@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<AppInfo>
+  <Summary>UExtract</Summary>
+  <About>
+	<Application>UExtract-3.32 - Ultimate Extractor</Application>
+	<Author>SFR</Author>
+	<License>GNU GPL v2</License>
+    <Homepage>http://www.murga-linux.com/puppy/viewtopic.php?t=87864</Homepage>
+  </About>
+  <AppMenu>
+    <Item icon="gtk-info" option="--filetypes">
+      <Label>Filetypes</Label>
+      <Label xml:lang="en">Filetypes</Label>
+      <Label xml:lang="pl">Typy plików</Label>
+      <Label xml:lang="es">Tipos de archivos</Label>
+    </Item>
+    <Item icon="gtk-info" option="--weblinks">
+      <Label>Weblinks</Label>
+      <Label xml:lang="en">Weblinks</Label>
+      <Label xml:lang="pl">Linki</Label>
+      <Label xml:lang="es">Enlaces web</Label>
+    </Item>
+    <Item icon="gtk-info" option="--backends">
+      <Label>Dependencies</Label>
+      <Label xml:lang="en">Backends</Label>
+      <Label xml:lang="pl">Backendy</Label>
+      <Label xml:lang="es">Backends</Label>
+    </Item>
+  </AppMenu>
+</AppInfo>

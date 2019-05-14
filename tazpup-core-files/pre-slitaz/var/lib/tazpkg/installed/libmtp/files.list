@@ -1,0 +1,4 @@
+/etc/udev/rules.d/69-libmtp.rules
+/usr/lib/libmtp.so.9.1.0
+/usr/lib/libmtp.so.9
+/usr/lib/libmtp.so

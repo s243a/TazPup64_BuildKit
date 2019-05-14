@@ -1,0 +1,30 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="40.0K"
+UNPACKED_SIZE="228.0K"
+PACKAGE="xdg-utils"
+VERSION="1.1.0-rc1"
+CATEGORY="development"
+SHORT_DESC="Assists desktop integration tasks."
+MAINTAINER="paul@slitaz.org"
+LICENSE="MIT"
+TARBALL="$PACKAGE-$VERSION.tar.gz"
+WEB_SITE="https://www.freedesktop.org/wiki/Software/xdg-utils/"
+WGET_URL="http://portland.freedesktop.org/download/$TARBALL"
+HOST_ARCH="i486 arm"
+
+# Rules to configure and make the package.
+compile_rules()
+{
+	./configure \
+		$CONFIGURE_ARGS &&
+	make && make install
+}
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	mkdir -p $fs/usr
+	cp -a $install/usr/bin $fs/usr
+}
+

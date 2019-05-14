@@ -1,0 +1,6 @@
+[Storage Permissions]
+Identity=*
+Action=org.freedesktop.udisks2.*
+ResultAny=yes
+ResultActive=yes
+ResultInactive=yes

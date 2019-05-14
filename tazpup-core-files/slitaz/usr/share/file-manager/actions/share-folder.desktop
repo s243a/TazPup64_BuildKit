@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Action
+Name=Share this folder
+Icon=folder-publicshare
+Profiles=share_folder;
+
+[X-Action-Profile share_folder]
+ShowIfTrue=test ! -z $(which smbd)
+MimeTypes=inode/directory;
+Exec=sfs-share %f

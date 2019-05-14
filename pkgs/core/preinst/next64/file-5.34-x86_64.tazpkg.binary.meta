@@ -1,0 +1,4 @@
+filename=file-5.34-x86_64.tazpkg
+size=168	pkgs/core/preinst/next64/file-5.34-x86_64.tazpkg 
+checksum.md5=418b1084340c7b38c536a3e8ca435915  pkgs/core/preinst/next64/file-5.34-x86_64.tazpkg
+checksum.sha256=8339a2072a6a3d1284196b3619397fe5ae001cdf17d47a7d0cd3e49176ecc27e  pkgs/core/preinst/next64/file-5.34-x86_64.tazpkg

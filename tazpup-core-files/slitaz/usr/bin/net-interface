@@ -1,0 +1,19 @@
+#!/bin/sh
+# wrapper for usb tethering
+# written by mistfire
+
+cmd1="$(basename $0)"
+iface="$1"
+subcmd="$2"
+
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A $0 $@
+exit
+fi
+
+if [ "$(pidof ethmon)" != "" ]; then
+ echo "Ethernet monitor is running"
+ exit
+fi
+
+probe-net "$1" skipwifi

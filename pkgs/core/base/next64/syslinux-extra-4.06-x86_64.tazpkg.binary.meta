@@ -1,0 +1,4 @@
+filename=syslinux-extra-4.06-x86_64.tazpkg
+size=92	pkgs/core/base/next64/syslinux-extra-4.06-x86_64.tazpkg 
+checksum.md5=df5a183fe34c5f6fd662ab23f732db2e  pkgs/core/base/next64/syslinux-extra-4.06-x86_64.tazpkg
+checksum.sha256=af319979d18d1258c712934ba8c1b88e21f2d5a7bc2246aa1b87e8dc2923bfa1  pkgs/core/base/next64/syslinux-extra-4.06-x86_64.tazpkg

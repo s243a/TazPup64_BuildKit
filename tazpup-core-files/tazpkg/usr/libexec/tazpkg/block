@@ -1,0 +1,65 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# block - TazPkg module
+# Change package's blocked status
+# Modified by mistfire for TazPuppy
+
+. /usr/libexec/tazpkg/header
+
+newline
+if [ ! -d "$INSTALLED/$2" ]; then
+_ 'Package "%s" is not installed.' "$2"
+exit 1
+fi
+
+case $1 in
+block|-b)
+
+if [ "$(cat $PKGS_DB/locked-packages | grep -E "$2")" != "" ]; then
+newline; _ 'Package "%s" cannot block/unblocked.' "$2"
+exit 1
+fi
+
+if grep -qs "^$2" "$BLOCKED"; then
+_ 'Package "%s" is already blocked.' "$2"
+else
+echo "$2">> "$BLOCKED"
+. "$INSTALLED/$2/receipt"; tazpkg call log_pkg Blocked
+_ 'Package "%s" blocked.' "$2"
+fi
+;;
+unblock|-u)
+
+if [ "$(cat $PKGS_DB/locked-packages | grep -E "$2")" != "" ]; then
+newline; _ 'Package "%s" cannot block/unblocked.' "$2"
+exit 1
+fi
+
+if grep -qs "^$2" "$BLOCKED"; then
+sed -i "/^$2\$/d" "$BLOCKED"
+. "$INSTALLED/$2/receipt"; tazpkg call log_pkg Unblocked
+_ 'Package "%s" unblocked.' "$2"
+else
+[ -z "$nowarning" ] && _ 'Package "%s" is not blocked.' "$2"
+fi
+
+;;
+chblock)
+
+if [ "$(cat $PKGS_DB/locked-packages | grep -E "$2")" != "" ]; then
+newline; _ 'Package "%s" is cannot block/unblocked.' "$2"
+exit 1
+fi
+
+if grep -qs "^$2" "$BLOCKED"; then
+sed -i "/^$2\$/d" "$BLOCKED"
+. "$INSTALLED/$2/receipt"; tazpkg call log_pkg Unblocked
+_ 'Package "%s" unblocked.' "$2"
+else
+echo "$2">> "$BLOCKED"
+. "$INSTALLED/$2/receipt"; tazpkg call log_pkg Blocked
+_ 'Package "%s" blocked.' "$2"
+fi
+;;
+esac
+newline

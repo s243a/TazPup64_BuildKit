@@ -1,0 +1,102 @@
+#!/bin/sh
+# TazPkg - Tiny autonomous zone packages manager, hg.slitaz.org/tazpkg
+# find-depends - TazPkg module
+# Functions that are common to tazpkg and tazpkg-convert and sourced by them.
+# Modified by mistfire for TazPuppy
+
+find_depends() {
+	
+DEFAULT_DEPENDS='glibc-base gcc-lib-base'
+
+if [ ! -f "$PKGS_DB/files.list.lzma" ]; then
+ if [ ! -f /tmp/tazpkg-local.lock ]; then
+  tazpkg recharge
+ fi
+fi
+
+if [ -f "$PKGS_DB/files.list.lzma" ]; then
+ for i in $PKGS_DB/files.list.lzma 
+ do
+ [ -f "$i" ] && lzma d "$i" -so | fgrep '.so' | fgrep '/lib/' >> "$TMP_DIR/files.list"
+ done
+fi
+
+for i in $(find $PKGS_DB/undigest/ -type f -name "files.list.lzma")
+do
+[ -f "$i" ] && lzma d "$i" -so | fgrep '.so' | fgrep '/lib/' >> "$TMP_DIR/files.list"
+done
+
+_ 'Find depends...' 1>&2
+
+libs_found=''
+
+for chkfile in $(find "$1" -type f); do
+	
+	[ "$(dd bs=1 skip=1 count=3 < "$chkfile" 2>/dev/null)" != 'ELF' ] && continue
+	
+	case "$chkfile" in
+	*.o|*.ko|*.ko.gz|*.ko.xz) continue;;
+	esac
+	
+	for lib in $(LD_TRACE_LOADED_OBJECTS=1 /lib/ld*.so "$chkfile" 2>/dev/null | sed '/=>/!d;s/ =>.*//'); do
+		debug "lib='$lib'"
+		
+		case " $libs_found " in
+		*\ $lib\ *) continue;;
+		esac
+		
+		libs_found="$libs_found $lib"
+		
+		case "$lib" in
+		statically|linux-gate.so*|ld-*.so|*/ld-*.so) continue;;
+		esac
+		
+		find "${1:-$TMP_DIR/$file/fs}" | grep -q /$lib$ && continue
+		
+		_n 'for %s' "$lib" 1>&2
+		
+		echo -ne '                   \r' 1>&2
+		
+			for dep in $(fgrep "$lib" "$TMP_DIR/files.list" | cut -d: -f1); do
+				debug "  dep='$dep'"
+				
+				case " $DEFAULT_DEPENDS " in
+				*\ $dep\ *) continue 2;;
+				esac
+				
+				grep -qs "^$dep$" "$TMP_DIR/depends" && continue 2
+			done
+		
+		if [ -n "$dep" ]; then
+		debug "  add '$dep' to depends"
+		echo "$dep">> "$TMP_DIR/depends"
+		else
+		debug "  add '$lib' to unresolved"
+		grep -qs ^$lib$ "$TMP_DIR/unresolved" ||
+		echo "$lib">> "$TMP_DIR/unresolved"
+		fi
+		
+	done
+	
+done
+
+spc=''
+
+
+[ -s "$TMP_DIR/depends" ] &&
+
+cat $TMP_DIR/depends | sort | uniq > $TMP_DIR/depends.new
+
+rm -f $TMP_DIR/depends
+
+cp -af $TMP_DIR/depends.new $TMP_DIR/depends 
+
+rm -f $TMP_DIR/depends.new
+ 
+while read file;
+do
+echo -n "$spc$file"
+spc=' '
+done < $TMP_DIR/depends 
+
+}

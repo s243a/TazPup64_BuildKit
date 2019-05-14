@@ -1,0 +1,23 @@
+# SliTaz package receipt.
+
+PACKED_SIZE="16.0K"
+UNPACKED_SIZE="40.0K"
+PACKAGE="libcomerr"
+VERSION="1.44.2"
+CATEGORY="base-system"
+SHORT_DESC="The libcomerr library files."
+MAINTAINER="pankso@slitaz.org"
+LICENSE="GPL2"
+WANTED="e2fsprogs"
+WEB_SITE="http://e2fsprogs.sourceforge.net/"
+HOST_ARCH="i486 arm"
+
+# Rules to gen a SliTaz package suitable for Tazpkg.
+genpkg_rules()
+{
+	while read file; do
+		dir=$(dirname $file)
+		[ -d ${fs}$dir ] || mkdir -p ${fs}$dir
+		cp -a ${install}$file ${fs}$file
+	done < $wanted_stuff/$PACKAGE.files-list
+}

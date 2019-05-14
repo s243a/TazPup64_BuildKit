@@ -1,0 +1,4 @@
+filename=kmod-25-x86_64.tazpkg
+size=60	pkgs/core/base/next64/kmod-25-x86_64.tazpkg 
+checksum.md5=de9c431a515cefaf509cf195eefd5eed  pkgs/core/base/next64/kmod-25-x86_64.tazpkg
+checksum.sha256=aa5d6baa6bba4c657fdfa8af571b84d163fae6b4f99811495f951df7e734a66b  pkgs/core/base/next64/kmod-25-x86_64.tazpkg

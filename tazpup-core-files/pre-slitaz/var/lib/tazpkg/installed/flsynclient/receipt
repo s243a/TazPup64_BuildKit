@@ -1,0 +1,11 @@
+# SliTaz package receipt.
+
+
+PACKED_SIZE="24.0K"
+UNPACKED_SIZE="88.0K"
+PACKAGE="flsynclient"
+VERSION="0.7"
+CATEGORY="system-tools"
+SHORT_DESC="synaptics"
+MAINTAINER="Gibor-compiled"
+DEPENDS="fltk"

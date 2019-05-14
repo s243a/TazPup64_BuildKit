@@ -1,0 +1,439 @@
+#!/bin/sh
+# Modified by mistfire for TazPuppy
+# ref. https://wiki.archlinux.org/index.php/3G_and_GPRS_modems_with_pppd
+. /lib/libtaz.sh
+. /etc/locale.conf
+#export LANG LC_ALL
+#export TEXTDOMAIN='tazmodem' # i18n
+
+chatfile=/etc/ppp/chat/gprs
+
+fifo=/tmp/$(basename $0).fifo
+
+#
+# functions
+#
+
+error_msg() {
+	icon='dialog-error'
+	yad --fixed --title="$(_n 'TazModem')" --window-icon=$icon \
+		--on-top --center \
+		--image=$icon --image-on-top \
+		--text="\n <b>$1\n$2\n$3</b> \n" \
+		--button="gtk-close:1"
+}
+
+yesno_msg() {
+	icon='dialog-warning'
+	yad --fixed --title="$(_n 'TazModem')" --window-icon=$icon \
+		 --on-top --center \
+		--image=$icon --image-on-top \
+		--text="\n <b>$1\n$2\n$3</b> \n" \
+		--button="gtk-yes:0" \
+		--button="gtk-no:1"
+	retval=$?
+}
+
+chat_modem(){
+	 mRES=""
+	 rm -f /tmp/modem-answer 2>/dev/null
+	 echo -e "ATZ\r" | microcom -t 1000 $1 > /tmp/modem-answer 2>/dev/null
+	 mRES="$(cat /tmp/modem-answer | grep "^OK")"	
+}
+
+detect_modem() {
+
+DETECTED=""
+
+	if [ "$(which get_modem_alternate_device)" != "" ]; then
+	 DETECTED="$(get_modem_alternate_device ALL | sed -e '/^$/ d' -e 's%^%/dev/%' -e 's% %!%')"
+	fi
+	
+	if [ -e /dev/gsmmodem ]; then
+         
+         chat_modem /dev/gsmmodem
+	
+		 if [ "$mRES" != "" ]; then
+			 if [ "$DETECTED" == "" ]; then
+			  DETECTED="/dev/gsmmodem"
+			 else
+			  if [ "$(echo "$DETECTED" | grep "/dev/gsmmodem")" == "" ]; then				  
+			   DETECTED="$DETECTED!/dev/gsmmodem"
+			  fi
+			 fi
+		 fi
+	 
+	fi
+	
+	
+	for MAINDEV in $(ls /dev/ttyACM* /dev/ttyHS* /dev/ttyUSB* /dev/ttyS* /dev/rfcomm* 2>/dev/null)
+	do 
+	 chat_modem $MAINDEV
+	 if [ "$mRES" != "" ]; then
+	   if [ "$DETECTED" == "" ]; then
+	    DETECTED="$MAINDEV"
+	   else
+	    if [ "$(echo "$DETECTED" | grep "$MAINDEV")" == "" ]; then
+	     DETECTED="$DETECTED!$MAINDEV"
+	    fi
+	   fi
+	 fi
+	done	
+
+MODEMS="$DETECTED"
+
+}
+
+# collect udev information about all attached modems
+history() {
+	mkdir -p $HOME/.config/tazmodem/history
+	env > $HOME/.config/tazmodem/history/$(date +%s)
+}
+
+# get settings from modem
+get_cgdcont() {
+	if [ "x$(which catty)" != x ]; then
+		ANSWER=$(catty -d $DEVNAME -b$SPEED -r1 -w '\nAT+CGDCONT?\n' | tr -d '\r')
+		if [ "$(echo "$ANSWER" | tail -n1)" == "OK" ]; then
+			ANS=$(echo "$ANSWER" | fgrep : | cut -d\" -f4 | tr '\n' !)
+			echo ${ANS%!}
+		fi
+	fi
+}
+
+# Yad dialog
+gui() {
+
+	# only way to pre-select combo-box value is to put it first
+	SPEEDS='!460800!230400!115200!57600!38400!19200!9600!4800'
+	SPEEDS=$SPEED${SPEEDS/!$SPEED/}
+	MODES='!'$(_ 'None')'!'$(_ '3G-only')'!'$(_ '3G-pref')'!'$(_ 'GPRS-only')'!'$(_ 'GPRS-pref')''
+	MODES=$MODE${MODES/!$MODE/}
+	
+	AUTHS="!$(_ 'None')!$(_ 'CHAP')!$(_ 'EAP')!$(_ 'PAP')!$(_ 'MSCHAP')"
+	AUTHS=$AUTH${AUTHS/!$AUTH/}
+	
+	if [ "$DEVICE" != "" ]; then
+	 MODEMS="$DEVICE!${MODEMS/!$DEVICE/}"
+	fi
+	
+	#echo ">>>$MODEMS" > /root/test.log
+	icon='gtk-network'
+	yad --title="$(_n 'SliTaz Wireless Modem Dialer')" --fixed --window-icon=$icon \
+		--width=400 --center \
+		--form \
+		--field="$(_ 'Modem:'):CB" \
+		--field="$(_ 'Baud Rate:'):CB" \
+		--field="$(_ 'Wireless Mode:'):CB" \
+		--field="$(_ 'Access Point:')" \
+		--field="$(_ 'Number:')" \
+		--field="$(_ 'Username:')" \
+		--field="$(_ 'Password:'):H" \
+		--field="$(_ 'PIN:'):H" \
+		--field="$(_ 'Authentication:'):CB" \
+		--button="gtk-connect:2" \
+		--button="gtk-cancel:1" \
+		"$MODEMS" "$SPEEDS" "$MODES" "$APN" "$NUMBER" "$USERNAME" "$PASSWORD" \
+		"$PIN" "$AUTHS"
+}
+
+# show modem configuration dialog; read and save settings
+dialog() {
+	icon=mobile
+	
+	CONFIG="/etc/gprs.conf"; debug "CONFIG=$CONFIG"
+	
+if [ ! -e "$CONFIG" ]; then
+echo "DEVICE=
+SPEED=460800
+MODE=None
+APN=
+NUMBER=*99#
+USERNAME=
+PASSWORD=
+PIN=
+AUTH=None" > $CONFIG
+	
+icon=network-transmit-receive
+fi
+	
+	. $CONFIG
+
+	if [ "$APN" == "" ]; then APN="$(get_cgdcont)"; fi
+
+	settings=$(gui)
+	
+	[ x$? != x2 ] && exit 0
+
+	eval $(echo "$settings" | awk -F'|' '{printf "DEVICE=\"%s\"\nSPEED=\"%s\"\nMODE=\"%s\"\nAPN=\"%s\"\nNUMBER=\"%s\"\nUSERNAME=\"%s\"\nPASSWORD=\"%s\"\nPIN=\"%s\"\nAUTH=\"%s\"", $1, $2, $3, $4, $5, $6, $7, $8, $9}')
+
+	if [ "$NUMBER" == "" ]; then
+	 error_msg "Enter access number"
+	 exec $0
+	exit
+	fi
+	
+	if [ "$APN" == "" ]; then
+	 error_msg "Enter access point"
+	 exec $0
+	exit
+	fi
+	
+	# translate back
+	for i in none 3G-only 3G-pref GPRS-only GPRS-pref ; do
+		if [ "$(_n $i)" == "$MODE" ]; then MODE=$i; break; fi
+	done
+	
+	cat > $CONFIG << EOT
+SPEED="$SPEED"
+MODE="$MODE"
+APN="$APN"
+NUMBER="$NUMBER"
+USERNAME="$USERNAME"
+PASSWORD="$PASSWORD"
+PIN="$PIN"
+AUTH="$AUTH"
+EOT
+}
+
+
+generate_gsm_conf(){
+
+. /etc/gprs.conf
+
+# mode settings
+case "$MODE" in
+	3G-only)	CMODE='OK     AT\^SYSCFG=14,2,3fffffff,0,1' ;;
+	3G-pref)	CMODE='OK     AT\^SYSCFG=2,2,3fffffff,0,1' ;;
+	GPRS-only)	CMODE='OK     AT\^SYSCFG=13,1,3fffffff,0,0' ;;
+	GPRS-pref)	CMODE='OK     AT\^SYSCFG=2,1,3fffffff,0,0' ;;
+	none)		CMODE= ;;
+esac
+
+echo "ABORT 'BUSY'
+ABORT 'NO CARRIER'
+ABORT 'VOICE'
+ABORT 'NO DIALTONE'
+ABORT 'NO DIAL TONE'
+ABORT 'NO ANSWER'
+ABORT 'DELAYED'
+REPORT CONNECT
+TIMEOUT 6
+'' 'ATQ0'
+'OK-AT-OK' 'ATZ'
+TIMEOUT 3
+'OK\d-AT-OK' 'ATI'
+'OK' 'ATI'
+'OK' 'ATZ'
+'OK' 'ATQ0 V1 E1 S0=0 &C1 &D2 +FCLASS=0'" > /etc/ppp/scripts/gsm.chat
+
+if [ "$PIN" != "" ]; then
+ echo "'OK' 'AT+CPIN=\"$PIN\"'" >> /etc/ppp/scripts/gsm.chat
+fi
+
+echo "'OK' 'AT+CGDCONT=1,\"IP\",\"$APN\"'" >> /etc/ppp/scripts/gsm.chat
+
+if [ "$CMODE" != "" ]; then
+ echo "$CMODE" >> /etc/ppp/scripts/gsm.chat
+fi
+
+echo "'OK' 'ATDT$NUMBER'
+TIMEOUT 30
+CONNECT ''
+" >> /etc/ppp/scripts/gsm.chat
+
+cat > /etc/ppp/options-gsm << EOT
+$DEVICE
+$SPEED
+modem
+crtscts
+lock
+passive
+novj
+defaultroute
+noipdefault
+usepeerdns
+hide-password
+persist
+holdoff 10
+maxfail 0
+asyncmap 0
+noauth
+debug
+EOT
+
+echo "file /etc/ppp/options-gsm" > /etc/ppp/peers/gsm
+
+if [ "$USERNAME" == "" ]; then
+ 
+	echo "user \"$USERNAME\"" >> /etc/ppp/peers/gsm 
+ 
+	if [ "$PASSWORD" != "" ]; then
+	 echo "password \"$PASSWORD\"" >> /etc/ppp/peers/gsm
+	fi
+
+fi
+
+if [ "$AUTH" == "PAP" ]; then
+ echo "require-pap" >> /etc/ppp/peers/gsm
+elif [ "$AUTH" == "CHAP" ]; then
+ echo "require-chap" >> /etc/ppp/peers/gsm
+elif [ "$AUTH" == "EAP" ]; then
+ echo "require-eap" >> /etc/ppp/peers/gsm
+elif [ "$AUTH" == "MSCHAP" ]; then
+ echo "require-mschap" >> /etc/ppp/peers/gsm
+fi
+	
+echo  "connect \"/usr/sbin/chat -v -t15 -f /etc/ppp/scripts/gsm.chat\"" >> /etc/ppp/peers/gsm
+
+if [ "$USERNAME" ]; then
+	sed -i -e "/^\"$USERNAME\"\t/d" /etc/ppp/pap-secrets
+	echo "\"$USERNAME\"	*	\"$PASSWORD\"" >> /etc/ppp/pap-secrets
+	chmod 600 /etc/ppp/pap-secrets
+fi #130812 end
+
+if [ "$USERNAME" ]; then
+	sed -i -e "/^\"$USERNAME\"\t/d" /etc/ppp/chap-secrets
+	echo "\"$USERNAME\"	*	\"$PASSWORD\"" >> /etc/ppp/chap-secrets
+	chmod 600 /etc/ppp/chap-secrets
+fi #130812 end
+
+if [ "$USERNAME" ]; then
+	sed -i -e "/^\"$USERNAME\"\t/d" /etc/ppp/eap-secrets
+	echo "\"$USERNAME\"	*	\"$PASSWORD\"" >> /etc/ppp/eap-secrets
+	chmod 600 /etc/ppp/eap-secrets
+fi #130812 end
+
+if [ "$USERNAME" ]; then
+	sed -i -e "/^\"$USERNAME\"\t/d" /etc/ppp/mschap-secrets
+	echo "\"$USERNAME\"	*	\"$PASSWORD\"" >> /etc/ppp/mschap-secrets
+	chmod 600 /etc/ppp/mschap-secrets
+fi #130812 end
+	
+}
+	
+wait_dialog(){
+yad --title="TazModem" --sticky --window-icon=gtk-execute --fixed --center --borders=1 --no-buttons --timeout "$1" --timeout-indicator=bottom --text "$2"
+
+if [ $? -ne 70 ]; then
+ wait_dialog "$1" "$2"
+else
+ continue
+fi
+
+}
+
+
+# prepare files for dialing and dial
+dial() {
+	. $CONFIG
+
+	generate_gsm_conf
+
+	# do we use PIN?
+	#case "x$PIN" in
+	#	x) trayicon="notification-gsm-full" ;;
+	#esac
+	
+	trayicon="mobile"
+   
+	# anyone can use it
+	chmod a+r /etc/resolv.conf
+	
+	cp -f /etc/resolv.conf /etc/resolv.conf.old
+
+	# dial
+	
+	lastppp="$(netstat -r | grep "ppp" | tail -n 1)"
+	
+	pppd call gsm &			#| tazbox out &
+	
+	wait_dialog 5 " Connecting to $DEVICE ... "
+	
+	dpid="$(busybox ps | grep "pppd call gsm" | grep -v "grep" | awk '{print $1}')"
+	
+	if [ "$dpid" != "" ]; then
+	 wait_dialog 10 " Verifying connection... "
+	 newppp="$(netstat -r | grep "ppp" | tail -n 1)"
+	 if [ "$newppp" != "" ] && [ "$lastppp" != "$newppp" ]; then
+	  listen &
+	  echo "menu:$(_ 'Show Activity')!$0 console \"$DEVICE\"!gtk-execute|$(_ 'Disconnect')!$0 off!gtk-disconnect" > $fifo
+	  echo "tooltip:\"GPRS/3G modem running on $DEVICE" > $fifo
+	  notify-send -t 5000 "Connection Established" "Connected to $newppp"
+	 else
+	  $0 off
+	  error_msg "Cannot establish connection. Try again"
+	 fi
+	else
+	 error_msg "Connecting to modem failed. Try again"
+	fi
+	
+}
+
+# notification icon
+listen() {
+	rm -f $fifo; mkfifo $fifo
+	exec 3<> $fifo
+	
+	if [ "$1" != "" ]; then
+	 trayicon="$1"
+	fi
+	
+	yad --notification --listen --command="$0 console $DEVICE" --image=$trayicon --text="$(_ 'TazModem')" <&3
+	rm -f $fifo
+}
+
+# clean tracks after pppd dialing
+off() {
+	dpid="$(busybox ps | grep "pppd call gsm" | grep -v "grep" | awk '{print $1}')"
+	kill $dpid
+	cp -f /etc/resolv.conf.old /etc/resolv.conf
+	echo quit > $fifo
+}
+
+
+#
+# main program
+#
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A "$0" "$@"
+exit
+fi
+
+if [ "$1" == "off" ]; then
+off
+echo quit > $fifo
+exit
+elif [ "$1" == "console" ]; then
+
+	if  [ "$(busybox ps | grep "sakura --title=View modem activity:" | grep -v "grep")" != "" ]; then
+	 exit
+	fi
+	
+sakura --title="View modem activity: $2" --geometry=35x15 -e "cat -v $2"
+exit
+fi
+
+detect_modem
+
+if [ "$MODEMS" == "" ]; then
+error_msg "No GSM/GPRS/3G modems found"
+exit
+fi
+
+dpid="$(busybox ps | grep "pppd call gsm" | grep -v "grep" | awk '{print $1}')"
+     
+if [ "$dpid" != "" ]; then
+yesno_msg "Ongoing modem session. Disconnect now?"
+	if [ $retval -eq 0 ]; then
+	 kill $dpid
+	 mv -f /etc/resolv.old /etc/resolv.conf
+	 echo quit > $fifo
+	else
+	 exit
+	fi
+fi
+
+dialog
+dial
+

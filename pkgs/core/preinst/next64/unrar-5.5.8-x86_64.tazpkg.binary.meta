@@ -1,0 +1,4 @@
+filename=unrar-5.5.8-x86_64.tazpkg
+size=120	pkgs/core/preinst/next64/unrar-5.5.8-x86_64.tazpkg 
+checksum.md5=79e0f52f815c7f15209123715011fbbb  pkgs/core/preinst/next64/unrar-5.5.8-x86_64.tazpkg
+checksum.sha256=c89de66dd8c3788c24e4002246ee6d23a930a2bcc077490b40161cb32e972c6e  pkgs/core/preinst/next64/unrar-5.5.8-x86_64.tazpkg

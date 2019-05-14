@@ -1,0 +1,4 @@
+filename=libgnutls-3.5.19-x86_64.tazpkg
+size=440	pkgs/core/base/next64/libgnutls-3.5.19-x86_64.tazpkg 
+checksum.md5=8be835dbd909f03459df296d539362ca  pkgs/core/base/next64/libgnutls-3.5.19-x86_64.tazpkg
+checksum.sha256=2d4d6ce4a273ec375ac9d812a4ffa27df1628d80e95c756ebde7af6b75cb7980  pkgs/core/base/next64/libgnutls-3.5.19-x86_64.tazpkg

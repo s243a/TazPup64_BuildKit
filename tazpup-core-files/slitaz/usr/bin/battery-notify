@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ "$1" == "low" ]; then
+ cmd="-u critical"
+ MSG1="Battery Low"
+ MSG2="Plugin charger to recharge"
+ icon="-i error"
+elif [ "$1" == "full" ]; then
+ cmd="-u normal"
+ MSG1="Battery Full"
+ MSG2="Unplug the charger"
+ icon="-i battery"
+else
+ exit
+fi
+
+notify-send $cmd $icon "$MSG1" "$MSG2"

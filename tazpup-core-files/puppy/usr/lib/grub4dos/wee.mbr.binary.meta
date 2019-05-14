@@ -1,0 +1,4 @@
+filename=wee.mbr
+size=32	tazpup-core-files/puppy/usr/lib/grub4dos/wee.mbr 
+checksum.md5=635b19bf6d2bc02127cfb1fde5e1de0c  tazpup-core-files/puppy/usr/lib/grub4dos/wee.mbr
+checksum.sha256=9fb2b619959ad32051e290e28001e1d0e20b96bbf1573505c6f93c5457a6002c  tazpup-core-files/puppy/usr/lib/grub4dos/wee.mbr

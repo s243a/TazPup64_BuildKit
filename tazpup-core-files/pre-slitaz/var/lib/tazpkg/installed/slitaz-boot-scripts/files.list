@@ -1,0 +1,17 @@
+/init
+/etc/inittab
+/etc/network.conf
+/etc/init.d/README
+/etc/init.d/wpa_cli_static.sh
+/etc/init.d/wpa_action.sh
+/etc/init.d/system.sh
+/etc/init.d/rcS
+/etc/init.d/local.sh
+/etc/init.d/rc.shutdown
+/etc/init.d/network.sh
+/etc/init.d/bootopts.sh
+/etc/rcS.conf
+/usr/share/slitaz/network.conf_migration
+/usr/share/applications/bootlog.desktop
+/usr/bin/bootlog
+/usr/bin/rcSconf

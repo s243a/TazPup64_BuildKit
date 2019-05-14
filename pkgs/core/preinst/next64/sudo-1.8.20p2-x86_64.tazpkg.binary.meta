@@ -1,0 +1,4 @@
+filename=sudo-1.8.20p2-x86_64.tazpkg
+size=220	pkgs/core/preinst/next64/sudo-1.8.20p2-x86_64.tazpkg 
+checksum.md5=df44f51492d9bee103da94bb8d29e1d6  pkgs/core/preinst/next64/sudo-1.8.20p2-x86_64.tazpkg
+checksum.sha256=5279a9d8cf0fd3bd3f95610d17ea8c5b144e99638cb77adbd3c531eaecdb6830  pkgs/core/preinst/next64/sudo-1.8.20p2-x86_64.tazpkg

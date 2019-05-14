@@ -1,0 +1,4 @@
+328fa2973e698e7e95726e6ef849cdb0  /usr/lib/libparted.so.2.0.1
+41413d0bf55fd7e236a77f3db8551a5d  /usr/lib/libparted-fs-resize.so.0.0.1
+886f636ce56f134ddbd5f08769e4bed7  /usr/sbin/partprobe
+b4364d31e0c9f7be1dc300879bf3c27e  /usr/sbin/parted

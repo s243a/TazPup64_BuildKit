@@ -1,0 +1,4 @@
+filename=util-linux-eject-2.32.1-x86_64.tazpkg
+size=20	pkgs/core/base/next64/util-linux-eject-2.32.1-x86_64.tazpkg 
+checksum.md5=b32f913d1effa850415a00b5d718aa0f  pkgs/core/base/next64/util-linux-eject-2.32.1-x86_64.tazpkg
+checksum.sha256=2cc202be64c33322d420d1b7fe7c535f520b1d89305d84f4e5895ac0a999cedf  pkgs/core/base/next64/util-linux-eject-2.32.1-x86_64.tazpkg

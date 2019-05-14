@@ -1,0 +1,9 @@
+/etc/dbus-1/system.d/wpa_supplicant.conf
+/etc/init.d/wpa_supplicant
+/etc/wpa/wpa_empty.conf
+/etc/wpa/wpa_supplicant.conf
+/usr/share/dbus-1/system-services/fi.epitest.hostap.WPASupplicant.service
+/usr/share/dbus-1/system-services/fi.w1.wpa_supplicant1.service
+/usr/bin/wpa_cli
+/usr/bin/wpa_supplicant
+/usr/bin/wpa_passphrase

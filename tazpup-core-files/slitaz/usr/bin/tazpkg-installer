@@ -1,0 +1,35 @@
+#!/bin/sh
+# Written by mistfire for TazPuppy
+
+[ "`whoami`" != "root" ] && exec sudo -A ${0} ${@} #110505
+
+
+if [ "$1" == "" ]; then
+exit
+fi
+
+bname=`basename "$1"`
+
+if [ "$(echo "$bname" | rev | cut -f 1 -d '.' | rev)" != "tazpkg" ]; then
+/usr/lib/gtkdialog/box_ok "Tazpkg" error "Not a Slitaz package"
+exit
+fi
+
+  . /usr/lib/gtkdialog/box_yesno "Tazpkg" "Do you want to install this package?" "$bname"
+  
+  if [ "$EXIT" == "no" ]; then
+  exit
+  fi
+
+yaf-splash -text "Installing Package..." -placement center -close never &
+PID=$!
+tazpkg install "$1" --forced
+RES=$?
+kill $PID
+
+if [ $RES -eq 0 ]; then
+/usr/lib/gtkdialog/box_ok "Tazpkg" info "Installation complete"
+else
+/usr/lib/gtkdialog/box_ok "Tazpkg" error "Installation failed"
+fi
+

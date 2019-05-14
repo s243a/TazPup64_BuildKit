@@ -1,0 +1,4 @@
+filename=xorg-server-1.20.1-x86_64.tazpkg
+size=912	pkgs/core/base/next64/xorg-server-1.20.1-x86_64.tazpkg 
+checksum.md5=7e5c7c2272ba57d82379497f0807c649  pkgs/core/base/next64/xorg-server-1.20.1-x86_64.tazpkg
+checksum.sha256=2cd749aa518d303a4683da4df3ba11aa7c71cf7d5f8feced16ffa92290046558  pkgs/core/base/next64/xorg-server-1.20.1-x86_64.tazpkg

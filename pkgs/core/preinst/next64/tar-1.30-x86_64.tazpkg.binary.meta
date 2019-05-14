@@ -1,0 +1,4 @@
+filename=tar-1.30-x86_64.tazpkg
+size=144	pkgs/core/preinst/next64/tar-1.30-x86_64.tazpkg 
+checksum.md5=29a409c16bd92d8730c1f95da5050cb0  pkgs/core/preinst/next64/tar-1.30-x86_64.tazpkg
+checksum.sha256=765bd0cbc05b2b2efa46d8587ad00b75ade0b68a861e6f90a5eaca5a1df67dea  pkgs/core/preinst/next64/tar-1.30-x86_64.tazpkg

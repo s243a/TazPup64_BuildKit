@@ -1,0 +1,3 @@
+/usr/lib/gvfs/gvfs-udisks2-volume-monitor
+/usr/share/dbus-1/services/org.gtk.Private.UDisks2VolumeMonitor.service
+/usr/share/gvfs/remote-volume-monitors/udisks2.monitor

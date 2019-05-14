@@ -1,0 +1,4 @@
+filename=lsb-release-1.4-x86_64.tazpkg
+size=8	pkgs/applications/dependencies/next64/lsb-release-1.4-x86_64.tazpkg 
+checksum.md5=0a6583e83ca6eb05639b93ded0ba83d2  pkgs/applications/dependencies/next64/lsb-release-1.4-x86_64.tazpkg
+checksum.sha256=7d4703cee5a0ab1b68c5c5076120283e4f8ab7b11a82a9d4a93df57d730867c7  pkgs/applications/dependencies/next64/lsb-release-1.4-x86_64.tazpkg

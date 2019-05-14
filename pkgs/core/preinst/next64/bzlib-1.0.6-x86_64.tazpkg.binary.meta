@@ -1,0 +1,4 @@
+filename=bzlib-1.0.6-x86_64.tazpkg
+size=28	pkgs/core/preinst/next64/bzlib-1.0.6-x86_64.tazpkg 
+checksum.md5=43d77aed670e920622a12d27a364f88a  pkgs/core/preinst/next64/bzlib-1.0.6-x86_64.tazpkg
+checksum.sha256=6eb9a51fe804b6ae3bea0dba470d01452f730e3fc25c5da5b6b2e6d8d26d50eb  pkgs/core/preinst/next64/bzlib-1.0.6-x86_64.tazpkg

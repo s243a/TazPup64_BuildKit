@@ -1,0 +1,4 @@
+filename=bash-4.4.p23-x86_64.tazpkg
+size=280	pkgs/core/preinst/next64/bash-4.4.p23-x86_64.tazpkg 
+checksum.md5=af44f01f162cedbd222a137268edda9f  pkgs/core/preinst/next64/bash-4.4.p23-x86_64.tazpkg
+checksum.sha256=d1ab6df9a8b088b2d9753f40a4f81b95a775ae1781c0bba0d0ff25d80c6e302d  pkgs/core/preinst/next64/bash-4.4.p23-x86_64.tazpkg

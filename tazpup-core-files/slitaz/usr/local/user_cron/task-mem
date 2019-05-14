@@ -1,0 +1,7 @@
+#!/bin/sh
+#Write commands here to perform every 5 seconds
+
+if [ "$(pidof freemem-read-memory)" == "" ]; then
+ exec /usr/local/user_cron/task-scripts/freemem-read-memory &
+fi
+

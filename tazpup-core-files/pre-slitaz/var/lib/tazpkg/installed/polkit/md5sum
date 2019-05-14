@@ -1,0 +1,16 @@
+74d00e1902150533a64d2c7182c81061  /etc/polkit-1/localauthority.conf.d/50-localauthority.conf
+1619df1aeee5c92bf19446a820274e5a  /etc/polkit-1/nullbackend.conf.d/50-nullbackend.conf
+09f96e58327bd8fe5cfdd28e56cef236  /etc/dbus-1/system.d/org.freedesktop.PolicyKit1.conf
+94a9b52be1a3b08a573114550201b03f  /usr/lib/polkit-1/polkit-agent-helper-1
+9186ec5523f831565178d0a995d325c1  /usr/lib/polkit-1/extensions/libnullbackend.so
+253687080d87309dd4f71fd1e9166ef6  /usr/lib/polkit-1/polkitd
+d97e8d6879799afa516478fb9ddcafbb  /usr/lib/libpolkit-gobject-1.so.0.0.0
+f62176b729645a21ce7dad7182c7344e  /usr/lib/libpolkit-agent-1.so.0.0.0
+380acaafbda17faf38dd29d8c7a0b406  /usr/lib/libpolkit-backend-1.so.0.0.0
+9f2641bef1ea24a5e071b83d31c90cbe  /usr/share/polkit-1/actions/org.freedesktop.policykit.policy
+dc5a52e05acb93628b357fe03fac5881  /usr/share/polkit-1/actions/org.freedesktop.policykit.examples.pkexec.policy
+ada198ecd0c4153f73a8fc6cfa7234d7  /usr/share/dbus-1/system-services/org.freedesktop.PolicyKit1.service
+3bab6e76a2000bd54c677fb8b62e1015  /usr/bin/pk-example-frobnicate
+26799e4fad57fc5e5fd873750c625858  /usr/bin/pkcheck
+23e5a64d7a27b9f14a329e234b35e28a  /usr/bin/pkaction
+427943cfde663723a31fa38cb3589b1f  /usr/bin/pkexec

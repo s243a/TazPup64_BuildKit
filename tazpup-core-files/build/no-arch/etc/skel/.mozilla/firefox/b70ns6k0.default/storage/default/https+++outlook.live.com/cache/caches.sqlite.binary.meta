@@ -1,0 +1,4 @@
+filename=caches.sqlite
+size=128	tazpup-core-files/build/no-arch/etc/skel/.mozilla/firefox/b70ns6k0.default/storage/default/https+++outlook.live.com/cache/caches.sqlite 
+checksum.md5=1e335837ae3e7cf614cc77de906564bf  tazpup-core-files/build/no-arch/etc/skel/.mozilla/firefox/b70ns6k0.default/storage/default/https+++outlook.live.com/cache/caches.sqlite
+checksum.sha256=7b1198fc03864f863d9a535be9816852285a17f7a3d1f0e8915297a30b8b8645  tazpup-core-files/build/no-arch/etc/skel/.mozilla/firefox/b70ns6k0.default/storage/default/https+++outlook.live.com/cache/caches.sqlite

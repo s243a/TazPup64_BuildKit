@@ -1,0 +1,269 @@
+#!/bin/sh
+# Written by mistfire for TazPuppy
+
+. /lib/libtaz.sh
+. /etc/locale.conf
+export LANG LC_ALL
+export TEXTDOMAIN='TazPPPOE' # i18n
+
+fifo=/tmp/$(basename $0).fifo
+
+#
+# functions
+#
+
+error_msg() {
+	icon='dialog-error'
+	yad --fixed --title="$(_n 'TazPPPOE')" --window-icon=$icon \
+		--on-top --center \
+		--image=$icon --image-on-top \
+		--text="\n <b>$1\n$2\n$3</b> \n" \
+		--button="gtk-close:1"
+}
+
+yesno_msg() {
+	icon='dialog-warning'
+	yad --fixed --title="$(_n 'TazPPPOE')" --window-icon=$icon \
+		 --on-top --center \
+		--image=$icon --image-on-top \
+		--text="\n <b>$1\n$2\n$3</b> \n" \
+		--button="gtk-yes:0" \
+		--button="gtk-no:1"
+	retval=$?
+}
+
+detect_interface() {
+
+ALL_INTF=`ls -1 /sys/class/net | grep -v '^lo$' | tr '\n' ' '`
+xETH=""
+xWLAN=""
+
+for IF1 in $ALL_INTF
+do
+
+xIF_DRIVER="`readlink /sys/class/net/$IF1/device/driver | rev | cut -f1 -d'/' | rev`" #ex: ath5k
+[ "$xIF_DRIVER" = "ath5k_pci" ] && [ "`lsmod | grep '^ath5k '`" != "" ] && xIF_DRIVER='ath5k'
+
+ePATTERN="${IF1}:"
+if [ "`grep "$ePATTERN" /proc/net/wireless`" != "" ] || [ "$xIF_DRIVER" = "prism2_usb" ] || [ -d /sys/class/net/${IF1}/wireless ]; then
+ if [ "$xWLAN" == "" ]; then
+  xWLAN="$IF1"
+ else
+  xWLAN="$xWLAN $IF1"
+ fi
+else
+ if [ "$xETH" == "" ]; then
+  xETH="$IF1"
+ else
+  xETH="$xETH $IF1"
+ fi
+fi
+
+done
+
+ETHS="$(echo "$xETH" | tr ' ' '!')"
+
+}
+
+# Yad dialog
+gui() {
+
+	# only way to pre-select combo-box value is to put it first
+	
+	if [ "$INTERFACE" != "" ]; then
+	 ETHS="$INTERFACE!${ETHS/!$INTERFACE/}"
+	fi
+	
+	#echo ">>>$ETHS" > /root/test.log
+	icon='gtk-network'
+	yad --title="$(_n 'SliTaz Connect to PPPOE')" --fixed --window-icon=$icon \
+		--width=400 --center \
+		--form \
+		--field="$(_ 'Interface:'):CB" \
+		--field="$(_ 'Username:')" \
+		--field="$(_ 'Password:'):H" \
+		--button="gtk-connect:2" \
+		--button="gtk-cancel:1" \
+		"$ETHS" "$USERNAME" "$PASSWORD"
+}
+
+# show modem configuration dialog; read and save settings
+dialog() {
+	
+	icon=gtk-network
+	
+	CONFIG="/etc/tazpppoe.conf"; debug "CONFIG=$CONFIG"
+	
+if [ ! -e "$CONFIG" ]; then
+echo "INTERFACE=
+USERNAME=
+PASSWORD=" > $CONFIG
+icon=network-transmit-receive
+fi
+	
+	. $CONFIG
+
+	if [ "$APN" == "" ]; then APN="$(get_cgdcont)"; fi
+
+	settings=$(gui)
+	
+	[ x$? != x2 ] && exit 0
+		
+	eval $(echo "$settings" | awk -F'|' '{printf "INTERFACE=\"%s\"\nUSERNAME=\"%s\"\nPASSWORD=\"%s\"", $1, $2, $3}')
+		
+	cat > $CONFIG << EOT
+INTERFACE="$INTERFACE"
+USERNAME="$USERNAME"
+PASSWORD="$PASSWORD"
+EOT
+}
+
+generate_pppoe_conf() {
+
+. /etc/tazpppoe.conf
+
+cat > /etc/ppp/peers/pppoe << EOT
+plugin rp-pppoe.so
+$INTERFACE
+noipdefault
+defaultroute
+mtu 1492
+mru 1492
+usepeerdns
+persist
+EOT
+
+if [ "$USERNAME" != "" ]; then
+echo "name $USERNAME
+noauth
+hide-password
+" >> /etc/ppp/peers/pppoe
+fi
+
+if [ "$USERNAME" != "" ]; then
+	sed -i -e "/^\"$USERNAME\"\t/d" /etc/ppp/pap-secrets
+	echo "\"$USERNAME\"	*	\"$PASSWORD\"" >> /etc/ppp/pap-secrets
+	chmod 600 /etc/ppp/pap-secrets
+fi #130812 end
+
+if [ "$USERNAME" != "" ]; then
+	sed -i -e "/^\"$USERNAME\"\t/d" /etc/ppp/chap-secrets
+	echo "\"$USERNAME\"	*	\"$PASSWORD\"" >> /etc/ppp/chap-secrets
+	chmod 600 /etc/ppp/chap-secrets
+fi #130812 end
+	
+}
+	
+wait_dialog(){
+yad --title="TazPPPOE" --sticky --window-icon=gtk-execute --fixed --center --borders=1 --no-buttons --timeout "$1" --timeout-indicator=bottom --text "$2"
+
+if [ $? -ne 70 ]; then
+ wait_dialog "$1" "$2"
+else
+ continue
+fi
+
+}
+
+#connect pppoe
+connect_pppoe() {
+	
+	. $CONFIG
+
+	generate_pppoe_conf
+
+	trayicon="gtk-connect"
+   
+	# anyone can use it
+	chmod a+r /etc/resolv.conf
+	
+	cp -f /etc/resolv.conf /etc/resolv.conf.old
+
+	# dial
+	
+	lastppp="$(netstat -r | grep "ppp" | tail -n 1)"
+	
+	pppd call pppoe &			#| tazbox out &
+	
+	wait_dialog 5 " Connecting PPPOE on $INTERFACE ... "
+	
+	dpid="$(busybox ps | grep "pppd call pppoe" | grep -v "grep" | awk '{print $1}')"
+	
+	if [ "$dpid" != "" ]; then
+	 wait_dialog 10 " Verifying connection... "
+	 newppp="$(netstat -r | grep "ppp" | tail -n 1)"
+	 if [ "$newppp" != "" ] && [ "$lastppp" != "$newppp" ]; then
+	  listen &
+	  echo "menu:$(_ 'Disconnect')!$0 off $INTERFACE!gtk-disconnect" > $fifo
+	  echo "tooltip:\"PPPoE running on $INTERFACE" > $fifo
+	  notify-send -t 5000 "Connection Established" "Connected to $newppp"
+	 else
+	  $0 off
+	  error_msg "Cannot establish connection. Try again"
+	 fi
+	else
+	 error_msg "Connecting to interface failed. Try again"
+	fi
+	
+}
+
+# notification icon
+listen() {
+	rm -f $fifo; mkfifo $fifo
+	exec 3<> $fifo
+	
+	if [ "$1" != "" ]; then
+	 trayicon="$1"
+	fi
+	
+	yad --notification --listen --image=$trayicon --text="$(_ 'TazPPPOE')" <&3
+	rm -f $fifo
+}
+
+# clean tracks after pppoe
+off() {
+	
+	dpid="$(busybox ps | grep "pppd call pppoe" | grep -v "grep" | awk '{print $1}')"
+	
+	if [ "$dpid" != "" ]; then
+	 kill $dpid
+	fi
+		
+	cp -f /etc/resolv.conf.old /etc/resolv.conf
+	echo quit > $fifo
+}
+
+#
+# main program
+#
+if [ "$(whoami)" != "root" ]; then
+exec sudo -A "$0" "$@"
+exit
+fi
+
+if [ "$1" == "off" ]; then
+off
+echo quit > $fifo
+exit
+fi
+
+	dpid="$(busybox ps | grep "pppd call pppoe" | grep -v "grep" | awk '{print $1}')"
+	
+	if [ "$dpid" != "" ]; then
+	yesno_msg "Ongoing PPPOE session" "Terminate the connection?"
+		if [ $retval -eq 0 ]; then
+		 $0 off
+	     sleep 1
+		fi
+	fi
+
+detect_interface
+
+if [ "$ETHS" == "" ]; then
+error_msg "No network interfaces found"
+exit
+fi
+
+dialog
+connect_pppoe
+

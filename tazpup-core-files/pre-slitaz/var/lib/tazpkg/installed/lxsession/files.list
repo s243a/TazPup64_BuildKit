@@ -1,0 +1,4 @@
+/etc/xdg/lxsession/LXDE/desktop.conf
+/usr/bin/lxsession-logout
+/usr/bin/lxlock
+/usr/bin/lxsession
